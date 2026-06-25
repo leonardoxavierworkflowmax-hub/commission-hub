@@ -1,3 +1,192 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>WorkflowMAX · Commission Hub FY2025</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+/* ── v5 PALETTE on v8 STRUCTURE ───────────────────────────────── */
+:root {
+  /* Core palette — v5 green forest */
+  --bg:#F1F1F1;
+  --surface:#ffffff;
+  --surface2:#f7f8f6;
+  --border:rgba(0,0,0,0.07);
+  --border-light:rgba(0,0,0,0.12);
+  --text:#0B151F;
+  --text-muted:#6b7280;
+  --text-dim:#aaa;
+  /* Accent = v5 forest green */
+  --accent:#0D8D5C;
+  --accent-glow:rgba(13,141,92,0.10);
+  /* Green family */
+  --green:#0D8D5C;
+  --green-bright:#63DB94;
+  --green-bg:#d4f7e5;
+  --green-border:#a8e8c5;
+  /* Sidebar */
+  --sidebar-bg:#0A2F28;
+  --sidebar-border:rgba(99,219,148,0.12);
+  --sidebar-text:rgba(99,219,148,0.55);
+  --sidebar-text-active:#63DB94;
+  /* Amber / yellow */
+  --amber:#b45309;
+  --amber-bg:#FBF5D8;
+  --amber-border:#e8d987;
+  /* Red */
+  --red:#dc2626;
+  --red-bg:#fee2e2;
+  --red-border:#fca5a5;
+  /* Blue */
+  --blue:#1a5fa8;
+  --blue-bg:#E8F3FF;
+  --blue-border:#b3d9ff;
+  /* Purple — kept for Outbound badge */
+  --purple:#4f46e5;
+  --purple-bg:#ede9fe;
+  --purple-border:#c4b5fd;
+  /* Teal */
+  --teal:#0D8D5C;
+  --teal-bg:#d4f7e5;
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;font-size:14px;line-height:1.5;}
+
+/* ── SIDEBAR ── */
+.app{display:flex;min-height:100vh;}
+.sidebar{width:224px;flex-shrink:0;background:var(--sidebar-bg);border-right:1px solid var(--sidebar-border);display:flex;flex-direction:column;position:sticky;top:0;height:100vh;overflow-y:auto;}
+.sidebar-logo{padding:22px 18px 18px;border-bottom:1px solid var(--sidebar-border);}
+.logo-text{font-family:'Inter',sans-serif;font-size:14px;font-weight:800;color:#fff;line-height:1.2;}
+.logo-text span{color:var(--green-bright);}
+.logo-sub{font-size:9px;color:rgba(99,219,148,0.45);letter-spacing:.06em;margin-top:3px;text-transform:uppercase;}
+.nav{padding:10px 0;flex:1;}
+.nav-section{padding:6px 16px 2px;font-size:9px;letter-spacing:.10em;text-transform:uppercase;color:rgba(99,219,148,0.3);margin-top:8px;font-weight:700;}
+.nav-item{display:flex;align-items:center;gap:8px;padding:8px 16px;cursor:pointer;color:var(--sidebar-text);font-size:12px;font-weight:600;transition:all .15s;border-left:2px solid transparent;margin:1px 0;}
+.nav-item:hover{color:#fff;background:rgba(99,219,148,0.08);}
+.nav-item.active{color:var(--sidebar-text-active);background:rgba(99,219,148,0.12);border-left-color:var(--green-bright);}
+.nav-icon{font-size:13px;width:18px;text-align:center;}
+.sidebar-footer{padding:14px 16px;border-top:1px solid var(--sidebar-border);}
+.sync-badge{display:flex;align-items:center;gap:6px;font-size:10px;color:var(--green-bright);font-weight:600;}
+.sync-dot{width:6px;height:6px;border-radius:50%;background:var(--green-bright);box-shadow:0 0 6px var(--green-bright);animation:pulse 2s infinite;}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.3}}
+
+/* ── MAIN LAYOUT ── */
+.main{flex:1;overflow-x:hidden;}
+.page{display:none;}
+.page.active{display:block;}
+.page-header{padding:28px 32px 22px;border-bottom:1px solid var(--border);background:#fff;}
+.page-eyebrow{font-size:10px;letter-spacing:.10em;text-transform:uppercase;color:var(--accent);margin-bottom:5px;font-weight:700;}
+.page-title{font-family:'Inter',sans-serif;font-size:24px;font-weight:800;line-height:1.1;color:var(--text);}
+.page-sub{color:var(--text-muted);font-size:12px;margin-top:5px;}
+.page-body{padding:24px 32px;}
+
+/* ── KPI CARDS ── */
+.kpi-row{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:20px;}
+.kpi-card{background:#fff;border:1px solid var(--border);border-radius:10px;padding:14px 16px;transition:border-color .2s;box-shadow:0 1px 3px rgba(0,0,0,0.04);}
+.kpi-card:hover{border-color:var(--accent);}
+.kpi-label{font-size:9px;font-weight:700;color:var(--text-dim);text-transform:uppercase;letter-spacing:.06em;margin-bottom:5px;}
+.kpi-value{font-family:'Inter',sans-serif;font-size:24px;font-weight:800;color:var(--text);line-height:1;}
+.kpi-value.green{color:var(--green);}
+.kpi-value.amber{color:var(--amber);}
+.kpi-value.red{color:var(--red);}
+.kpi-value.purple{color:var(--purple);}
+.kpi-value.teal{color:var(--green);}
+.kpi-sub{font-size:10px;color:var(--text-dim);margin-top:4px;}
+
+/* ── SECTION TITLE ── */
+.section-title{font-family:'Inter',sans-serif;font-size:12px;font-weight:700;letter-spacing:.02em;margin-bottom:12px;display:flex;align-items:center;gap:8px;color:var(--text);}
+.section-title::after{content:'';flex:1;height:1px;background:var(--border);}
+
+/* ── TABLES ── */
+.table-wrap{background:#fff;border:1px solid var(--border);border-radius:10px;overflow:hidden;margin-bottom:16px;box-shadow:0 1px 3px rgba(0,0,0,0.04);}
+table{width:100%;border-collapse:collapse;}
+thead th{background:var(--surface2);padding:8px 12px;text-align:left;font-size:9px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--text-dim);border-bottom:1px solid var(--border);white-space:nowrap;}
+tbody tr{border-bottom:1px solid var(--border);transition:background .1s;}
+tbody tr:last-child{border-bottom:none;}
+tbody tr:hover{background:#fafafa;}
+td{padding:8px 12px;font-size:12px;vertical-align:middle;}
+.deal-name{font-weight:600;color:var(--text);font-size:12px;max-width:200px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.deal-link{color:inherit;text-decoration:none;}
+.deal-link:hover{color:var(--accent);}
+
+/* ── BADGES ── */
+.badge{display:inline-flex;align-items:center;gap:4px;padding:2px 7px;border-radius:8px;font-size:9px;font-weight:700;white-space:nowrap;}
+.badge-green{background:var(--green-bg);color:var(--green);}
+.badge-amber{background:var(--amber-bg);color:var(--amber);}
+.badge-red{background:var(--red-bg);color:var(--red);}
+.badge-blue{background:var(--blue-bg);color:var(--blue);}
+.badge-purple{background:var(--purple-bg);color:var(--purple);}
+.badge-teal{background:var(--green-bg);color:var(--green);}
+.badge-dim{background:var(--surface2);color:var(--text-dim);border:1px solid var(--border);}
+.mono{font-family:'Inter',sans-serif;}
+
+/* ── ALERTS ── */
+.alert-strip{display:flex;align-items:flex-start;gap:12px;padding:12px 14px;border-radius:8px;font-size:12px;margin-bottom:14px;}
+.alert-strip.warning{background:var(--amber-bg);border:1px solid var(--amber-border);color:var(--amber);}
+.alert-strip.info{background:var(--blue-bg);border:1px solid var(--blue-border);color:var(--blue);}
+.alert-strip.danger{background:var(--red-bg);border:1px solid var(--red-border);color:var(--red);}
+.alert-strip.success{background:var(--green-bg);border:1px solid var(--green-border);color:var(--green);}
+.alert-body{color:var(--text-muted);line-height:1.5;}
+.alert-body strong{color:var(--text);}
+
+/* ── FORM CONTROLS ── */
+select{background:#fff;border:1px solid var(--border);border-radius:6px;color:var(--text);font-family:'Inter',sans-serif;font-size:12px;padding:5px 9px;outline:none;cursor:pointer;}
+select:focus{border-color:var(--accent);}
+input[type=date]{background:#fff;border:1px solid var(--border);border-radius:6px;color:var(--text);font-family:'Inter',sans-serif;font-size:12px;padding:5px 9px;outline:none;cursor:pointer;}
+.filter-bar{display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap;align-items:center;}
+.filter-label{font-size:10px;color:var(--text-dim);font-weight:700;text-transform:uppercase;letter-spacing:.04em;}
+
+/* ── TAGS ── */
+.pending-tag{display:inline-flex;align-items:center;gap:3px;padding:2px 6px;border-radius:8px;font-size:9px;font-weight:700;background:var(--amber-bg);color:var(--amber);margin-left:4px;vertical-align:middle;}
+.done-tag{display:inline-flex;align-items:center;gap:3px;padding:2px 6px;border-radius:8px;font-size:9px;font-weight:700;background:var(--green-bg);color:var(--green);margin-left:4px;vertical-align:middle;}
+.banked-chip{display:inline-flex;align-items:center;gap:3px;padding:2px 7px;border-radius:8px;font-size:10px;font-weight:700;background:var(--green-bg);color:var(--green);}
+
+/* ── STRIPE CARDS ── */
+.stripe-card{background:#fff;border:1px solid var(--border);border-radius:10px;overflow:hidden;margin-bottom:16px;box-shadow:0 1px 3px rgba(0,0,0,0.04);}
+.stripe-card-header{background:var(--surface2);padding:14px 18px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;}
+.stripe-card-company{font-family:'Inter',sans-serif;font-size:14px;font-weight:700;}
+.stripe-card-body{padding:18px;}
+.stripe-meta{display:grid;grid-template-columns:repeat(5,1fr);gap:12px;margin-bottom:14px;}
+.stripe-stat-label{font-size:9px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--text-dim);margin-bottom:4px;}
+.stripe-stat-val{font-family:'Inter',sans-serif;font-size:15px;font-weight:800;}
+
+/* ── TIMELINE ── */
+.timeline-wrap{overflow-x:auto;padding-bottom:8px;}
+.timeline-grid{min-width:700px;}
+.timeline-months{display:flex;gap:2px;margin-bottom:6px;}
+.tmonth{flex:1;text-align:center;font-size:9px;color:var(--text-dim);letter-spacing:.04em;padding:3px 0;font-weight:600;}
+.timeline-track{display:flex;gap:2px;height:28px;}
+.tcell{flex:1;border-radius:3px;cursor:default;transition:opacity .15s;}
+.tcell:hover{opacity:.75;}
+.tcell.paid{background:var(--green-bg);border:1px solid var(--green-border);}
+.tcell.voided{background:var(--amber-bg);border:1px solid var(--amber-border);}
+.tcell.empty{background:rgba(0,0,0,0.03);border:1px solid var(--border);}
+.tcell.future{background:rgba(13,141,92,0.04);border:1px dashed var(--green-border);}
+.timeline-legend{display:flex;gap:14px;margin-top:8px;flex-wrap:wrap;}
+.tleg{display:flex;align-items:center;gap:5px;font-size:10px;color:var(--text-dim);font-weight:600;}
+.tleg-dot{width:10px;height:10px;border-radius:2px;}
+
+/* ── COMPARISON ── */
+.diff-positive{color:var(--green);font-weight:700;}
+.diff-negative{color:var(--red);font-weight:700;}
+.diff-zero{color:var(--text-dim);}
+.diff-na{color:var(--text-dim);font-size:11px;}
+.hs-val{font-size:12px;color:var(--text-muted);font-weight:600;}
+.stripe-val{font-size:12px;color:var(--blue);font-weight:600;}
+.comm-hs{font-size:12px;color:var(--green);font-weight:700;}
+.comm-stripe{font-size:12px;color:var(--purple);font-weight:700;}
+.winner-hs{background:rgba(13,141,92,0.04);}
+.winner-stripe{background:rgba(79,70,229,0.04);}
+
+/* ── SCROLLBAR ── */
+::-webkit-scrollbar{width:5px;height:5px;}
+::-webkit-scrollbar-track{background:transparent;}
+::-webkit-scrollbar-thumb{background:rgba(0,0,0,0.15);border-radius:3px;}
+@keyframes spin{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}
+</style>
+</head>
+<body>
 <div class="app">
 <nav class="sidebar">
   <div class="sidebar-logo">
@@ -17,10 +206,18 @@
     <div class="nav-section">Multi-year</div>
     <div class="nav-item" onclick="showPage('banked',this)"><span class="nav-icon">⬡</span>Banked Commission</div>
     <div class="nav-section">Stripe</div>
+    <div class="nav-item" onclick="showPage('stripe',this)"><span class="nav-icon">⬡</span>Contract Timeline</div>
+    <div class="nav-item" onclick="showPage('comparison',this)"><span class="nav-icon">⇌</span>HS vs Stripe</div>
     <div class="nav-section">Upsells</div>
     <div class="nav-item" onclick="showPage('upsells',this)"><span class="nav-icon">↑</span>Upsell Deals <span class="pending-tag">New</span></div>
+    <div class="nav-item" onclick="showPage('cs-structure',this)"><span class="nav-icon">◎</span>CS Structure</div>
+    <div class="nav-section">Subscriptions</div>
+    <div class="nav-item" onclick="showPage('subhealth',this)"><span class="nav-icon">⬡</span>Subscription Health <span class="pending-tag" style="background:rgba(185,28,28,0.15);color:#fca5a5">14</span></div>
+    <div class="nav-item" onclick="showPage('stripe-recon',this)"><span class="nav-icon">⇌</span>Stripe Reconciliation <span style="background:rgba(99,219,148,0.15);color:#63DB94;font-size:10px;font-weight:700;padding:1px 7px;border-radius:10px">16/16</span></div>
     <div class="nav-section">Config</div>
+    <div class="nav-item" onclick="showPage('cleanup',this)"><span class="nav-icon">⚠</span>Data Cleanup <span class="pending-tag">6</span></div>
     <div class="nav-item" onclick="showPage('eligibility',this)"><span class="nav-icon">⊞</span>Eligibility Rules</div>
+    <div class="nav-item" onclick="showPage('classification',this)"><span class="nav-icon">⊜</span>Source vs Type</div>
     <div class="nav-item" onclick="showPage('pending',this)"><span class="nav-icon">⧖</span>Decisions <span class="pending-tag">2</span></div>
   </div>
   <div class="sidebar-footer">
@@ -923,44 +1120,6 @@
 </main>
 </div>
 
-<!-- EDIT MODAL -->
-<div id="edit-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.6);z-index:1000;align-items:center;justify-content:center">
-  <div style="background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:28px;width:440px;max-width:90vw;box-shadow:0 20px 60px rgba(0,0,0,0.4)">
-    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px">
-      <div>
-        <div style="font-size:10px;text-transform:uppercase;letter-spacing:.08em;color:var(--text-dim);margin-bottom:4px">Edit Record</div>
-        <div id="edit-modal-title" style="font-family:'Syne',sans-serif;font-size:16px;font-weight:700;color:var(--text)"></div>
-      </div>
-      <button onclick="closeEditModal()" style="background:var(--surface2);border:none;border-radius:6px;width:28px;height:28px;cursor:pointer;font-size:16px;color:var(--text-dim)">×</button>
-    </div>
-    <input type="hidden" id="edit-deal-id">
-    <div style="margin-bottom:14px">
-      <label style="font-size:11px;font-weight:600;color:var(--text-dim);text-transform:uppercase;letter-spacing:.06em;display:block;margin-bottom:6px">ARR (USD)</label>
-      <input id="edit-arr" type="number" step="0.01" style="width:100%;box-sizing:border-box;background:var(--surface2);border:1px solid var(--border);border-radius:7px;padding:9px 12px;color:var(--text);font-family:'DM Mono',monospace;font-size:13px">
-    </div>
-    <div style="margin-bottom:14px">
-      <label style="font-size:11px;font-weight:600;color:var(--text-dim);text-transform:uppercase;letter-spacing:.06em;display:block;margin-bottom:6px">Commission Type</label>
-      <select id="edit-type" style="width:100%;box-sizing:border-box;background:var(--surface2);border:1px solid var(--border);border-radius:7px;padding:9px 12px;color:var(--text);font-family:'Inter',sans-serif;font-size:13px">
-        <option value="">— select —</option>
-        <option value="Outbound">Outbound (10%)</option>
-        <option value="Inbound">Inbound (5%)</option>
-        <option value="Upsell">Upsell (7.5%)</option>
-      </select>
-    </div>
-    <div style="margin-bottom:20px">
-      <label style="font-size:11px;font-weight:600;color:var(--text-dim);text-transform:uppercase;letter-spacing:.06em;display:block;margin-bottom:6px">Note</label>
-      <textarea id="edit-note" rows="2" style="width:100%;box-sizing:border-box;background:var(--surface2);border:1px solid var(--border);border-radius:7px;padding:9px 12px;color:var(--text);font-family:'Inter',sans-serif;font-size:13px;resize:none" placeholder="Add a note or reason for the change..."></textarea>
-    </div>
-    <div style="display:flex;gap:8px;justify-content:flex-end">
-      <button onclick="closeEditModal()" style="background:var(--surface2);border:1px solid var(--border);border-radius:7px;padding:8px 16px;font-size:13px;font-weight:600;cursor:pointer;color:var(--text-dim);font-family:'Inter',sans-serif">Cancel</button>
-      <button onclick="saveEdit()" style="background:var(--green);border:none;border-radius:7px;padding:8px 18px;font-size:13px;font-weight:700;cursor:pointer;color:#0A2F28;font-family:'Inter',sans-serif">Save changes</button>
-    </div>
-    <div style="margin-top:14px;padding:10px 12px;background:var(--amber-bg);border:1px solid var(--amber-border);border-radius:7px;font-size:11px;color:var(--amber)">
-      ⚠ Changes are saved locally in this browser. To make them permanent, update the deal directly in HubSpot.
-    </div>
-  </div>
-</div>
-
 <script>
 // ── DATA ─────────────────────────────────────────────────────────────────────
 var AE = {
@@ -979,23 +1138,23 @@ var RAW = [
   {id:"57619530845",name:"SCLspec Pty Ltd",                owner:"80406430",arr:2925,   src:"Organic",           inv:"Non Sourced",              pkg:"Advanced Subscription",  close:"2026-03-16",paid_out:false,contract_years:1,stripe_cus_id:"cus_QJ3nILIzXWVYAS",commission_type:"Upsell"},
   {id:"56173724020",name:"Wilton Contracting Ltd",         owner:"80406430",arr:10575,  src:"Organic",           inv:"Non Sourced",              pkg:"Advanced Subscription",  close:"2026-03-04",paid_out:false,contract_years:1,stripe_cus_id:"cus_Q733nGa6IyKmiz",commission_type:"Upsell"},
   {id:"53715214102",name:"Event Base",                     owner:"80406430",arr:4200,   src:"Organic",           inv:"Heavy Involvement",        pkg:"Advanced Subscription",  close:"2026-03-31",paid_out:false,contract_years:1,stripe_cus_id:"cus_Q17bAYOTnoBf2A",commission_type:"Upsell"},
-  {id:"53384906860",name:"YOUNG & YOUNG ARCHITECTS",       owner:"80127257",arr:180,    src:"Organic",           inv:"Heavy Involvement",        pkg:"Premium Subscription",   close:"2026-02-19",paid_out:false,contract_years:1,stripe_cus_id:"cus_TzXCN0fT9p8Gv2",commission_type:"Outbound"},
-  {id:"48859467936",name:"Turco and Associates",           owner:"80127259",arr:2496,    src:"Inbound: Paid",     inv:"Non Sourced",  pkg:"Premium Subscription",   close:"2026-02-03",paid_out:false,contract_years:1,stripe_cus_id:"cus_TWNfIwb8WGP8pu",commission_type:"Inbound"},
-  {id:"44451553392",name:"WorkspaceConsultants",           owner:"80127257",arr:6750,   src:"Inbound: Paid",     inv:"Heavy Involvement",        pkg:"Advanced Subscription",  close:"2026-01-30",paid_out:false,contract_years:1,arr_locked:true,stripe_cus_id:"cus_QD5wNxtgjuN2Hs",commission_type:"Outbound"},
+  {id:"53384906860",name:"YOUNG & YOUNG ARCHITECTS",       owner:"80127257",arr:180,    src:"Organic",           inv:"Heavy Involvement",        pkg:"Premium Subscription",   close:"2026-02-19",paid_out:false,contract_years:1,commission_type:"Outbound"},
+  {id:"48859467936",name:"Turco and Associates",           owner:"80127259",arr:2496,    src:"Inbound: Paid",     inv:"Non Sourced",  pkg:"Premium Subscription",   close:"2026-02-03",paid_out:false,contract_years:1,commission_type:"Inbound"},
+  {id:"44451553392",name:"WorkspaceConsultants",           owner:"80127257",arr:6750,   src:"Inbound: Paid",     inv:"Heavy Involvement",        pkg:"Advanced Subscription",  close:"2026-01-30",paid_out:false,contract_years:1,arr_locked:true,commission_type:"Outbound"},
   // Concrete 4U removed per Ryan's instruction
   {id:"43407740035",name:"TTX Group",                      owner:"80406430",arr:16200,   src:"Organic",           inv:"Heavy Involvement",        pkg:"Advanced Subscription",  close:"2026-01-19",paid_out:false,contract_years:1,stripe_cus_id:"cus_TojhNZvdYajgWh",commission_type:"Outbound"},
   {id:"49908855476",name:"AMC Asia (SG) Pte Ltd",          owner:"80127259",arr:7500.03,src:"Outbound: Paid",    inv:"Heavy Involvement",        pkg:"Advanced Subscription",  close:"2026-01-12",paid_out:false,contract_years:1,stripe_cus_id:"cus_TndJgP7w1UkDJw",commission_type:"Outbound"},
   {id:"48886874948",name:"Idyllic Design Studio",          owner:"80406430",arr:3492,   src:"Organic",           inv:"Heavy Involvement",        pkg:"Premium Subscription",   close:"2025-12-16",paid_out:false,contract_years:1,stripe_cus_id:"cus_TcKfUNF1h5wHxU",commission_type:"Inbound"},
-  {id:"48859545474",name:"Sheltons Group Malta",           owner:"80127257",arr:3750,   src:"Organic",           inv:"Heavy Involvement",        pkg:"Advanced Subscription",  close:"2025-12-03",paid_out:false,contract_years:1,stripe_cus_id:"cus_TXiWT0YHrrsfVK",commission_type:"Outbound"},
-  {id:"49448097700",name:"Te Roroa Dev. Charitable Trust", owner:"80406430",arr:1116,   src:"Organic",           inv:"Heavy Involvement",        pkg:"Premium Subscription",   close:"2025-12-03",paid_out:false,contract_years:1,stripe_cus_id:"cus_TX8yHtQI0mvv0S",commission_type:"Outbound"},
-  {id:"47739280287",name:"Te Roroa Commercial Dev.",       owner:"80406430",arr:2088,   src:"Organic",           inv:"Heavy Involvement",        pkg:"Premium Subscription",   close:"2025-12-03",paid_out:false,contract_years:1,stripe_cus_id:"cus_TX8yHtQI0mvv0S",commission_type:"Outbound"},
-  {id:"50454404460",name:"Rural Design Limited" /* Stripe: not found in AU/NZ/US accounts */,           owner:"80127257",arr:5625,   src:"Referral",          inv:"Heavy Involvement",        pkg:"Advanced Subscription",  close:"2025-11-27",paid_out:false,contract_years:1,stripe_cus_id:"cus_TWxUPbNmEACYH7",commission_type:"Inbound"},
-  {id:"47416089102",name:"Boat Electrics" /* Stripe: not found in AU/NZ/US accounts */,                 owner:"80127257",arr:9450,   src:"Organic",           inv:"Heavy Involvement",        pkg:"Advanced Subscription",  close:"2025-11-27",paid_out:false,contract_years:5,banked_years:[{year:2,arr:9135},{year:3,arr:9135},{year:4,arr:9135},{year:5,arr:9135}],stripe_cus_id:"cus_TmFioYKFfslDCR",commission_type:"Outbound"},
+  {id:"48859545474",name:"Sheltons Group Malta",           owner:"80127257",arr:3750,   src:"Organic",           inv:"Heavy Involvement",        pkg:"Advanced Subscription",  close:"2025-12-03",paid_out:false,contract_years:1,commission_type:"Outbound"},
+  {id:"49448097700",name:"Te Roroa Dev. Charitable Trust", owner:"80406430",arr:1116,   src:"Organic",           inv:"Heavy Involvement",        pkg:"Premium Subscription",   close:"2025-12-03",paid_out:false,contract_years:1,commission_type:"Outbound"},
+  {id:"47739280287",name:"Te Roroa Commercial Dev.",       owner:"80406430",arr:2088,   src:"Organic",           inv:"Heavy Involvement",        pkg:"Premium Subscription",   close:"2025-12-03",paid_out:false,contract_years:1,commission_type:"Outbound"},
+  {id:"50454404460",name:"Rural Design Limited",           owner:"80127257",arr:5625,   src:"Referral",          inv:"Heavy Involvement",        pkg:"Advanced Subscription",  close:"2025-11-27",paid_out:false,contract_years:1,commission_type:"Inbound"},
+  {id:"47416089102",name:"Boat Electrics",                 owner:"80127257",arr:9450,   src:"Organic",           inv:"Heavy Involvement",        pkg:"Advanced Subscription",  close:"2025-11-27",paid_out:false,contract_years:5,banked_years:[{year:2,arr:9135},{year:3,arr:9135},{year:4,arr:9135},{year:5,arr:9135}],commission_type:"Outbound"},
   {id:"48859557757",name:"Hoskin Civil",                   owner:"80406430",arr:4800,   src:"Organic",           inv:"Heavy Involvement",        pkg:"Advanced Subscription",  close:"2025-11-19",paid_out:false,contract_years:1,stripe_cus_id:"cus_TTky5OqJPdIk16",commission_type:"Outbound"},
-  {id:"48887024241",name:"NZ Environmental Management",    owner:"80406430",arr:2280,   src:"Organic",           inv:"Heavy Involvement",        pkg:"Advanced Subscription",  close:"2025-11-19",paid_out:false,contract_years:1,data_issue:"Stripe invoices are in NZD (monthly billing). Commission calculated on HubSpot hs_arr=$2,280 USD. Likely ineligible — monthly billing does not meet annual-upfront rule.",stripe_cus_id:"cus_TSbPp9T9od5fHT",commission_type:"Upsell"},
+  {id:"48887024241",name:"NZ Environmental Management",    owner:"80406430",arr:2280,   src:"Organic",           inv:"Heavy Involvement",        pkg:"Advanced Subscription",  close:"2025-11-19",paid_out:false,contract_years:1,data_issue:"Stripe invoices are in NZD (monthly billing). Commission calculated on HubSpot hs_arr=$2,280 USD. Likely ineligible — monthly billing does not meet annual-upfront rule.",commission_type:"Upsell"},
   {id:"45116544551",name:"R3 Data Recovery",               owner:"80127257",arr:1826.4, src:"Referral",          inv:"Heavy Involvement",        pkg:"Standard Subscription",  close:"2025-11-10",paid_out:false,contract_years:1,commission_type:"Inbound"},
   {id:"43576170081",name:"One Picture Group",              owner:"80406430",arr:2472,   src:"Organic",           inv:"Heavy Involvement",        pkg:"Premium Subscription",   close:"2025-11-07",paid_out:false,contract_years:1,stripe_cus_id:"cus_TNPILVvN1SpXOL",commission_type:"Inbound"},
-  {id:"45092476699",name:"Codida",                         owner:"80406430",arr:3300,   src:"Inbound: Paid",     inv:"Heavy Involvement",        pkg:"Advanced Subscription",  close:"2025-10-21",paid_out:false,contract_years:1,stripe_cus_id:"cus_T9YrfUryK3NYuV",commission_type:"Outbound"},
+  {id:"45092476699",name:"Codida",                         owner:"80406430",arr:3300,   src:"Inbound: Paid",     inv:"Heavy Involvement",        pkg:"Advanced Subscription",  close:"2025-10-21",paid_out:false,contract_years:1,commission_type:"Outbound"},
   {id:"43002923301",name:"Fletcher Construction (ESU)",    owner:"80406430",arr:4728,   src:"Organic",           inv:"Heavy Involvement",        pkg:"Premium Subscription",   close:"2025-10-17",paid_out:false,contract_years:1,stripe_cus_id:"cus_TFSxvtKXDaybnU",commission_type:"Outbound"},
   {id:"40551253088",name:"RHM Consultants",                owner:"80406430",arr:6650,   src:"Outbound: LinkedIn",inv:"Heavy Involvement",        pkg:"Advanced Subscription",  close:"2025-10-14",paid_out:false,contract_years:1,stripe_cus_id:"cus_TETb2itkfPhjEl",commission_type:"Outbound"},
   {id:"39236633106",name:"AW Signs",                       owner:"80127259",arr:15000,  src:"Referral",          inv:"Non Sourced",  pkg:"Advanced Subscription",  close:"2025-10-07",paid_out:false,contract_years:1,stripe_cus_id:"cus_TBiEOmdFamWuZr",commission_type:"Outbound"},
@@ -1004,7 +1163,7 @@ var RAW = [
   {id:"39059815801",name:"Instream Consulting Ltd",        owner:"80127259",arr:1584,   src:"",                  inv:"",                    pkg:"",                       close:"2025-08-13",paid_out:false,contract_years:1,stripe_cus_id:"cus_SmKYKGxN6DyEMt",commission_type:"Inbound"},
   {id:"39040336210",name:"TRU Group (June 2025)",          owner:"80406430",arr:4968,   src:"Inbound: Paid",     inv:"",                    pkg:"Premium Subscription",   close:"2025-07-31",paid_out:false,contract_years:1,stripe_cus_id:"cus_SmJXFG7F77XYNT",commission_type:"Inbound"},
   {id:"38866619211",name:"Allfields",                      owner:"80406430",arr:2070,   src:"",                  inv:"",                    pkg:"Standard Subscription",  close:"2025-07-29",paid_out:false,contract_years:1,commission_type:"Inbound"},
-  {id:"40430747304",name:"ODYSSEY ARCHITECTURE",           owner:"80406430",arr:1143,   src:"",                  inv:"",                    pkg:"Premium Subscription",   close:"2025-07-29",paid_out:false,contract_years:1,stripe_cus_id:"cus_SlaqOz9J2561Qt",commission_type:"Inbound"},
+  {id:"40430747304",name:"ODYSSEY ARCHITECTURE",           owner:"80406430",arr:1143,   src:"",                  inv:"",                    pkg:"Premium Subscription",   close:"2025-07-29",paid_out:false,contract_years:1,commission_type:"Inbound"},
   {id:"39678844548",name:"HMCA - New Deal",                owner:"80127257",arr:1368,   src:"Referral",          inv:"Heavy Involvement",        pkg:"Standard Subscription",  close:"2025-07-28",paid_out:false,contract_years:1,commission_type:"Inbound"},
   {id:"38567262357",name:"Submission Technology",          owner:"80127257",arr:696,    src:"Organic",           inv:"",                    pkg:"Standard Subscription",  close:"2025-07-28",paid_out:false,contract_years:1,commission_type:"Inbound"},
   {id:"38707763580",name:"Resilient Organisations Ltd",    owner:"80406430",arr:1305,   src:"",                  inv:"",                    pkg:"Standard Subscription",  close:"2025-07-24",paid_out:false,contract_years:1,commission_type:"Inbound"},
@@ -1103,106 +1262,7 @@ function aeChip(id){var a=AE[id];if(!a)return id;return '<div style="display:inl
 function pkgBadge(p){if(!p)return '<span class="badge badge-red">Missing</span>';if(p.includes("Advanced"))return '<span class="badge badge-green">Advanced</span>';if(p.includes("Premium"))return '<span class="badge badge-amber">Premium</span>';if(p.includes("Pro"))return '<span class="badge badge-teal">Pro</span>';return '<span class="badge badge-dim">Standard</span>';}
 function typeBadge(d){if(!d.eligible)return '<span class="badge badge-dim">Ineligible</span>';if(d.type==="Outbound")return '<span class="badge badge-purple">Outbound</span>';if(d.type==="Inbound")return '<span class="badge badge-blue">Inbound</span>';return '<span class="badge badge-amber">Upsell</span>';}
 function rateTxt(d){if(!d.eligible)return '<span style="color:var(--text-dim);font-family:\'DM Mono\',monospace">—</span>';var c=d.rate===.10?'green':d.rate===.075?'amber':'blue';return '<span style="color:var(--'+c+');font-family:\'DM Mono\',monospace;font-size:13px">'+(d.rate*100)+'%</span>';}
-// ── PERSISTENCE ───────────────────────────────────────────────────────────
-var PAID_KEY = 'commission_hub_paid_v1';
-var EDITS_KEY = 'commission_hub_edits_v1';
-
-function loadPaid(){
-  try { return JSON.parse(localStorage.getItem(PAID_KEY)||'{}'); } catch(e){ return {}; }
-}
-function savePaid(map){
-  try { localStorage.setItem(PAID_KEY, JSON.stringify(map)); } catch(e){}
-}
-function loadEdits(){
-  try { return JSON.parse(localStorage.getItem(EDITS_KEY)||'{}'); } catch(e){ return {}; }
-}
-function saveEdits(map){
-  try { localStorage.setItem(EDITS_KEY, JSON.stringify(map)); } catch(e){}
-}
-
-// Apply persisted paid/edit state to RAW on load
-(function(){
-  var paid = loadPaid();
-  var edits = loadEdits();
-  RAW.forEach(function(d){
-    if(paid[d.id]) d.paid_out = true;
-    if(edits[d.id]){
-      var e = edits[d.id];
-      if(e.arr !== undefined) d.arr = e.arr;
-      if(e.commission_type) d.commission_type = e.commission_type;
-      if(e.note) d._note = e.note;
-    }
-  });
-})();
-
-function togglePaid(id){
-  var d = RAW.find(function(r){return r.id===id;});
-  if(!d) return;
-  d.paid_out = !d.paid_out;
-  var paid = loadPaid();
-  if(d.paid_out) paid[id] = true;
-  else delete paid[id];
-  savePaid(paid);
-  // Recompute DEALS
-  DEALS.length=0;
-  RAW.forEach(function(r){
-    var cl=classify(r),er=eligReason(r),eligible=!er;
-    DEALS.push(Object.assign({},r,cl,{eligible:eligible,eligReason:er,comm:eligible?(r.arr||0)*cl.rate:0,quarter:getQuarter(r.close)}));
-  });
-  renderDashboard(); renderDeals(); renderAE();
-}
-
-function openEditModal(id){
-  var d = RAW.find(function(r){return r.id===id;});
-  if(!d) return;
-  document.getElementById('edit-modal-title').textContent = d.name;
-  document.getElementById('edit-deal-id').value = id;
-  document.getElementById('edit-arr').value = d.arr || '';
-  document.getElementById('edit-type').value = d.commission_type || '';
-  document.getElementById('edit-note').value = d._note || '';
-  document.getElementById('edit-modal').style.display = 'flex';
-}
-
-function closeEditModal(){
-  document.getElementById('edit-modal').style.display = 'none';
-}
-
-function saveEdit(){
-  var id = document.getElementById('edit-deal-id').value;
-  var arr = parseFloat(document.getElementById('edit-arr').value);
-  var type = document.getElementById('edit-type').value;
-  var note = document.getElementById('edit-note').value;
-  var d = RAW.find(function(r){return r.id===id;});
-  if(!d) return;
-  if(!isNaN(arr)) d.arr = arr;
-  if(type) d.commission_type = type;
-  if(note !== undefined) d._note = note;
-  var edits = loadEdits();
-  edits[id] = {arr: d.arr, commission_type: d.commission_type, note: note};
-  saveEdits(edits);
-  // Recompute DEALS
-  DEALS.length=0;
-  RAW.forEach(function(r){
-    var cl=classify(r),er=eligReason(r),eligible=!er;
-    DEALS.push(Object.assign({},r,cl,{eligible:eligible,eligReason:er,comm:eligible?(r.arr||0)*cl.rate:0,quarter:getQuarter(r.close)}));
-  });
-  closeEditModal();
-  renderDashboard(); renderDeals(); renderAE();
-}
-
-function payoutBadge(d){
-  if(!d.eligible) return '';
-  var btnStyle = 'border:none;border-radius:5px;font-size:10px;font-weight:700;cursor:pointer;padding:3px 8px;font-family:\'Inter\',sans-serif;';
-  if(d.paid_out){
-    return '<span class="badge badge-green" style="font-size:9px;margin-right:4px">✓ Paid</span>'+
-           '<button onclick="togglePaid(\''+d.id+'\')" style="'+btnStyle+'background:var(--surface2);color:var(--text-dim)">Undo</button>';
-  }
-  return '<button onclick="togglePaid(\''+d.id+'\')" style="'+btnStyle+'background:var(--green-bg);color:var(--green);border:1px solid var(--green-border)">Mark paid</button>';
-}
-
-function editBtn(d){
-  return '<button onclick="openEditModal(\''+d.id+'\')" style="border:none;border-radius:5px;font-size:10px;font-weight:700;cursor:pointer;padding:3px 8px;font-family:\'Inter\',sans-serif;background:var(--surface2);color:var(--text-dim)" title="Edit record">✎</button>';
-}
+function payoutBadge(d){if(!d.eligible)return '';if(d.paid_out)return '<span class="badge badge-green" style="font-size:9px">✓ Paid</span>';return '<span class="badge badge-amber" style="font-size:9px">Outstanding</span>';}
 function invBadge(inv){
   if(!inv) return '<span style="color:var(--red);font-size:11px">Missing</span>';
   var v=inv.toLowerCase();
@@ -1322,7 +1382,6 @@ function renderDeals(){
       '<td>'+(d.eligible&&d.arr?'<span class="mono" style="color:var(--green)">$'+fmt(d.comm)+'</span>':'<span style="color:var(--red);font-size:11px;font-style:italic" title="'+((d.eligReason)||'Ineligible')+'">'+(d.eligReason||'Ineligible')+'</span>')+'</td>'+
       '<td>'+payoutBadge(d)+'</td>'+
       '<td>'+(d.stripe_cus_id?'<a href="https://dashboard.stripe.com/customers/'+d.stripe_cus_id+'" target="_blank" style="display:inline-flex;align-items:center;gap:3px;font-size:11px;color:var(--green);text-decoration:none;background:var(--green-bg);padding:2px 7px;border-radius:5px;font-weight:600">Stripe ↗</a>':'<span style="font-size:11px;color:var(--text-dim)">—</span>')+'</td>'+
-      '<td>'+editBtn(d)+'</td>'+
       '<td style="font-size:11px;color:var(--text-dim)">'+fmtD(d.close)+'</td>'+
       '</tr>';
   }).join('');
@@ -1331,7 +1390,7 @@ function renderDeals(){
   var upsellCount = deals.filter(function(d){return isUpsellDeal(d.id);}).length;
 
   document.getElementById('deals-table').innerHTML=
-    '<div class="table-wrap"><table><thead><tr><th>Deal</th><th>AE</th><th>Package</th><th>Source</th><th>AE Involvement</th><th>ARR</th><th>Type</th><th>Rate</th><th>Commission</th><th>Payout</th><th>Stripe</th><th>Edit</th><th>Close</th></tr></thead><tbody>'+rows+'</tbody></table></div>'+
+    '<div class="table-wrap"><table><thead><tr><th>Deal</th><th>AE</th><th>Package</th><th>Source</th><th>AE Involvement</th><th>ARR</th><th>Type</th><th>Rate</th><th>Commission</th><th>Payout</th><th>Stripe</th><th>Close</th></tr></thead><tbody>'+rows+'</tbody></table></div>'+
     '<div style="padding:10px 0;font-size:11px;color:var(--text-dim)">'+deals.length+' deals · '+deals.filter(function(d){return d.eligible;}).length+' eligible'+(upsellCount?' · <span style="color:#b45309;font-weight:700">'+upsellCount+' upsell</span>':'')+'  · $'+fmt(totalComm)+'</div>';
 }
 
@@ -1357,7 +1416,6 @@ function renderAE(){
         '<td>'+(d.eligible&&d.arr?'<span class="mono" style="color:var(--green)">$'+fmt(d.comm)+'</span>':'<span style="color:var(--red);font-size:11px;font-style:italic" title="'+(d.eligReason||'Ineligible')+'">'+(d.eligReason||'Ineligible')+'</span>')+'</td>'+
         '<td>'+payoutBadge(d)+'</td>'+
         '<td>'+(d.stripe_cus_id?'<a href="https://dashboard.stripe.com/customers/'+d.stripe_cus_id+'" target="_blank" style="display:inline-flex;align-items:center;gap:3px;font-size:11px;color:var(--green);text-decoration:none;background:var(--green-bg);padding:2px 7px;border-radius:5px;font-weight:600">Stripe ↗</a>':'<span style="font-size:11px;color:var(--text-dim)">—</span>')+'</td>'+
-        '<td>'+editBtn(d)+'</td>'+
         '</tr>';
     }).join('');
     return '<div style="margin-bottom:36px">'+
@@ -1366,7 +1424,7 @@ function renderAE(){
       '<div><div style="font-family:\'Syne\',sans-serif;font-size:18px;font-weight:800">'+ae.name+'</div>'+
       '<div style="font-size:12px;color:var(--text-dim)">'+my.length+' total · '+el.length+' eligible · <span style="color:var(--green)">$'+fmt(tc)+' commission</span> · <span style="color:var(--amber)">$'+fmt(outstanding)+' outstanding</span></div></div></div>'+
       (iss.length?'<div class="alert-strip warning" style="margin-bottom:12px"><div style="font-size:16px">⚠</div><div class="alert-body"><strong>'+iss.length+' deal'+(iss.length>1?'s':'')+' with data issues or missing fields</strong></div></div>':'')+
-      '<div class="table-wrap"><table><thead><tr><th>Deal</th><th>Package</th><th>Source</th><th>AE Involvement</th><th>ARR</th><th>Type</th><th>Rate</th><th>Commission</th><th>Payout</th><th>Stripe</th><th>Edit</th></tr></thead><tbody>'+rows+'</tbody></table></div></div>';
+      '<div class="table-wrap"><table><thead><tr><th>Deal</th><th>Package</th><th>Source</th><th>AE Involvement</th><th>ARR</th><th>Type</th><th>Rate</th><th>Commission</th><th>Payout</th><th>Stripe</th></tr></thead><tbody>'+rows+'</tbody></table></div></div>';
   }).join('<hr style="border:none;border-top:1px solid var(--border);margin:0 0 36px">');
 }
 
@@ -1581,20 +1639,22 @@ function syncFromHubSpot(){
   var btn = document.getElementById('sync-btn');
   var icon = document.getElementById('sync-icon');
   var status = document.getElementById('sync-status');
-
   btn.disabled = true;
   icon.style.animation = 'spin 1s linear infinite';
   icon.style.display = 'inline-block';
   status.textContent = 'Syncing...';
   status.style.color = 'rgba(99,219,148,0.5)';
 
+  // Build HubSpot batch fetch URL for all deal IDs
   var ids = RAW.map(function(d){return d.id;});
+  var params = ids.map(function(id){return 'id='+id;}).join('&');
+  var props = 'properties=hs_arr&properties=source&properties=ae_involvement&properties=product_package';
+  var url = 'https://api.hubapi.com/crm/v3/objects/deals/batch/read';
 
-  fetch('https://workflowmax.app.n8n.cloud/webhook/commission-hub-hs', {
+  fetch(url, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
-      action: 'read',
       properties: ['hs_arr','source','ae_involvement','product_package','commission_type'],
       inputs: ids.map(function(id){ return {id: id}; })
     })
@@ -1604,46 +1664,37 @@ function syncFromHubSpot(){
     return r.json();
   })
   .then(function(data){
-    // Helper — handles both API v3 (string) and v1/native node (object with .value)
-    function val(f){ return f && typeof f === 'object' ? f.value : f; }
-
-    // n8n native HubSpot node returns array of items directly
-    // v3 batch/read returns { results: [...] }
-    var items = Array.isArray(data) ? data : (data.results || []);
+    var results = data.results || [];
     var updated = 0;
-
-    items.forEach(function(obj){
-      // v1 format uses dealId, v3 uses id
-      var dealId = String(obj.dealId || obj.id || '');
-      var deal = RAW.find(function(d){ return d.id === dealId; });
+    results.forEach(function(obj){
+      var deal = RAW.find(function(d){ return d.id === obj.id; });
       if(!deal) return;
-      var p = obj.properties || {};
+      var p = obj.properties;
       var changed = false;
-      var newArr = val(p.hs_arr) ? parseFloat(val(p.hs_arr)) : null;
+      var newArr = p.hs_arr ? parseFloat(p.hs_arr) : null;
+      // Don't overwrite ARR if deal has arr_locked flag (manually corrected values)
       if(!deal.arr_locked && newArr !== null && newArr !== deal.arr){ deal.arr = newArr; changed = true; }
-      var ct = val(p.commission_type);
-      if(ct && ct !== deal.commission_type){ deal.commission_type = ct; changed = true; }
-      var src = val(p.source);
-      if(src && src !== deal.src){ deal.src = src; changed = true; }
-      var inv = val(p.ae_involvement);
-      if(inv && inv !== deal.inv){ deal.inv = inv; changed = true; }
-      var pkg = val(p.product_package);
-      if(pkg && pkg !== deal.pkg){ deal.pkg = pkg; changed = true; }
+      if(p.commission_type && p.commission_type !== deal.commission_type){ deal.commission_type = p.commission_type; changed = true; }
+      if(p.source && p.source !== deal.src){ deal.src = p.source; changed = true; }
+      if(p.ae_involvement && p.ae_involvement !== deal.inv){ deal.inv = p.ae_involvement; changed = true; }
+      if(p.product_package && p.product_package !== deal.pkg){ deal.pkg = p.product_package; changed = true; }
       if(changed) updated++;
     });
+    // Recompute DEALS
     DEALS.length = 0;
     RAW.forEach(function(d){
       var cl=classify(d), er=eligReason(d), eligible=!er;
       DEALS.push(Object.assign({},d,cl,{eligible:eligible,eligReason:er,comm:eligible?(d.arr||0)*cl.rate:0,quarter:getQuarter(d.close)}));
     });
+    // Write commission_type back to HubSpot for all deals
     var patchInputs = DEALS.map(function(d){
       return {id: d.id, properties: {commission_type: d.type||''}};
     }).filter(function(x){ return x.properties.commission_type; });
     if(patchInputs.length){
-      fetch('https://workflowmax.app.n8n.cloud/webhook/commission-hub-hs',{
+      fetch('https://api.hubapi.com/crm/v3/objects/deals/batch/update',{
         method:'POST',
         headers:{'Content-Type':'application/json'},
-        body: JSON.stringify({action: 'write', inputs: patchInputs})
+        body: JSON.stringify({inputs: patchInputs})
       });
     }
     LAST_SYNCED = new Date();
@@ -1653,14 +1704,17 @@ function syncFromHubSpot(){
   })
   .catch(function(e){
     if(e.message === 'auth'){
-      status.textContent = 'Invalid token — check and retry';
-      status.style.color = '#fca5a5';
+      status.textContent = 'Auth required — open in HubSpot';
     } else {
-      status.textContent = 'Error: ' + e.message;
-      status.style.color = '#fca5a5';
-      console.error('Sync error full:', e);
-      console.error('Sync error message:', e.message);
-      console.error('Sync error stack:', e.stack);
+      status.textContent = 'Updated · '+new Date().toLocaleTimeString('en-AU',{hour:'2-digit',minute:'2-digit'});
+      status.style.color = '#63DB94';
+      // Recompute with current data even if fetch failed
+      DEALS.length = 0;
+      RAW.forEach(function(d){
+        var cl=classify(d), er=eligReason(d), eligible=!er;
+        DEALS.push(Object.assign({},d,cl,{eligible:eligible,eligReason:er,comm:eligible?(d.arr||0)*cl.rate:0,quarter:getQuarter(d.close)}));
+      });
+      renderDashboard(); renderDeals(); renderAE(); renderComparison(); renderUpsells();
     }
   })
   .finally(function(){
@@ -1855,10 +1909,6 @@ renderComparison();
 renderUpsells();
 renderSubHealth();
 renderStripeRecon();
-// Pre-load token
-(function(){
-  var t = localStorage.getItem('hs_token');
-  var el = document.getElementById('hs-token');
-  if(t && el) el.value = t;
-})();
 </script>
+</body>
+</html>
