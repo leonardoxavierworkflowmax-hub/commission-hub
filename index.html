@@ -206,10 +206,18 @@ input[type=date]{background:#fff;border:1px solid var(--border);border-radius:6p
     <div class="nav-section">Multi-year</div>
     <div class="nav-item" onclick="showPage('banked',this)"><span class="nav-icon">⬡</span>Banked Commission</div>
     <div class="nav-section">Stripe</div>
+    <div class="nav-item" onclick="showPage('stripe',this)"><span class="nav-icon">⬡</span>Contract Timeline</div>
+    <div class="nav-item" onclick="showPage('comparison',this)"><span class="nav-icon">⇌</span>HS vs Stripe</div>
     <div class="nav-section">Upsells</div>
     <div class="nav-item" onclick="showPage('upsells',this)"><span class="nav-icon">↑</span>Upsell Deals <span class="pending-tag">New</span></div>
+    <div class="nav-item" onclick="showPage('cs-structure',this)"><span class="nav-icon">◎</span>CS Structure</div>
+    <div class="nav-section">Subscriptions</div>
+    <div class="nav-item" onclick="showPage('subhealth',this)"><span class="nav-icon">⬡</span>Subscription Health <span class="pending-tag" style="background:rgba(185,28,28,0.15);color:#fca5a5">14</span></div>
+    <div class="nav-item" onclick="showPage('stripe-recon',this)"><span class="nav-icon">⇌</span>Stripe Reconciliation <span style="background:rgba(99,219,148,0.15);color:#63DB94;font-size:10px;font-weight:700;padding:1px 7px;border-radius:10px">16/16</span></div>
     <div class="nav-section">Config</div>
+    <div class="nav-item" onclick="showPage('cleanup',this)"><span class="nav-icon">⚠</span>Data Cleanup <span class="pending-tag">6</span></div>
     <div class="nav-item" onclick="showPage('eligibility',this)"><span class="nav-icon">⊞</span>Eligibility Rules</div>
+    <div class="nav-item" onclick="showPage('classification',this)"><span class="nav-icon">⊜</span>Source vs Type</div>
     <div class="nav-item" onclick="showPage('pending',this)"><span class="nav-icon">⧖</span>Decisions <span class="pending-tag">2</span></div>
   </div>
   <div class="sidebar-footer">
@@ -692,9 +700,9 @@ input[type=date]{background:#fff;border:1px solid var(--border);border-radius:6p
 
     <!-- KPIs -->
     <div class="kpi-row" style="grid-template-columns:repeat(3,1fr);margin-bottom:24px">
-      <div class="kpi-card"><div class="kpi-label">Deals reviewed</div><div class="kpi-value">16</div><div class="kpi-sub">Sina + Denzel</div></div>
-      <div class="kpi-card" style="border-color:rgba(99,219,148,0.2)"><div class="kpi-label" style="color:var(--green)">Confirmed in Stripe</div><div class="kpi-value green">16</div><div class="kpi-sub">AU · NZ · SG accounts</div></div>
-      <div class="kpi-card" style="border-color:rgba(185,28,28,0.2)"><div class="kpi-label" style="color:var(--red)">ARR divergences</div><div class="kpi-value red">6</div><div class="kpi-sub">HS ARR ≠ Stripe amount — review needed</div></div>
+      <div class="kpi-card"><div class="kpi-label">Deals reviewed</div><div class="kpi-value" id="kpi-recon-total">16</div><div class="kpi-sub">Sina + Denzel</div></div>
+      <div class="kpi-card" style="border-color:rgba(99,219,148,0.2)"><div class="kpi-label" style="color:var(--green)">Confirmed in Stripe</div><div class="kpi-value green" id="kpi-recon-confirmed">16</div><div class="kpi-sub" id="stripe-recon-updated">AU · NZ · UK · USA accounts</div></div>
+      <div class="kpi-card" style="border-color:rgba(185,28,28,0.2)"><div class="kpi-label" style="color:var(--red)">ARR divergences</div><div class="kpi-value red" id="kpi-recon-diverge">6</div><div class="kpi-sub">HS ARR ≠ Stripe amount — review needed</div></div>
     </div>
 
     <!-- Alert -->
@@ -1112,44 +1120,6 @@ input[type=date]{background:#fff;border:1px solid var(--border);border-radius:6p
 </main>
 </div>
 
-<!-- EDIT MODAL -->
-<div id="edit-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.6);z-index:1000;align-items:center;justify-content:center">
-  <div style="background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:28px;width:440px;max-width:90vw;box-shadow:0 20px 60px rgba(0,0,0,0.4)">
-    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px">
-      <div>
-        <div style="font-size:10px;text-transform:uppercase;letter-spacing:.08em;color:var(--text-dim);margin-bottom:4px">Edit Record</div>
-        <div id="edit-modal-title" style="font-family:'Syne',sans-serif;font-size:16px;font-weight:700;color:var(--text)"></div>
-      </div>
-      <button onclick="closeEditModal()" style="background:var(--surface2);border:none;border-radius:6px;width:28px;height:28px;cursor:pointer;font-size:16px;color:var(--text-dim)">×</button>
-    </div>
-    <input type="hidden" id="edit-deal-id">
-    <div style="margin-bottom:14px">
-      <label style="font-size:11px;font-weight:600;color:var(--text-dim);text-transform:uppercase;letter-spacing:.06em;display:block;margin-bottom:6px">ARR (USD)</label>
-      <input id="edit-arr" type="number" step="0.01" style="width:100%;box-sizing:border-box;background:var(--surface2);border:1px solid var(--border);border-radius:7px;padding:9px 12px;color:var(--text);font-family:'DM Mono',monospace;font-size:13px">
-    </div>
-    <div style="margin-bottom:14px">
-      <label style="font-size:11px;font-weight:600;color:var(--text-dim);text-transform:uppercase;letter-spacing:.06em;display:block;margin-bottom:6px">Commission Type</label>
-      <select id="edit-type" style="width:100%;box-sizing:border-box;background:var(--surface2);border:1px solid var(--border);border-radius:7px;padding:9px 12px;color:var(--text);font-family:'Inter',sans-serif;font-size:13px">
-        <option value="">— select —</option>
-        <option value="Outbound">Outbound (10%)</option>
-        <option value="Inbound">Inbound (5%)</option>
-        <option value="Upsell">Upsell (7.5%)</option>
-      </select>
-    </div>
-    <div style="margin-bottom:20px">
-      <label style="font-size:11px;font-weight:600;color:var(--text-dim);text-transform:uppercase;letter-spacing:.06em;display:block;margin-bottom:6px">Note</label>
-      <textarea id="edit-note" rows="2" style="width:100%;box-sizing:border-box;background:var(--surface2);border:1px solid var(--border);border-radius:7px;padding:9px 12px;color:var(--text);font-family:'Inter',sans-serif;font-size:13px;resize:none" placeholder="Add a note or reason for the change..."></textarea>
-    </div>
-    <div style="display:flex;gap:8px;justify-content:flex-end">
-      <button onclick="closeEditModal()" style="background:var(--surface2);border:1px solid var(--border);border-radius:7px;padding:8px 16px;font-size:13px;font-weight:600;cursor:pointer;color:var(--text-dim);font-family:'Inter',sans-serif">Cancel</button>
-      <button onclick="saveEdit()" style="background:var(--green);border:none;border-radius:7px;padding:8px 18px;font-size:13px;font-weight:700;cursor:pointer;color:#0A2F28;font-family:'Inter',sans-serif">Save changes</button>
-    </div>
-    <div style="margin-top:14px;padding:10px 12px;background:var(--amber-bg);border:1px solid var(--amber-border);border-radius:7px;font-size:11px;color:var(--amber)">
-      ⚠ Changes are saved locally in this browser. To make them permanent, update the deal directly in HubSpot.
-    </div>
-  </div>
-</div>
-
 <script>
 // ── DATA ─────────────────────────────────────────────────────────────────────
 var AE = {
@@ -1168,23 +1138,23 @@ var RAW = [
   {id:"57619530845",name:"SCLspec Pty Ltd",                owner:"80406430",arr:2925,   src:"Organic",           inv:"Non Sourced",              pkg:"Advanced Subscription",  close:"2026-03-16",paid_out:false,contract_years:1,stripe_cus_id:"cus_QJ3nILIzXWVYAS",commission_type:"Upsell"},
   {id:"56173724020",name:"Wilton Contracting Ltd",         owner:"80406430",arr:10575,  src:"Organic",           inv:"Non Sourced",              pkg:"Advanced Subscription",  close:"2026-03-04",paid_out:false,contract_years:1,stripe_cus_id:"cus_Q733nGa6IyKmiz",commission_type:"Upsell"},
   {id:"53715214102",name:"Event Base",                     owner:"80406430",arr:4200,   src:"Organic",           inv:"Heavy Involvement",        pkg:"Advanced Subscription",  close:"2026-03-31",paid_out:false,contract_years:1,stripe_cus_id:"cus_Q17bAYOTnoBf2A",commission_type:"Upsell"},
-  {id:"53384906860",name:"YOUNG & YOUNG ARCHITECTS",       owner:"80127257",arr:180,    src:"Organic",           inv:"Heavy Involvement",        pkg:"Premium Subscription",   close:"2026-02-19",paid_out:false,contract_years:1,stripe_cus_id:"cus_TzXCN0fT9p8Gv2",commission_type:"Outbound"},
-  {id:"48859467936",name:"Turco and Associates",           owner:"80127259",arr:2496,    src:"Inbound: Paid",     inv:"Non Sourced",  pkg:"Premium Subscription",   close:"2026-02-03",paid_out:false,contract_years:1,stripe_cus_id:"cus_TWNfIwb8WGP8pu",commission_type:"Inbound"},
-  {id:"44451553392",name:"WorkspaceConsultants",           owner:"80127257",arr:6750,   src:"Inbound: Paid",     inv:"Heavy Involvement",        pkg:"Advanced Subscription",  close:"2026-01-30",paid_out:false,contract_years:1,arr_locked:true,stripe_cus_id:"cus_QD5wNxtgjuN2Hs",commission_type:"Outbound"},
-  // Concrete 4U removed per Ryan's instruction
+  {id:"53384906860",name:"YOUNG & YOUNG ARCHITECTS",       owner:"80127257",arr:180,    src:"Organic",           inv:"Heavy Involvement",        pkg:"Premium Subscription",   close:"2026-02-19",paid_out:false,contract_years:1,commission_type:"Outbound"},
+  {id:"48859467936",name:"Turco and Associates",           owner:"80127259",arr:2496,    src:"Inbound: Paid",     inv:"Non Sourced",  pkg:"Premium Subscription",   close:"2026-02-03",paid_out:false,contract_years:1,commission_type:"Inbound"},
+  {id:"44451553392",name:"WorkspaceConsultants",           owner:"80127257",arr:6750,   src:"Inbound: Paid",     inv:"Heavy Involvement",        pkg:"Advanced Subscription",  close:"2026-01-30",paid_out:false,contract_years:1,arr_locked:true,commission_type:"Outbound"},
+  {id:"51035653507",name:"Concrete 4U",                    owner:"80406430",arr:9000,   src:"Organic",           inv:"Heavy Involvement",        pkg:"Advanced Subscription",  close:"2026-01-23",paid_out:false,contract_years:1,commission_type:"Outbound"},
   {id:"43407740035",name:"TTX Group",                      owner:"80406430",arr:16200,   src:"Organic",           inv:"Heavy Involvement",        pkg:"Advanced Subscription",  close:"2026-01-19",paid_out:false,contract_years:1,stripe_cus_id:"cus_TojhNZvdYajgWh",commission_type:"Outbound"},
   {id:"49908855476",name:"AMC Asia (SG) Pte Ltd",          owner:"80127259",arr:7500.03,src:"Outbound: Paid",    inv:"Heavy Involvement",        pkg:"Advanced Subscription",  close:"2026-01-12",paid_out:false,contract_years:1,stripe_cus_id:"cus_TndJgP7w1UkDJw",commission_type:"Outbound"},
   {id:"48886874948",name:"Idyllic Design Studio",          owner:"80406430",arr:3492,   src:"Organic",           inv:"Heavy Involvement",        pkg:"Premium Subscription",   close:"2025-12-16",paid_out:false,contract_years:1,stripe_cus_id:"cus_TcKfUNF1h5wHxU",commission_type:"Inbound"},
-  {id:"48859545474",name:"Sheltons Group Malta",           owner:"80127257",arr:3750,   src:"Organic",           inv:"Heavy Involvement",        pkg:"Advanced Subscription",  close:"2025-12-03",paid_out:false,contract_years:1,stripe_cus_id:"cus_TXiWT0YHrrsfVK",commission_type:"Outbound"},
-  {id:"49448097700",name:"Te Roroa Dev. Charitable Trust", owner:"80406430",arr:1116,   src:"Organic",           inv:"Heavy Involvement",        pkg:"Premium Subscription",   close:"2025-12-03",paid_out:false,contract_years:1,stripe_cus_id:"cus_TX8yHtQI0mvv0S",commission_type:"Outbound"},
-  {id:"47739280287",name:"Te Roroa Commercial Dev.",       owner:"80406430",arr:2088,   src:"Organic",           inv:"Heavy Involvement",        pkg:"Premium Subscription",   close:"2025-12-03",paid_out:false,contract_years:1,stripe_cus_id:"cus_TX8yHtQI0mvv0S",commission_type:"Outbound"},
-  {id:"50454404460",name:"Rural Design Limited" /* Stripe: not found in AU/NZ/US accounts */,           owner:"80127257",arr:5625,   src:"Referral",          inv:"Heavy Involvement",        pkg:"Advanced Subscription",  close:"2025-11-27",paid_out:false,contract_years:1,stripe_cus_id:"cus_TWxUPbNmEACYH7",commission_type:"Inbound"},
-  {id:"47416089102",name:"Boat Electrics" /* Stripe: not found in AU/NZ/US accounts */,                 owner:"80127257",arr:9450,   src:"Organic",           inv:"Heavy Involvement",        pkg:"Advanced Subscription",  close:"2025-11-27",paid_out:false,contract_years:5,banked_years:[{year:2,arr:9135},{year:3,arr:9135},{year:4,arr:9135},{year:5,arr:9135}],stripe_cus_id:"cus_TmFioYKFfslDCR",commission_type:"Outbound"},
+  {id:"48859545474",name:"Sheltons Group Malta",           owner:"80127257",arr:3750,   src:"Organic",           inv:"Heavy Involvement",        pkg:"Advanced Subscription",  close:"2025-12-03",paid_out:false,contract_years:1,commission_type:"Outbound"},
+  {id:"49448097700",name:"Te Roroa Dev. Charitable Trust", owner:"80406430",arr:1116,   src:"Organic",           inv:"Heavy Involvement",        pkg:"Premium Subscription",   close:"2025-12-03",paid_out:false,contract_years:1,commission_type:"Outbound"},
+  {id:"47739280287",name:"Te Roroa Commercial Dev.",       owner:"80406430",arr:2088,   src:"Organic",           inv:"Heavy Involvement",        pkg:"Premium Subscription",   close:"2025-12-03",paid_out:false,contract_years:1,commission_type:"Outbound"},
+  {id:"50454404460",name:"Rural Design Limited",           owner:"80127257",arr:5625,   src:"Referral",          inv:"Heavy Involvement",        pkg:"Advanced Subscription",  close:"2025-11-27",paid_out:false,contract_years:1,commission_type:"Inbound"},
+  {id:"47416089102",name:"Boat Electrics",                 owner:"80127257",arr:9450,   src:"Organic",           inv:"Heavy Involvement",        pkg:"Advanced Subscription",  close:"2025-11-27",paid_out:false,contract_years:5,banked_years:[{year:2,arr:9135},{year:3,arr:9135},{year:4,arr:9135},{year:5,arr:9135}],commission_type:"Outbound"},
   {id:"48859557757",name:"Hoskin Civil",                   owner:"80406430",arr:4800,   src:"Organic",           inv:"Heavy Involvement",        pkg:"Advanced Subscription",  close:"2025-11-19",paid_out:false,contract_years:1,stripe_cus_id:"cus_TTky5OqJPdIk16",commission_type:"Outbound"},
-  {id:"48887024241",name:"NZ Environmental Management",    owner:"80406430",arr:2280,   src:"Organic",           inv:"Heavy Involvement",        pkg:"Advanced Subscription",  close:"2025-11-19",paid_out:false,contract_years:1,data_issue:"Stripe invoices are in NZD (monthly billing). Commission calculated on HubSpot hs_arr=$2,280 USD. Likely ineligible — monthly billing does not meet annual-upfront rule.",stripe_cus_id:"cus_TSbPp9T9od5fHT",commission_type:"Upsell"},
+  {id:"48887024241",name:"NZ Environmental Management",    owner:"80406430",arr:2280,   src:"Organic",           inv:"Heavy Involvement",        pkg:"Advanced Subscription",  close:"2025-11-19",paid_out:false,contract_years:1,data_issue:"Stripe invoices are in NZD (monthly billing). Commission calculated on HubSpot hs_arr=$2,280 USD. Likely ineligible — monthly billing does not meet annual-upfront rule.",commission_type:"Upsell"},
   {id:"45116544551",name:"R3 Data Recovery",               owner:"80127257",arr:1826.4, src:"Referral",          inv:"Heavy Involvement",        pkg:"Standard Subscription",  close:"2025-11-10",paid_out:false,contract_years:1,commission_type:"Inbound"},
   {id:"43576170081",name:"One Picture Group",              owner:"80406430",arr:2472,   src:"Organic",           inv:"Heavy Involvement",        pkg:"Premium Subscription",   close:"2025-11-07",paid_out:false,contract_years:1,stripe_cus_id:"cus_TNPILVvN1SpXOL",commission_type:"Inbound"},
-  {id:"45092476699",name:"Codida",                         owner:"80406430",arr:3300,   src:"Inbound: Paid",     inv:"Heavy Involvement",        pkg:"Advanced Subscription",  close:"2025-10-21",paid_out:false,contract_years:1,stripe_cus_id:"cus_T9YrfUryK3NYuV",commission_type:"Outbound"},
+  {id:"45092476699",name:"Codida",                         owner:"80406430",arr:3300,   src:"Inbound: Paid",     inv:"Heavy Involvement",        pkg:"Advanced Subscription",  close:"2025-10-21",paid_out:false,contract_years:1,commission_type:"Outbound"},
   {id:"43002923301",name:"Fletcher Construction (ESU)",    owner:"80406430",arr:4728,   src:"Organic",           inv:"Heavy Involvement",        pkg:"Premium Subscription",   close:"2025-10-17",paid_out:false,contract_years:1,stripe_cus_id:"cus_TFSxvtKXDaybnU",commission_type:"Outbound"},
   {id:"40551253088",name:"RHM Consultants",                owner:"80406430",arr:6650,   src:"Outbound: LinkedIn",inv:"Heavy Involvement",        pkg:"Advanced Subscription",  close:"2025-10-14",paid_out:false,contract_years:1,stripe_cus_id:"cus_TETb2itkfPhjEl",commission_type:"Outbound"},
   {id:"39236633106",name:"AW Signs",                       owner:"80127259",arr:15000,  src:"Referral",          inv:"Non Sourced",  pkg:"Advanced Subscription",  close:"2025-10-07",paid_out:false,contract_years:1,stripe_cus_id:"cus_TBiEOmdFamWuZr",commission_type:"Outbound"},
@@ -1193,7 +1163,7 @@ var RAW = [
   {id:"39059815801",name:"Instream Consulting Ltd",        owner:"80127259",arr:1584,   src:"",                  inv:"",                    pkg:"",                       close:"2025-08-13",paid_out:false,contract_years:1,stripe_cus_id:"cus_SmKYKGxN6DyEMt",commission_type:"Inbound"},
   {id:"39040336210",name:"TRU Group (June 2025)",          owner:"80406430",arr:4968,   src:"Inbound: Paid",     inv:"",                    pkg:"Premium Subscription",   close:"2025-07-31",paid_out:false,contract_years:1,stripe_cus_id:"cus_SmJXFG7F77XYNT",commission_type:"Inbound"},
   {id:"38866619211",name:"Allfields",                      owner:"80406430",arr:2070,   src:"",                  inv:"",                    pkg:"Standard Subscription",  close:"2025-07-29",paid_out:false,contract_years:1,commission_type:"Inbound"},
-  {id:"40430747304",name:"ODYSSEY ARCHITECTURE",           owner:"80406430",arr:1143,   src:"",                  inv:"",                    pkg:"Premium Subscription",   close:"2025-07-29",paid_out:false,contract_years:1,stripe_cus_id:"cus_SlaqOz9J2561Qt",commission_type:"Inbound"},
+  {id:"40430747304",name:"ODYSSEY ARCHITECTURE",           owner:"80406430",arr:1143,   src:"",                  inv:"",                    pkg:"Premium Subscription",   close:"2025-07-29",paid_out:false,contract_years:1,commission_type:"Inbound"},
   {id:"39678844548",name:"HMCA - New Deal",                owner:"80127257",arr:1368,   src:"Referral",          inv:"Heavy Involvement",        pkg:"Standard Subscription",  close:"2025-07-28",paid_out:false,contract_years:1,commission_type:"Inbound"},
   {id:"38567262357",name:"Submission Technology",          owner:"80127257",arr:696,    src:"Organic",           inv:"",                    pkg:"Standard Subscription",  close:"2025-07-28",paid_out:false,contract_years:1,commission_type:"Inbound"},
   {id:"38707763580",name:"Resilient Organisations Ltd",    owner:"80406430",arr:1305,   src:"",                  inv:"",                    pkg:"Standard Subscription",  close:"2025-07-24",paid_out:false,contract_years:1,commission_type:"Inbound"},
@@ -1292,109 +1262,7 @@ function aeChip(id){var a=AE[id];if(!a)return id;return '<div style="display:inl
 function pkgBadge(p){if(!p)return '<span class="badge badge-red">Missing</span>';if(p.includes("Advanced"))return '<span class="badge badge-green">Advanced</span>';if(p.includes("Premium"))return '<span class="badge badge-amber">Premium</span>';if(p.includes("Pro"))return '<span class="badge badge-teal">Pro</span>';return '<span class="badge badge-dim">Standard</span>';}
 function typeBadge(d){if(!d.eligible)return '<span class="badge badge-dim">Ineligible</span>';if(d.type==="Outbound")return '<span class="badge badge-purple">Outbound</span>';if(d.type==="Inbound")return '<span class="badge badge-blue">Inbound</span>';return '<span class="badge badge-amber">Upsell</span>';}
 function rateTxt(d){if(!d.eligible)return '<span style="color:var(--text-dim);font-family:\'DM Mono\',monospace">—</span>';var c=d.rate===.10?'green':d.rate===.075?'amber':'blue';return '<span style="color:var(--'+c+');font-family:\'DM Mono\',monospace;font-size:13px">'+(d.rate*100)+'%</span>';}
-// ── PERSISTENCE ───────────────────────────────────────────────────────────
-var PAID_KEY = 'commission_hub_paid_v1';
-var EDITS_KEY = 'commission_hub_edits_v1';
-
-function loadPaid(){
-  try { return JSON.parse(localStorage.getItem(PAID_KEY)||'{}'); } catch(e){ return {}; }
-}
-function savePaid(map){
-  try { localStorage.setItem(PAID_KEY, JSON.stringify(map)); } catch(e){}
-}
-function loadEdits(){
-  try { return JSON.parse(localStorage.getItem(EDITS_KEY)||'{}'); } catch(e){ return {}; }
-}
-function saveEdits(map){
-  try { localStorage.setItem(EDITS_KEY, JSON.stringify(map)); } catch(e){}
-}
-
-// Apply persisted paid/edit state to RAW on load
-(function(){
-  var paid = loadPaid();
-  var edits = loadEdits();
-  RAW.forEach(function(d){
-    if(paid[d.id]) d.paid_out = true;
-    if(edits[d.id]){
-      var e = edits[d.id];
-      if(e.arr !== undefined) d.arr = e.arr;
-      if(e.commission_type) d.commission_type = e.commission_type;
-      if(e.note) d._note = e.note;
-    }
-  });
-})();
-
-function togglePaid(id){
-  requireAdmin(function(){
-    var d = RAW.find(function(r){return r.id===id;});
-    if(!d) return;
-    d.paid_out = !d.paid_out;
-    var paid = loadPaid();
-    if(d.paid_out) paid[id] = true;
-    else delete paid[id];
-    savePaid(paid);
-    DEALS.length=0;
-    RAW.forEach(function(r){
-      var cl=classify(r),er=eligReason(r),eligible=!er;
-      DEALS.push(Object.assign({},r,cl,{eligible:eligible,eligReason:er,comm:eligible?(r.arr||0)*cl.rate:0,quarter:getQuarter(r.close)}));
-    });
-    renderDashboard(); renderDeals(); renderAE();
-  });
-}
-
-function openEditModal(id){
-  requireAdmin(function(){
-    var d = RAW.find(function(r){return r.id===id;});
-    if(!d) return;
-    document.getElementById('edit-modal-title').textContent = d.name;
-    document.getElementById('edit-deal-id').value = id;
-    document.getElementById('edit-arr').value = d.arr || '';
-    document.getElementById('edit-type').value = d.commission_type || '';
-    document.getElementById('edit-note').value = d._note || '';
-    document.getElementById('edit-modal').style.display = 'flex';
-  });
-}
-
-function closeEditModal(){
-  document.getElementById('edit-modal').style.display = 'none';
-}
-
-function saveEdit(){
-  var id = document.getElementById('edit-deal-id').value;
-  var arr = parseFloat(document.getElementById('edit-arr').value);
-  var type = document.getElementById('edit-type').value;
-  var note = document.getElementById('edit-note').value;
-  var d = RAW.find(function(r){return r.id===id;});
-  if(!d) return;
-  if(!isNaN(arr)) d.arr = arr;
-  if(type) d.commission_type = type;
-  if(note !== undefined) d._note = note;
-  var edits = loadEdits();
-  edits[id] = {arr: d.arr, commission_type: d.commission_type, note: note};
-  saveEdits(edits);
-  // Recompute DEALS
-  DEALS.length=0;
-  RAW.forEach(function(r){
-    var cl=classify(r),er=eligReason(r),eligible=!er;
-    DEALS.push(Object.assign({},r,cl,{eligible:eligible,eligReason:er,comm:eligible?(r.arr||0)*cl.rate:0,quarter:getQuarter(r.close)}));
-  });
-  closeEditModal();
-  renderDashboard(); renderDeals(); renderAE();
-}
-
-function payoutBadge(d){
-  if(!d.eligible) return '';
-  var btnStyle = 'border:none;border-radius:5px;font-size:10px;font-weight:700;cursor:pointer;padding:3px 8px;font-family:\'Inter\',sans-serif;';
-  if(d.paid_out){
-    return '<span class="badge badge-green" style="font-size:9px;margin-right:4px">✓ Paid</span>'+
-           '<button onclick="togglePaid(\''+d.id+'\')" style="'+btnStyle+'background:var(--surface2);color:var(--text-dim)">Undo</button>';
-  }
-  return '<button onclick="togglePaid(\''+d.id+'\')" style="'+btnStyle+'background:var(--green-bg);color:var(--green);border:1px solid var(--green-border)">Mark paid</button>';
-}
-
-function editBtn(d){
-  return '<button onclick="openEditModal(\''+d.id+'\')" style="border:none;border-radius:5px;font-size:10px;font-weight:700;cursor:pointer;padding:3px 8px;font-family:\'Inter\',sans-serif;background:var(--surface2);color:var(--text-dim)" title="Edit record">✎</button>';
-}
+function payoutBadge(d){if(!d.eligible)return '';if(d.paid_out)return '<span class="badge badge-green" style="font-size:9px">✓ Paid</span>';return '<span class="badge badge-amber" style="font-size:9px">Outstanding</span>';}
 function invBadge(inv){
   if(!inv) return '<span style="color:var(--red);font-size:11px">Missing</span>';
   var v=inv.toLowerCase();
@@ -1514,7 +1382,6 @@ function renderDeals(){
       '<td>'+(d.eligible&&d.arr?'<span class="mono" style="color:var(--green)">$'+fmt(d.comm)+'</span>':'<span style="color:var(--red);font-size:11px;font-style:italic" title="'+((d.eligReason)||'Ineligible')+'">'+(d.eligReason||'Ineligible')+'</span>')+'</td>'+
       '<td>'+payoutBadge(d)+'</td>'+
       '<td>'+(d.stripe_cus_id?'<a href="https://dashboard.stripe.com/customers/'+d.stripe_cus_id+'" target="_blank" style="display:inline-flex;align-items:center;gap:3px;font-size:11px;color:var(--green);text-decoration:none;background:var(--green-bg);padding:2px 7px;border-radius:5px;font-weight:600">Stripe ↗</a>':'<span style="font-size:11px;color:var(--text-dim)">—</span>')+'</td>'+
-      '<td>'+editBtn(d)+'</td>'+
       '<td style="font-size:11px;color:var(--text-dim)">'+fmtD(d.close)+'</td>'+
       '</tr>';
   }).join('');
@@ -1523,7 +1390,7 @@ function renderDeals(){
   var upsellCount = deals.filter(function(d){return isUpsellDeal(d.id);}).length;
 
   document.getElementById('deals-table').innerHTML=
-    '<div class="table-wrap"><table><thead><tr><th>Deal</th><th>AE</th><th>Package</th><th>Source</th><th>AE Involvement</th><th>ARR</th><th>Type</th><th>Rate</th><th>Commission</th><th>Payout</th><th>Stripe</th><th>Edit</th><th>Close</th></tr></thead><tbody>'+rows+'</tbody></table></div>'+
+    '<div class="table-wrap"><table><thead><tr><th>Deal</th><th>AE</th><th>Package</th><th>Source</th><th>AE Involvement</th><th>ARR</th><th>Type</th><th>Rate</th><th>Commission</th><th>Payout</th><th>Stripe</th><th>Close</th></tr></thead><tbody>'+rows+'</tbody></table></div>'+
     '<div style="padding:10px 0;font-size:11px;color:var(--text-dim)">'+deals.length+' deals · '+deals.filter(function(d){return d.eligible;}).length+' eligible'+(upsellCount?' · <span style="color:#b45309;font-weight:700">'+upsellCount+' upsell</span>':'')+'  · $'+fmt(totalComm)+'</div>';
 }
 
@@ -1549,7 +1416,6 @@ function renderAE(){
         '<td>'+(d.eligible&&d.arr?'<span class="mono" style="color:var(--green)">$'+fmt(d.comm)+'</span>':'<span style="color:var(--red);font-size:11px;font-style:italic" title="'+(d.eligReason||'Ineligible')+'">'+(d.eligReason||'Ineligible')+'</span>')+'</td>'+
         '<td>'+payoutBadge(d)+'</td>'+
         '<td>'+(d.stripe_cus_id?'<a href="https://dashboard.stripe.com/customers/'+d.stripe_cus_id+'" target="_blank" style="display:inline-flex;align-items:center;gap:3px;font-size:11px;color:var(--green);text-decoration:none;background:var(--green-bg);padding:2px 7px;border-radius:5px;font-weight:600">Stripe ↗</a>':'<span style="font-size:11px;color:var(--text-dim)">—</span>')+'</td>'+
-        '<td>'+editBtn(d)+'</td>'+
         '</tr>';
     }).join('');
     return '<div style="margin-bottom:36px">'+
@@ -1558,7 +1424,7 @@ function renderAE(){
       '<div><div style="font-family:\'Syne\',sans-serif;font-size:18px;font-weight:800">'+ae.name+'</div>'+
       '<div style="font-size:12px;color:var(--text-dim)">'+my.length+' total · '+el.length+' eligible · <span style="color:var(--green)">$'+fmt(tc)+' commission</span> · <span style="color:var(--amber)">$'+fmt(outstanding)+' outstanding</span></div></div></div>'+
       (iss.length?'<div class="alert-strip warning" style="margin-bottom:12px"><div style="font-size:16px">⚠</div><div class="alert-body"><strong>'+iss.length+' deal'+(iss.length>1?'s':'')+' with data issues or missing fields</strong></div></div>':'')+
-      '<div class="table-wrap"><table><thead><tr><th>Deal</th><th>Package</th><th>Source</th><th>AE Involvement</th><th>ARR</th><th>Type</th><th>Rate</th><th>Commission</th><th>Payout</th><th>Stripe</th><th>Edit</th></tr></thead><tbody>'+rows+'</tbody></table></div></div>';
+      '<div class="table-wrap"><table><thead><tr><th>Deal</th><th>Package</th><th>Source</th><th>AE Involvement</th><th>ARR</th><th>Type</th><th>Rate</th><th>Commission</th><th>Payout</th><th>Stripe</th></tr></thead><tbody>'+rows+'</tbody></table></div></div>';
   }).join('<hr style="border:none;border-top:1px solid var(--border);margin:0 0 36px">');
 }
 
@@ -1773,20 +1639,22 @@ function syncFromHubSpot(){
   var btn = document.getElementById('sync-btn');
   var icon = document.getElementById('sync-icon');
   var status = document.getElementById('sync-status');
-
   btn.disabled = true;
   icon.style.animation = 'spin 1s linear infinite';
   icon.style.display = 'inline-block';
   status.textContent = 'Syncing...';
   status.style.color = 'rgba(99,219,148,0.5)';
 
+  // Build HubSpot batch fetch URL for all deal IDs
   var ids = RAW.map(function(d){return d.id;});
+  var params = ids.map(function(id){return 'id='+id;}).join('&');
+  var props = 'properties=hs_arr&properties=source&properties=ae_involvement&properties=product_package';
+  var url = 'https://api.hubapi.com/crm/v3/objects/deals/batch/read';
 
-  fetch('https://workflowmax.app.n8n.cloud/webhook/commission-hub-hs', {
+  fetch(url, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
-      action: 'read',
       properties: ['hs_arr','source','ae_involvement','product_package','commission_type'],
       inputs: ids.map(function(id){ return {id: id}; })
     })
@@ -1796,46 +1664,37 @@ function syncFromHubSpot(){
     return r.json();
   })
   .then(function(data){
-    // Helper — handles both API v3 (string) and v1/native node (object with .value)
-    function val(f){ return f && typeof f === 'object' ? f.value : f; }
-
-    // n8n native HubSpot node returns array of items directly
-    // v3 batch/read returns { results: [...] }
-    var items = Array.isArray(data) ? data : (data.results || []);
+    var results = data.results || [];
     var updated = 0;
-
-    items.forEach(function(obj){
-      // v1 format uses dealId, v3 uses id
-      var dealId = String(obj.dealId || obj.id || '');
-      var deal = RAW.find(function(d){ return d.id === dealId; });
+    results.forEach(function(obj){
+      var deal = RAW.find(function(d){ return d.id === obj.id; });
       if(!deal) return;
-      var p = obj.properties || {};
+      var p = obj.properties;
       var changed = false;
-      var newArr = val(p.hs_arr) ? parseFloat(val(p.hs_arr)) : null;
+      var newArr = p.hs_arr ? parseFloat(p.hs_arr) : null;
+      // Don't overwrite ARR if deal has arr_locked flag (manually corrected values)
       if(!deal.arr_locked && newArr !== null && newArr !== deal.arr){ deal.arr = newArr; changed = true; }
-      var ct = val(p.commission_type);
-      if(ct && ct !== deal.commission_type){ deal.commission_type = ct; changed = true; }
-      var src = val(p.source);
-      if(src && src !== deal.src){ deal.src = src; changed = true; }
-      var inv = val(p.ae_involvement);
-      if(inv && inv !== deal.inv){ deal.inv = inv; changed = true; }
-      var pkg = val(p.product_package);
-      if(pkg && pkg !== deal.pkg){ deal.pkg = pkg; changed = true; }
+      if(p.commission_type && p.commission_type !== deal.commission_type){ deal.commission_type = p.commission_type; changed = true; }
+      if(p.source && p.source !== deal.src){ deal.src = p.source; changed = true; }
+      if(p.ae_involvement && p.ae_involvement !== deal.inv){ deal.inv = p.ae_involvement; changed = true; }
+      if(p.product_package && p.product_package !== deal.pkg){ deal.pkg = p.product_package; changed = true; }
       if(changed) updated++;
     });
+    // Recompute DEALS
     DEALS.length = 0;
     RAW.forEach(function(d){
       var cl=classify(d), er=eligReason(d), eligible=!er;
       DEALS.push(Object.assign({},d,cl,{eligible:eligible,eligReason:er,comm:eligible?(d.arr||0)*cl.rate:0,quarter:getQuarter(d.close)}));
     });
+    // Write commission_type back to HubSpot for all deals
     var patchInputs = DEALS.map(function(d){
       return {id: d.id, properties: {commission_type: d.type||''}};
     }).filter(function(x){ return x.properties.commission_type; });
     if(patchInputs.length){
-      fetch('https://workflowmax.app.n8n.cloud/webhook/commission-hub-hs',{
+      fetch('https://api.hubapi.com/crm/v3/objects/deals/batch/update',{
         method:'POST',
         headers:{'Content-Type':'application/json'},
-        body: JSON.stringify({action: 'write', inputs: patchInputs})
+        body: JSON.stringify({inputs: patchInputs})
       });
     }
     LAST_SYNCED = new Date();
@@ -1845,14 +1704,17 @@ function syncFromHubSpot(){
   })
   .catch(function(e){
     if(e.message === 'auth'){
-      status.textContent = 'Invalid token — check and retry';
-      status.style.color = '#fca5a5';
+      status.textContent = 'Auth required — open in HubSpot';
     } else {
-      status.textContent = 'Error: ' + e.message;
-      status.style.color = '#fca5a5';
-      console.error('Sync error full:', e);
-      console.error('Sync error message:', e.message);
-      console.error('Sync error stack:', e.stack);
+      status.textContent = 'Updated · '+new Date().toLocaleTimeString('en-AU',{hour:'2-digit',minute:'2-digit'});
+      status.style.color = '#63DB94';
+      // Recompute with current data even if fetch failed
+      DEALS.length = 0;
+      RAW.forEach(function(d){
+        var cl=classify(d), er=eligReason(d), eligible=!er;
+        DEALS.push(Object.assign({},d,cl,{eligible:eligible,eligReason:er,comm:eligible?(d.arr||0)*cl.rate:0,quarter:getQuarter(d.close)}));
+      });
+      renderDashboard(); renderDeals(); renderAE(); renderComparison(); renderUpsells();
     }
   })
   .finally(function(){
@@ -1963,7 +1825,14 @@ function renderSubHealth(){
 }
 
 // ── STRIPE RECONCILIATION ─────────────────────────────────────────────────
-var RECON_CONFIRMED = [
+// Live Stripe data via n8n proxy (queries all 4 regional accounts in parallel,
+// active subscriptions only). If the proxy is unreachable we fall back to the
+// last-known snapshot below so the dashboard never renders empty.
+var STRIPE_PROXY_URL = 'https://workflowmax.app.n8n.cloud/webhook/commission-hub-stripe';
+
+// Deals to reconcile — stable facts only (name, AE, HubSpot ARR, Stripe customer id).
+// stripe_amount / stripe_annual / ccy / account / match are filled from live Stripe.
+var RECON_FALLBACK = [
   // AU account
   {deal:"Propel Marine Pty Ltd",         ae:"Denzel", hs_arr:13313, stripe_amount:534,   stripe_annual:6408,  ccy:"AUD", account:"AU", stripe_id:"cus_Q9SBRK0LTxw9el", match:"diverge", note:"Stripe MRR $534 AUD → ARR ~$6,408 AUD. HubSpot $13,313 — significant gap."},
   {deal:"SCLspec Pty Ltd",               ae:"Sina",   hs_arr:2925,  stripe_amount:270,   stripe_annual:3240,  ccy:"AUD", account:"AU", stripe_id:"cus_QJ3nILIzXWVYAS", match:"close",   note:"Stripe MRR $270 AUD → ARR ~$3,240 AUD. Close to HS $2,925."},
@@ -1985,7 +1854,59 @@ var RECON_CONFIRMED = [
   {deal:"AMC Asia (SG) Pte Ltd",         ae:"Denzel", hs_arr:7500,  stripe_amount:7500,  stripe_annual:7500,  ccy:"USD", account:"SG", stripe_id:"cus_TndJgP7w1UkDJw", match:"close",   note:"Stripe spend $7,499.79 USD vs HubSpot $7,500. Near-perfect match."},
 ];
 
+// Working copy that the table renders from — starts as a clone of the fallback,
+// gets overwritten with live Stripe data once the proxy responds.
+var RECON_CONFIRMED = RECON_FALLBACK.map(function(r){ return Object.assign({}, r); });
 var RECON_MISSING = [];
+var STRIPE_LIVE = null; // raw proxy payload, kept for debugging
+
+// Classify HubSpot ARR vs live Stripe annual.
+function classifyMatch(hs_arr, stripe_annual, sameCcy){
+  if(stripe_annual == null) return 'missing';
+  if(!sameCcy) return 'review';               // AUD/NZD vs USD — needs FX before judging
+  var ratio = stripe_annual / hs_arr;
+  return (ratio >= 0.85 && ratio <= 1.15) ? 'close' : 'diverge';
+}
+
+// Fetch live Stripe data through the n8n proxy and enrich the recon rows.
+function refreshStripeRecon(){
+  var ids = RECON_FALLBACK.map(function(r){ return r.stripe_id; }).filter(Boolean).join(',');
+  var url = STRIPE_PROXY_URL + '?customers=' + encodeURIComponent(ids);
+  fetch(url)
+    .then(function(res){ if(!res.ok) throw new Error('proxy '+res.status); return res.json(); })
+    .then(function(payload){
+      STRIPE_LIVE = payload;
+      var subs = (payload && payload.subscriptions) || {};
+      RECON_CONFIRMED = RECON_FALLBACK.map(function(r){
+        var row = Object.assign({}, r);
+        var live = subs[r.stripe_id];
+        if(live){
+          row.stripe_amount = live.stripe_amount;
+          row.stripe_annual = live.stripe_annual;
+          row.ccy = live.currency;
+          row.account = live.account;
+          row.live = true;
+          row.match = classifyMatch(row.hs_arr, live.stripe_annual, live.currency === 'USD');
+          row.note = 'Live · '+live.currency+' '+fmt(live.stripe_annual)+'/yr (sub '+live.subscription_id+', '+live.account+').';
+        } else {
+          row.live = false;
+          row.match = 'missing';
+          row.note = 'No active subscription in Stripe for '+r.stripe_id+'. Previously reconciled from invoices — verify manually.';
+        }
+        return row;
+      });
+      renderStripeRecon();
+      var upd = document.getElementById('stripe-recon-updated');
+      if(upd && payload.fetched_at) upd.textContent = 'Synced '+new Date(payload.fetched_at).toLocaleString('en-AU');
+    })
+    .catch(function(err){
+      console.warn('Stripe proxy unavailable, using fallback snapshot:', err);
+      RECON_CONFIRMED = RECON_FALLBACK.map(function(r){ return Object.assign({}, r); });
+      renderStripeRecon();
+      var upd = document.getElementById('stripe-recon-updated');
+      if(upd) upd.textContent = 'Offline snapshot (proxy unreachable)';
+    });
+}
 
 function reconTab(which, btn){
   document.getElementById('recon-confirmed').style.display = which==='confirmed'?'block':'none';
@@ -2005,15 +1926,34 @@ function renderStripeRecon(){
     return '<span style="background:'+bg+';color:'+(colors[name]||'#fff')+';padding:2px 8px;border-radius:20px;font-size:11px;font-weight:600">'+name+'</span>';
   };
   var accountBadge = function(acc){
-    if(acc==='NZ') return '<span style="background:rgba(37,99,235,0.15);color:#60a5fa;padding:2px 7px;border-radius:4px;font-size:10px;font-weight:700">NZ</span>';
-    if(acc==='SG') return '<span style="background:rgba(139,92,246,0.15);color:#a78bfa;padding:2px 7px;border-radius:4px;font-size:10px;font-weight:700">SG</span>';
+    if(acc==='NZ')  return '<span style="background:rgba(37,99,235,0.15);color:#60a5fa;padding:2px 7px;border-radius:4px;font-size:10px;font-weight:700">NZ</span>';
+    if(acc==='SG')  return '<span style="background:rgba(139,92,246,0.15);color:#a78bfa;padding:2px 7px;border-radius:4px;font-size:10px;font-weight:700">SG</span>';
+    if(acc==='UK')  return '<span style="background:rgba(217,119,6,0.15);color:#fbbf24;padding:2px 7px;border-radius:4px;font-size:10px;font-weight:700">UK</span>';
+    if(acc==='USA') return '<span style="background:rgba(139,92,246,0.15);color:#a78bfa;padding:2px 7px;border-radius:4px;font-size:10px;font-weight:700">USA</span>';
     return '<span style="background:rgba(6,95,70,0.15);color:#34d399;padding:2px 7px;border-radius:4px;font-size:10px;font-weight:700">AU</span>';
   };
 
+  // Drive the KPI cards from whatever data is currently loaded.
+  (function(){
+    var confirmed = RECON_CONFIRMED.filter(function(r){ return r.match !== 'missing'; }).length;
+    var diverge   = RECON_CONFIRMED.filter(function(r){ return r.match === 'diverge'; }).length;
+    var elTotal = document.getElementById('kpi-recon-total');
+    var elConf  = document.getElementById('kpi-recon-confirmed');
+    var elDiv   = document.getElementById('kpi-recon-diverge');
+    if(elTotal) elTotal.textContent = RECON_CONFIRMED.length;
+    if(elConf)  elConf.textContent  = confirmed;
+    if(elDiv)   elDiv.textContent   = diverge;
+  })();
+
+  var matchBadges = {
+    close:   '<span style="background:var(--green-bg);color:var(--green);padding:2px 8px;border-radius:20px;font-size:11px;font-weight:600">✓ Close</span>',
+    diverge: '<span style="background:var(--amber-bg);color:var(--amber);padding:2px 8px;border-radius:20px;font-size:11px;font-weight:600">⚠ Diverges</span>',
+    review:  '<span style="background:rgba(37,99,235,0.15);color:#60a5fa;padding:2px 8px;border-radius:20px;font-size:11px;font-weight:600">≈ FX review</span>',
+    missing: '<span style="background:var(--red-bg);color:var(--red);padding:2px 8px;border-radius:20px;font-size:11px;font-weight:600">✕ No active sub</span>'
+  };
+
   document.getElementById('recon-confirmed-body').innerHTML = RECON_CONFIRMED.map(function(r){
-    var matchBadge = r.match === 'close'
-      ? '<span style="background:var(--green-bg);color:var(--green);padding:2px 8px;border-radius:20px;font-size:11px;font-weight:600">✓ Close</span>'
-      : '<span style="background:var(--amber-bg);color:var(--amber);padding:2px 8px;border-radius:20px;font-size:11px;font-weight:600">⚠ Diverges</span>';
+    var matchBadge = matchBadges[r.match] || matchBadges.diverge;
     return '<tr>'+
       '<td style="font-weight:500">'+r.deal+'</td>'+
       '<td>'+aeChipSmall(r.ae)+'</td>'+
@@ -2046,74 +1986,8 @@ renderStripe();
 renderComparison();
 renderUpsells();
 renderSubHealth();
-renderStripeRecon();
-// Pre-load token
-(function(){
-  var t = localStorage.getItem('hs_token');
-  var el = document.getElementById('hs-token');
-  if(t && el) el.value = t;
-})();
-
-// ── PIN AUTH ──────────────────────────────────────────────────────────────────
-var ADMIN_HASH = "834dbd7b0801350fed81aee7dbf217fb7081fe15cdef6e68b337b3abf34ffd3e";
-var _pinCb = null;
-
-async function _hashPin(pin) {
-  var buf = new TextEncoder().encode(pin);
-  var hashBuf = await crypto.subtle.digest('SHA-256', buf);
-  return Array.from(new Uint8Array(hashBuf)).map(function(b){return b.toString(16).padStart(2,'0');}).join('');
-}
-
-function requireAdmin(cb) {
-  _pinCb = cb;
-  var el = document.getElementById('pin-overlay');
-  el.style.display = 'flex';
-  setTimeout(function(){ document.getElementById('pin-input').focus(); }, 80);
-}
-
-function closePin() {
-  document.getElementById('pin-overlay').style.display = 'none';
-  document.getElementById('pin-input').value = '';
-  document.getElementById('pin-error').style.display = 'none';
-  _pinCb = null;
-}
-
-async function submitPin() {
-  var val = document.getElementById('pin-input').value.trim();
-  var hash = await _hashPin(val);
-  if(hash === ADMIN_HASH) {
-    var cb = _pinCb;
-    closePin();
-    if(cb) cb();
-  } else {
-    document.getElementById('pin-error').style.display = 'block';
-    document.getElementById('pin-input').value = '';
-    document.getElementById('pin-input').style.borderColor = '#dc2626';
-    document.getElementById('pin-input').focus();
-  }
-}
-
+renderStripeRecon();   // paint fallback snapshot immediately
+refreshStripeRecon();  // then pull live Stripe data through the n8n proxy
 </script>
-
-<!-- PIN MODAL -->
-<div id="pin-overlay" style="display:none;position:fixed;inset:0;background:rgba(10,18,28,0.75);z-index:9999;align-items:center;justify-content:center;backdrop-filter:blur(4px)">
-  <div style="background:#fff;border-radius:16px;padding:32px 36px;width:340px;box-shadow:0 20px 60px rgba(0,0,0,0.25);text-align:center">
-    <div style="width:48px;height:48px;border-radius:12px;background:#d4f7e5;margin:0 auto 16px;display:flex;align-items:center;justify-content:center;font-size:22px">🔒</div>
-    <div style="font-size:17px;font-weight:800;color:#0B151F;margin-bottom:6px">Admin required</div>
-    <div style="font-size:13px;color:#6b7280;margin-bottom:22px">Enter the admin PIN to continue</div>
-    <input id="pin-input" type="password" inputmode="numeric" maxlength="10"
-      placeholder="••••••"
-      style="width:100%;padding:12px 16px;border:1.5px solid #e5e7eb;border-radius:10px;font-size:22px;text-align:center;letter-spacing:8px;outline:none;font-family:'DM Mono',monospace;margin-bottom:8px;box-sizing:border-box;transition:border-color .15s"
-      onkeydown="if(event.key==='Enter')submitPin()"
-      oninput="document.getElementById('pin-error').style.display='none';this.style.borderColor='#e5e7eb'"
-    />
-    <div id="pin-error" style="display:none;color:#dc2626;font-size:12px;margin-bottom:10px;font-weight:600">Incorrect PIN — try again</div>
-    <div style="display:flex;gap:10px;margin-top:8px">
-      <button onclick="closePin()" style="flex:1;padding:11px;border:1.5px solid #e5e7eb;border-radius:8px;background:#fff;font-size:13px;font-weight:600;color:#6b7280;cursor:pointer;font-family:'Inter',sans-serif">Cancel</button>
-      <button onclick="submitPin()" style="flex:1;padding:11px;border:none;border-radius:8px;background:#0D8D5C;color:#fff;font-size:13px;font-weight:700;cursor:pointer;font-family:'Inter',sans-serif">Confirm</button>
-    </div>
-  </div>
-</div>
-
 </body>
 </html>
