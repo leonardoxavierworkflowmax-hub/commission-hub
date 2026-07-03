@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>WorkflowMAX · Commission Hub FY2025</title>
+<title>WorkflowMAX · Commission Hub FY2026</title>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
 /* ── v5 PALETTE on v8 STRUCTURE ───────────────────────────────── */
@@ -194,7 +194,7 @@ input[type=date]{background:#fff;border:1px solid var(--border);border-radius:6p
       <div style="width:32px;height:32px;border-radius:50%;background:#63DB94;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:800;color:#0A2F28;flex-shrink:0">MAX</div>
       <div>
         <div style="font-size:14px;color:#fff;font-family:'Inter',sans-serif;">workflow<b style="font-weight:800;color:#63DB94">MAX</b></div>
-        <div style="font-size:9px;color:rgba(99,219,148,0.5);margin-top:-2px;letter-spacing:.04em;text-transform:uppercase">Commission Hub · FY2025</div>
+        <div style="font-size:9px;color:rgba(99,219,148,0.5);margin-top:-2px;letter-spacing:.04em;text-transform:uppercase">Commission Hub · FY2026</div>
       </div>
     </div>
   </div>
@@ -234,7 +234,7 @@ input[type=date]{background:#fff;border:1px solid var(--border);border-radius:6p
 <!-- DASHBOARD -->
 <div class="page active" id="page-dashboard">
   <div class="page-header">
-    <div class="page-eyebrow">Commission Hub · FY2025</div>
+    <div class="page-eyebrow">Commission Hub · FY2026</div>
     <div class="page-title">Dashboard</div>
     <div class="page-sub">Advanced + Premium + Pro · Any deal value · Annual upfront · Post-discount ARR · AE Commission Attribution wins on conflict · <span style="background:#d4f7e5;color:#0A2F28;padding:1px 7px;border-radius:4px;font-size:10px;font-weight:700">All values USD</span></div>
   </div>
@@ -244,11 +244,11 @@ input[type=date]{background:#fff;border:1px solid var(--border);border-radius:6p
       <span class="filter-label">PERIOD</span>
       <select id="dash-quarter" onchange="renderDashboard()">
         <option value="all">All time</option>
-        <option value="q2-2026">Q2 2026 (Apr–Jun)</option>
-        <option value="q1-2026">Q1 2026 (Jan–Mar)</option>
-        <option value="q4-2025">Q4 2025 (Oct–Dec)</option>
-        <option value="q3-2025">Q3 2025 (Jul–Sep)</option>
-        <option value="q2-2025">Q2 2025 (Apr–Jun)</option>
+        <option value="q1-2027">Q1 FY2027 (Apr–Jun 2026)</option>
+        <option value="q4-2026">Q4 FY2026 (Jan–Mar 2026)</option>
+        <option value="q3-2026">Q3 FY2026 (Oct–Dec 2025)</option>
+        <option value="q2-2026">Q2 FY2026 (Jul–Sep 2025)</option>
+        <option value="q1-2026">Q1 FY2026 (Apr–Jun 2025)</option>
       </select>
       <span class="filter-label" style="margin-left:8px">STATUS</span>
       <select id="dash-payout" onchange="renderDashboard()">
@@ -283,11 +283,11 @@ input[type=date]{background:#fff;border:1px solid var(--border);border-radius:6p
       <span class="filter-label">Period</span>
       <select id="f-quarter" onchange="renderDeals()">
         <option value="">All time</option>
-        <option value="q2-2026">Q2 2026 (Apr–Jun)</option>
-        <option value="q1-2026">Q1 2026 (Jan–Mar)</option>
-        <option value="q4-2025">Q4 2025 (Oct–Dec)</option>
-        <option value="q3-2025">Q3 2025 (Jul–Sep)</option>
-        <option value="q2-2025">Q2 2025 (Apr–Jun)</option>
+        <option value="q1-2027">Q1 FY2027 (Apr–Jun 2026)</option>
+        <option value="q4-2026">Q4 FY2026 (Jan–Mar 2026)</option>
+        <option value="q3-2026">Q3 FY2026 (Oct–Dec 2025)</option>
+        <option value="q2-2026">Q2 FY2026 (Jul–Sep 2025)</option>
+        <option value="q1-2026">Q1 FY2026 (Apr–Jun 2025)</option>
       </select>
       <span class="filter-label">Status</span>
       <select id="f-status" onchange="renderDeals()">
@@ -700,9 +700,9 @@ input[type=date]{background:#fff;border:1px solid var(--border);border-radius:6p
 
     <!-- KPIs -->
     <div class="kpi-row" style="grid-template-columns:repeat(3,1fr);margin-bottom:24px">
-      <div class="kpi-card"><div class="kpi-label">Deals reviewed</div><div class="kpi-value" id="kpi-recon-total">16</div><div class="kpi-sub">Sina + Denzel</div></div>
-      <div class="kpi-card" style="border-color:rgba(99,219,148,0.2)"><div class="kpi-label" style="color:var(--green)">Confirmed in Stripe</div><div class="kpi-value green" id="kpi-recon-confirmed">16</div><div class="kpi-sub" id="stripe-recon-updated">AU · NZ · UK · USA accounts</div></div>
-      <div class="kpi-card" style="border-color:rgba(185,28,28,0.2)"><div class="kpi-label" style="color:var(--red)">ARR divergences</div><div class="kpi-value red" id="kpi-recon-diverge">6</div><div class="kpi-sub">HS ARR ≠ Stripe amount — review needed</div></div>
+      <div class="kpi-card"><div class="kpi-label">Deals reviewed</div><div class="kpi-value">16</div><div class="kpi-sub">Sina + Denzel</div></div>
+      <div class="kpi-card" style="border-color:rgba(99,219,148,0.2)"><div class="kpi-label" style="color:var(--green)">Confirmed in Stripe</div><div class="kpi-value green">16</div><div class="kpi-sub">AU · NZ · SG accounts</div></div>
+      <div class="kpi-card" style="border-color:rgba(185,28,28,0.2)"><div class="kpi-label" style="color:var(--red)">ARR divergences</div><div class="kpi-value red">6</div><div class="kpi-sub">HS ARR ≠ Stripe amount — review needed</div></div>
     </div>
 
     <!-- Alert -->
@@ -1243,11 +1243,15 @@ function eligReason(d){
 }
 
 function getQuarter(close){
+  // Fiscal year starts 1 April.
+  // Q1 = Apr–Jun, Q2 = Jul–Sep, Q3 = Oct–Dec, Q4 = Jan–Mar
+  // FY label = calendar year + 1 for months Apr–Dec, calendar year for Jan–Mar
   var dt=new Date(close), m=dt.getMonth(), y=dt.getFullYear();
-  if(m<=2) return "q1-"+y;
-  if(m<=5) return "q2-"+y;
-  if(m<=8) return "q3-"+y;
-  return "q4-"+y;
+  var fy = (m >= 3) ? y + 1 : y;
+  if(m >= 3 && m <= 5) return "q1-"+fy;  // Apr–Jun
+  if(m >= 6 && m <= 8) return "q2-"+fy;  // Jul–Sep
+  if(m >= 9)           return "q3-"+fy;  // Oct–Dec
+  return "q4-"+fy;                        // Jan–Mar
 }
 
 var DEALS = RAW.map(function(d){
@@ -1825,14 +1829,7 @@ function renderSubHealth(){
 }
 
 // ── STRIPE RECONCILIATION ─────────────────────────────────────────────────
-// Live Stripe data via n8n proxy (queries all 4 regional accounts in parallel,
-// active subscriptions only). If the proxy is unreachable we fall back to the
-// last-known snapshot below so the dashboard never renders empty.
-var STRIPE_PROXY_URL = 'https://workflowmax.app.n8n.cloud/webhook/commission-hub-stripe';
-
-// Deals to reconcile — stable facts only (name, AE, HubSpot ARR, Stripe customer id).
-// stripe_amount / stripe_annual / ccy / account / match are filled from live Stripe.
-var RECON_FALLBACK = [
+var RECON_CONFIRMED = [
   // AU account
   {deal:"Propel Marine Pty Ltd",         ae:"Denzel", hs_arr:13313, stripe_amount:534,   stripe_annual:6408,  ccy:"AUD", account:"AU", stripe_id:"cus_Q9SBRK0LTxw9el", match:"diverge", note:"Stripe MRR $534 AUD → ARR ~$6,408 AUD. HubSpot $13,313 — significant gap."},
   {deal:"SCLspec Pty Ltd",               ae:"Sina",   hs_arr:2925,  stripe_amount:270,   stripe_annual:3240,  ccy:"AUD", account:"AU", stripe_id:"cus_QJ3nILIzXWVYAS", match:"close",   note:"Stripe MRR $270 AUD → ARR ~$3,240 AUD. Close to HS $2,925."},
@@ -1854,59 +1851,7 @@ var RECON_FALLBACK = [
   {deal:"AMC Asia (SG) Pte Ltd",         ae:"Denzel", hs_arr:7500,  stripe_amount:7500,  stripe_annual:7500,  ccy:"USD", account:"SG", stripe_id:"cus_TndJgP7w1UkDJw", match:"close",   note:"Stripe spend $7,499.79 USD vs HubSpot $7,500. Near-perfect match."},
 ];
 
-// Working copy that the table renders from — starts as a clone of the fallback,
-// gets overwritten with live Stripe data once the proxy responds.
-var RECON_CONFIRMED = RECON_FALLBACK.map(function(r){ return Object.assign({}, r); });
 var RECON_MISSING = [];
-var STRIPE_LIVE = null; // raw proxy payload, kept for debugging
-
-// Classify HubSpot ARR vs live Stripe annual.
-function classifyMatch(hs_arr, stripe_annual, sameCcy){
-  if(stripe_annual == null) return 'missing';
-  if(!sameCcy) return 'review';               // AUD/NZD vs USD — needs FX before judging
-  var ratio = stripe_annual / hs_arr;
-  return (ratio >= 0.85 && ratio <= 1.15) ? 'close' : 'diverge';
-}
-
-// Fetch live Stripe data through the n8n proxy and enrich the recon rows.
-function refreshStripeRecon(){
-  var ids = RECON_FALLBACK.map(function(r){ return r.stripe_id; }).filter(Boolean).join(',');
-  var url = STRIPE_PROXY_URL + '?customers=' + encodeURIComponent(ids);
-  fetch(url)
-    .then(function(res){ if(!res.ok) throw new Error('proxy '+res.status); return res.json(); })
-    .then(function(payload){
-      STRIPE_LIVE = payload;
-      var subs = (payload && payload.subscriptions) || {};
-      RECON_CONFIRMED = RECON_FALLBACK.map(function(r){
-        var row = Object.assign({}, r);
-        var live = subs[r.stripe_id];
-        if(live){
-          row.stripe_amount = live.stripe_amount;
-          row.stripe_annual = live.stripe_annual;
-          row.ccy = live.currency;
-          row.account = live.account;
-          row.live = true;
-          row.match = classifyMatch(row.hs_arr, live.stripe_annual, live.currency === 'USD');
-          row.note = 'Live · '+live.currency+' '+fmt(live.stripe_annual)+'/yr (sub '+live.subscription_id+', '+live.account+').';
-        } else {
-          row.live = false;
-          row.match = 'missing';
-          row.note = 'No active subscription in Stripe for '+r.stripe_id+'. Previously reconciled from invoices — verify manually.';
-        }
-        return row;
-      });
-      renderStripeRecon();
-      var upd = document.getElementById('stripe-recon-updated');
-      if(upd && payload.fetched_at) upd.textContent = 'Synced '+new Date(payload.fetched_at).toLocaleString('en-AU');
-    })
-    .catch(function(err){
-      console.warn('Stripe proxy unavailable, using fallback snapshot:', err);
-      RECON_CONFIRMED = RECON_FALLBACK.map(function(r){ return Object.assign({}, r); });
-      renderStripeRecon();
-      var upd = document.getElementById('stripe-recon-updated');
-      if(upd) upd.textContent = 'Offline snapshot (proxy unreachable)';
-    });
-}
 
 function reconTab(which, btn){
   document.getElementById('recon-confirmed').style.display = which==='confirmed'?'block':'none';
@@ -1926,34 +1871,15 @@ function renderStripeRecon(){
     return '<span style="background:'+bg+';color:'+(colors[name]||'#fff')+';padding:2px 8px;border-radius:20px;font-size:11px;font-weight:600">'+name+'</span>';
   };
   var accountBadge = function(acc){
-    if(acc==='NZ')  return '<span style="background:rgba(37,99,235,0.15);color:#60a5fa;padding:2px 7px;border-radius:4px;font-size:10px;font-weight:700">NZ</span>';
-    if(acc==='SG')  return '<span style="background:rgba(139,92,246,0.15);color:#a78bfa;padding:2px 7px;border-radius:4px;font-size:10px;font-weight:700">SG</span>';
-    if(acc==='UK')  return '<span style="background:rgba(217,119,6,0.15);color:#fbbf24;padding:2px 7px;border-radius:4px;font-size:10px;font-weight:700">UK</span>';
-    if(acc==='USA') return '<span style="background:rgba(139,92,246,0.15);color:#a78bfa;padding:2px 7px;border-radius:4px;font-size:10px;font-weight:700">USA</span>';
+    if(acc==='NZ') return '<span style="background:rgba(37,99,235,0.15);color:#60a5fa;padding:2px 7px;border-radius:4px;font-size:10px;font-weight:700">NZ</span>';
+    if(acc==='SG') return '<span style="background:rgba(139,92,246,0.15);color:#a78bfa;padding:2px 7px;border-radius:4px;font-size:10px;font-weight:700">SG</span>';
     return '<span style="background:rgba(6,95,70,0.15);color:#34d399;padding:2px 7px;border-radius:4px;font-size:10px;font-weight:700">AU</span>';
   };
 
-  // Drive the KPI cards from whatever data is currently loaded.
-  (function(){
-    var confirmed = RECON_CONFIRMED.filter(function(r){ return r.match !== 'missing'; }).length;
-    var diverge   = RECON_CONFIRMED.filter(function(r){ return r.match === 'diverge'; }).length;
-    var elTotal = document.getElementById('kpi-recon-total');
-    var elConf  = document.getElementById('kpi-recon-confirmed');
-    var elDiv   = document.getElementById('kpi-recon-diverge');
-    if(elTotal) elTotal.textContent = RECON_CONFIRMED.length;
-    if(elConf)  elConf.textContent  = confirmed;
-    if(elDiv)   elDiv.textContent   = diverge;
-  })();
-
-  var matchBadges = {
-    close:   '<span style="background:var(--green-bg);color:var(--green);padding:2px 8px;border-radius:20px;font-size:11px;font-weight:600">✓ Close</span>',
-    diverge: '<span style="background:var(--amber-bg);color:var(--amber);padding:2px 8px;border-radius:20px;font-size:11px;font-weight:600">⚠ Diverges</span>',
-    review:  '<span style="background:rgba(37,99,235,0.15);color:#60a5fa;padding:2px 8px;border-radius:20px;font-size:11px;font-weight:600">≈ FX review</span>',
-    missing: '<span style="background:var(--red-bg);color:var(--red);padding:2px 8px;border-radius:20px;font-size:11px;font-weight:600">✕ No active sub</span>'
-  };
-
   document.getElementById('recon-confirmed-body').innerHTML = RECON_CONFIRMED.map(function(r){
-    var matchBadge = matchBadges[r.match] || matchBadges.diverge;
+    var matchBadge = r.match === 'close'
+      ? '<span style="background:var(--green-bg);color:var(--green);padding:2px 8px;border-radius:20px;font-size:11px;font-weight:600">✓ Close</span>'
+      : '<span style="background:var(--amber-bg);color:var(--amber);padding:2px 8px;border-radius:20px;font-size:11px;font-weight:600">⚠ Diverges</span>';
     return '<tr>'+
       '<td style="font-weight:500">'+r.deal+'</td>'+
       '<td>'+aeChipSmall(r.ae)+'</td>'+
@@ -1986,8 +1912,7 @@ renderStripe();
 renderComparison();
 renderUpsells();
 renderSubHealth();
-renderStripeRecon();   // paint fallback snapshot immediately
-refreshStripeRecon();  // then pull live Stripe data through the n8n proxy
+renderStripeRecon();
 </script>
 </body>
 </html>
