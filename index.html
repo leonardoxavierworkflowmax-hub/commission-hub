@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>WorkflowMAX · Commission Hub FY2026</title>
+<title>WorkflowMAX · Commission Hub FY2025</title>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
 /* ── v5 PALETTE on v8 STRUCTURE ───────────────────────────────── */
@@ -194,7 +194,7 @@ input[type=date]{background:#fff;border:1px solid var(--border);border-radius:6p
       <div style="width:32px;height:32px;border-radius:50%;background:#63DB94;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:800;color:#0A2F28;flex-shrink:0">MAX</div>
       <div>
         <div style="font-size:14px;color:#fff;font-family:'Inter',sans-serif;">workflow<b style="font-weight:800;color:#63DB94">MAX</b></div>
-        <div style="font-size:9px;color:rgba(99,219,148,0.5);margin-top:-2px;letter-spacing:.04em;text-transform:uppercase">Commission Hub · FY2026</div>
+        <div style="font-size:9px;color:rgba(99,219,148,0.5);margin-top:-2px;letter-spacing:.04em;text-transform:uppercase">Commission Hub · FY2025</div>
       </div>
     </div>
   </div>
@@ -202,6 +202,7 @@ input[type=date]{background:#fff;border:1px solid var(--border);border-radius:6p
     <div class="nav-section">Overview</div>
     <div class="nav-item active" onclick="showPage('dashboard',this)"><span class="nav-icon">◈</span>Dashboard</div>
     <div class="nav-item" onclick="showPage('deals',this)"><span class="nav-icon">≡</span>Deal Table</div>
+    <div class="nav-item" onclick="showPage('lost',this)"><span class="nav-icon">⊘</span>Closed / Lost <span class="pending-tag" id="lost-tag" style="background:rgba(185,28,28,0.15);color:#fca5a5">·</span></div>
     <div class="nav-item" onclick="showPage('ae',this)"><span class="nav-icon">◎</span>By AE</div>
     <div class="nav-section">Multi-year</div>
     <div class="nav-item" onclick="showPage('banked',this)"><span class="nav-icon">⬡</span>Banked Commission</div>
@@ -234,7 +235,7 @@ input[type=date]{background:#fff;border:1px solid var(--border);border-radius:6p
 <!-- DASHBOARD -->
 <div class="page active" id="page-dashboard">
   <div class="page-header">
-    <div class="page-eyebrow">Commission Hub · FY2026</div>
+    <div class="page-eyebrow">Commission Hub · FY2025</div>
     <div class="page-title">Dashboard</div>
     <div class="page-sub">Advanced + Premium + Pro · Any deal value · Annual upfront · Post-discount ARR · AE Commission Attribution wins on conflict · <span style="background:#d4f7e5;color:#0A2F28;padding:1px 7px;border-radius:4px;font-size:10px;font-weight:700">All values USD</span></div>
   </div>
@@ -244,11 +245,11 @@ input[type=date]{background:#fff;border:1px solid var(--border);border-radius:6p
       <span class="filter-label">PERIOD</span>
       <select id="dash-quarter" onchange="renderDashboard()">
         <option value="all">All time</option>
-        <option value="q1-2027">Q1 FY2027 (Apr–Jun 2026)</option>
-        <option value="q4-2026">Q4 FY2026 (Jan–Mar 2026)</option>
-        <option value="q3-2026">Q3 FY2026 (Oct–Dec 2025)</option>
-        <option value="q2-2026">Q2 FY2026 (Jul–Sep 2025)</option>
-        <option value="q1-2026">Q1 FY2026 (Apr–Jun 2025)</option>
+        <option value="q2-2026">Q2 2026 (Apr–Jun)</option>
+        <option value="q1-2026">Q1 2026 (Jan–Mar)</option>
+        <option value="q4-2025">Q4 2025 (Oct–Dec)</option>
+        <option value="q3-2025">Q3 2025 (Jul–Sep)</option>
+        <option value="q2-2025">Q2 2025 (Apr–Jun)</option>
       </select>
       <span class="filter-label" style="margin-left:8px">STATUS</span>
       <select id="dash-payout" onchange="renderDashboard()">
@@ -283,11 +284,11 @@ input[type=date]{background:#fff;border:1px solid var(--border);border-radius:6p
       <span class="filter-label">Period</span>
       <select id="f-quarter" onchange="renderDeals()">
         <option value="">All time</option>
-        <option value="q1-2027">Q1 FY2027 (Apr–Jun 2026)</option>
-        <option value="q4-2026">Q4 FY2026 (Jan–Mar 2026)</option>
-        <option value="q3-2026">Q3 FY2026 (Oct–Dec 2025)</option>
-        <option value="q2-2026">Q2 FY2026 (Jul–Sep 2025)</option>
-        <option value="q1-2026">Q1 FY2026 (Apr–Jun 2025)</option>
+        <option value="q2-2026">Q2 2026 (Apr–Jun)</option>
+        <option value="q1-2026">Q1 2026 (Jan–Mar)</option>
+        <option value="q4-2025">Q4 2025 (Oct–Dec)</option>
+        <option value="q3-2025">Q3 2025 (Jul–Sep)</option>
+        <option value="q2-2025">Q2 2025 (Apr–Jun)</option>
       </select>
       <span class="filter-label">Status</span>
       <select id="f-status" onchange="renderDeals()">
@@ -307,6 +308,17 @@ input[type=date]{background:#fff;border:1px solid var(--border);border-radius:6p
 </div>
 
 <!-- BY AE -->
+<div class="page" id="page-lost">
+  <div class="page-header">
+    <div class="page-eyebrow">HubSpot · Control view</div>
+    <div class="page-title">Closed / Lost</div>
+    <div class="page-sub">Deals in Closed Lost, Expired or Churned stages. Kept for tracking only — never counted in commission. Hit Refresh data to pull the latest from HubSpot.</div>
+  </div>
+  <div class="page-body">
+    <div id="lost-body"></div>
+  </div>
+</div>
+
 <div class="page" id="page-ae">
   <div class="page-header">
     <div class="page-eyebrow">Commission Hub</div>
@@ -1130,6 +1142,15 @@ var AE = {
   "85659656":{name:"Aline Baleeiro", initials:"AB",color:"#991b1b",bg:"#fee2e2"},
 };
 
+// Roster is the 5 AEs above. Any deal owned by someone else (e.g. an inactive
+// user) is attributed to a neutral "off-roster" chip so nothing crashes and the
+// AE stats stay clean. These deals are flagged for review, not silently dropped.
+function ensureAE(id){
+  if(!id) id="unassigned";
+  if(!AE[id]) AE[id]={name:"Off-roster ("+id+")",initials:"·",color:"#6b7280",bg:"#e5e7eb",offRoster:true};
+  return AE[id];
+}
+
 // paid_out = true means commission has been paid to the AE already
 // contract_years = total contracted years (for multi-year / banked view)
 var RAW = [
@@ -1243,21 +1264,23 @@ function eligReason(d){
 }
 
 function getQuarter(close){
-  // Fiscal year starts 1 April.
-  // Q1 = Apr–Jun, Q2 = Jul–Sep, Q3 = Oct–Dec, Q4 = Jan–Mar
-  // FY label = calendar year + 1 for months Apr–Dec, calendar year for Jan–Mar
   var dt=new Date(close), m=dt.getMonth(), y=dt.getFullYear();
-  var fy = (m >= 3) ? y + 1 : y;
-  if(m >= 3 && m <= 5) return "q1-"+fy;  // Apr–Jun
-  if(m >= 6 && m <= 8) return "q2-"+fy;  // Jul–Sep
-  if(m >= 9)           return "q3-"+fy;  // Oct–Dec
-  return "q4-"+fy;                        // Jan–Mar
+  if(m<=2) return "q1-"+y;
+  if(m<=5) return "q2-"+y;
+  if(m<=8) return "q3-"+y;
+  return "q4-"+y;
 }
 
 var DEALS = RAW.map(function(d){
   var cl=classify(d), er=eligReason(d), eligible=!er;
   return Object.assign({},d,cl,{eligible:eligible,eligReason:er,comm:eligible?(d.arr||0)*cl.rate:0,quarter:getQuarter(d.close)});
 });
+
+// Populated by the HubSpot sync. LOST = closed-lost/expired/churn (control tab only,
+// never in commission totals). RENEWAL = existing customers in renewal motion.
+var LOST = [];
+var RENEWAL = [];
+var SYNCED_ONCE = false;
 
 // ── HELPERS ───────────────────────────────────────────────────────────────
 function fmt(n,dec){if(dec===undefined)dec=0;if(n==null)return"—";return Number(n).toLocaleString('en-US',{minimumFractionDigits:dec,maximumFractionDigits:dec});}
@@ -1639,91 +1662,107 @@ function renderUpsells(){
 // ── SYNC ──────────────────────────────────────────────────────────────────
 var LAST_SYNCED = null;
 
+// Route all HubSpot traffic through the n8n proxy (never call api.hubapi.com
+// directly from the browser — CORS + no auth would fail silently). The proxy
+// discovers every commissionable deal by stage, so this is what surfaces new
+// deals and drops closed-lost ones from the view.
+var HS_PROXY = 'https://workflowmax.app.n8n.cloud/webhook/commission-hub-hs';
+
+function buildDeal(src){
+  // src is a proxy row; merge with any manual enrichment we already hold in RAW.
+  var prior = RAW.find(function(d){ return d.id === src.dealId; }) || {};
+  ensureAE(src.owner);
+  var arr = src.arr;
+  if(prior.arr_locked){ arr = prior.arr; } // keep manually corrected ARR
+  return {
+    id: src.dealId,
+    name: src.name || prior.name || src.dealId,
+    owner: src.owner || prior.owner || 'unassigned',
+    arr: (arr != null ? arr : (prior.arr != null ? prior.arr : null)),
+    src: src.source || prior.src || '',
+    inv: src.ae_involvement || prior.inv || '',
+    pkg: src.product_package || prior.pkg || '',
+    close: src.close || prior.close || '',
+    commission_type: src.commission_type || prior.commission_type || '',
+    // preserved manual fields
+    paid_out: prior.paid_out || false,
+    contract_years: prior.contract_years || 1,
+    banked_years: prior.banked_years,
+    arr_locked: prior.arr_locked,
+    data_issue: prior.data_issue,
+    stripe_cus_id: prior.stripe_cus_id,
+    // live stage info from HubSpot
+    stage_label: src.stage_label,
+    dealstage: src.dealstage,
+    isNew: !RAW.find(function(d){ return d.id === src.dealId; })
+  };
+}
+
 function syncFromHubSpot(){
   var btn = document.getElementById('sync-btn');
   var icon = document.getElementById('sync-icon');
   var status = document.getElementById('sync-status');
-  btn.disabled = true;
-  icon.style.animation = 'spin 1s linear infinite';
-  icon.style.display = 'inline-block';
-  status.textContent = 'Syncing...';
-  status.style.color = 'rgba(99,219,148,0.5)';
+  if(btn){ btn.disabled = true; }
+  if(icon){ icon.style.animation = 'spin 1s linear infinite'; icon.style.display = 'inline-block'; }
+  if(status){ status.textContent = 'Syncing from HubSpot...'; status.style.color = 'rgba(99,219,148,0.5)'; }
 
-  // Build HubSpot batch fetch URL for all deal IDs
-  var ids = RAW.map(function(d){return d.id;});
-  var params = ids.map(function(id){return 'id='+id;}).join('&');
-  var props = 'properties=hs_arr&properties=source&properties=ae_involvement&properties=product_package';
-  var url = 'https://api.hubapi.com/crm/v3/objects/deals/batch/read';
-
-  fetch(url, {
+  return fetch(HS_PROXY, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      properties: ['hs_arr','source','ae_involvement','product_package','commission_type'],
-      inputs: ids.map(function(id){ return {id: id}; })
-    })
+    body: JSON.stringify({})
   })
   .then(function(r){
-    if(r.status === 401 || r.status === 403) throw new Error('auth');
+    if(!r.ok) throw new Error('Proxy returned HTTP '+r.status);
     return r.json();
   })
   .then(function(data){
-    var results = data.results || [];
-    var updated = 0;
-    results.forEach(function(obj){
-      var deal = RAW.find(function(d){ return d.id === obj.id; });
-      if(!deal) return;
-      var p = obj.properties;
-      var changed = false;
-      var newArr = p.hs_arr ? parseFloat(p.hs_arr) : null;
-      // Don't overwrite ARR if deal has arr_locked flag (manually corrected values)
-      if(!deal.arr_locked && newArr !== null && newArr !== deal.arr){ deal.arr = newArr; changed = true; }
-      if(p.commission_type && p.commission_type !== deal.commission_type){ deal.commission_type = p.commission_type; changed = true; }
-      if(p.source && p.source !== deal.src){ deal.src = p.source; changed = true; }
-      if(p.ae_involvement && p.ae_involvement !== deal.inv){ deal.inv = p.ae_involvement; changed = true; }
-      if(p.product_package && p.product_package !== deal.pkg){ deal.pkg = p.product_package; changed = true; }
-      if(changed) updated++;
-    });
-    // Recompute DEALS
-    DEALS.length = 0;
-    RAW.forEach(function(d){
-      var cl=classify(d), er=eligReason(d), eligible=!er;
-      DEALS.push(Object.assign({},d,cl,{eligible:eligible,eligReason:er,comm:eligible?(d.arr||0)*cl.rate:0,quarter:getQuarter(d.close)}));
-    });
-    // Write commission_type back to HubSpot for all deals
-    var patchInputs = DEALS.map(function(d){
-      return {id: d.id, properties: {commission_type: d.type||''}};
-    }).filter(function(x){ return x.properties.commission_type; });
-    if(patchInputs.length){
-      fetch('https://api.hubapi.com/crm/v3/objects/deals/batch/update',{
-        method:'POST',
-        headers:{'Content-Type':'application/json'},
-        body: JSON.stringify({inputs: patchInputs})
-      });
+    if(!Array.isArray(data)){
+      // proxy error payloads come back as an object (e.g. credential error)
+      var msg = (data && data.message) ? data.message : 'Unexpected response from proxy';
+      throw new Error(msg);
     }
+
+    var active = [], renewal = [], lost = [];
+    data.forEach(function(row){
+      if(row.bucket === 'lost') lost.push(row);
+      else if(row.bucket === 'renewal') renewal.push(row);
+      else active.push(row);
+    });
+
+    // Commission view = active bucket only. This both discovers new deals and
+    // removes anything now closed-lost (it simply isn't in the active bucket).
+    DEALS.length = 0;
+    active.forEach(function(row){
+      var d = buildDeal(row);
+      var cl = classify(d), er = eligReason(d), eligible = !er;
+      DEALS.push(Object.assign({}, d, cl, {eligible:eligible, eligReason:er, comm: eligible?(d.arr||0)*cl.rate:0, quarter:getQuarter(d.close)}));
+    });
+
+    // Control tab — closed-lost / expired / churn. Enriched name/owner where known.
+    LOST = lost.map(function(row){ ensureAE(row.owner); return buildDeal(row); });
+    // Renewals — existing customers, tracked but out of commission totals.
+    RENEWAL = renewal.map(function(row){ ensureAE(row.owner); return buildDeal(row); });
+
+    var newCount = DEALS.filter(function(d){return d.isNew;}).length;
+    SYNCED_ONCE = true;
     LAST_SYNCED = new Date();
-    status.textContent = 'Synced '+LAST_SYNCED.toLocaleTimeString('en-AU',{hour:'2-digit',minute:'2-digit'})+' · '+updated+' updated';
-    status.style.color = '#63DB94';
-    renderDashboard(); renderDeals(); renderAE(); renderComparison(); renderUpsells();
+    if(status){
+      status.textContent = 'Synced '+LAST_SYNCED.toLocaleTimeString('en-AU',{hour:'2-digit',minute:'2-digit'})+' · '+DEALS.length+' active'+(newCount?' ('+newCount+' new)':'')+' · '+LOST.length+' lost';
+      status.style.color = '#63DB94';
+    }
+    renderDashboard(); renderDeals(); renderAE(); renderComparison(); renderUpsells(); renderLost();
   })
   .catch(function(e){
-    if(e.message === 'auth'){
-      status.textContent = 'Auth required — open in HubSpot';
-    } else {
-      status.textContent = 'Updated · '+new Date().toLocaleTimeString('en-AU',{hour:'2-digit',minute:'2-digit'});
-      status.style.color = '#63DB94';
-      // Recompute with current data even if fetch failed
-      DEALS.length = 0;
-      RAW.forEach(function(d){
-        var cl=classify(d), er=eligReason(d), eligible=!er;
-        DEALS.push(Object.assign({},d,cl,{eligible:eligible,eligReason:er,comm:eligible?(d.arr||0)*cl.rate:0,quarter:getQuarter(d.close)}));
-      });
-      renderDashboard(); renderDeals(); renderAE(); renderComparison(); renderUpsells();
+    // Honest failure — no fake "Updated". Tell the user what actually happened.
+    if(status){
+      status.textContent = 'Sync failed: '+(e && e.message ? e.message : 'network error');
+      status.style.color = '#f87171';
     }
+    console.error('Commission Hub sync failed:', e);
   })
   .finally(function(){
-    btn.disabled = false;
-    icon.style.animation = '';
+    if(btn){ btn.disabled = false; }
+    if(icon){ icon.style.animation = ''; }
   });
 }
 
@@ -1903,6 +1942,47 @@ function renderStripeRecon(){
   }).join('');
 }
 
+// ── CLOSED / LOST (control view) ──────────────────────────────────────────
+function renderLost(){
+  var tag = document.getElementById('lost-tag');
+  if(tag) tag.textContent = LOST.length ? LOST.length : '·';
+
+  var body = document.getElementById('lost-body');
+  if(!body) return;
+
+  if(!SYNCED_ONCE){
+    body.innerHTML = '<div class="alert-strip" style="background:var(--surface2)"><div class="alert-body">No data yet. Click <strong>Refresh data</strong> in the sidebar to pull closed-lost, expired and churned deals from HubSpot.</div></div>';
+    return;
+  }
+
+  var byStage = {};
+  LOST.forEach(function(d){ byStage[d.stage_label]=(byStage[d.stage_label]||0)+1; });
+  var chips = Object.keys(byStage).map(function(k){
+    return '<span class="badge badge-dim" style="margin-right:6px">'+k.replace(/_/g,' ')+': '+byStage[k]+'</span>';
+  }).join('');
+
+  var rows = LOST.sort(function(a,b){return (b.close||'').localeCompare(a.close||'');}).map(function(d){
+    return '<tr style="opacity:.75">'+
+      '<td><a class="deal-link" href="https://app.hubspot.com/contacts/24214994/record/0-3/'+d.id+'" target="_blank"><div class="deal-name" title="'+d.name+'">'+d.name+'</div></a></td>'+
+      '<td>'+aeChip(d.owner)+'</td>'+
+      '<td><span class="badge badge-red">'+(d.stage_label||'lost').replace(/_/g,' ')+'</span></td>'+
+      '<td>'+pkgBadge(d.pkg)+'</td>'+
+      '<td>'+(d.arr?'<span class="mono" style="color:var(--text-dim)">$'+fmt(d.arr)+'</span>':'<span style="color:var(--text-dim);font-size:11px">—</span>')+'</td>'+
+      '<td style="font-size:11px;color:var(--text-dim)">'+fmtD(d.close)+'</td>'+
+      '</tr>';
+  }).join('');
+
+  var renewalNote = RENEWAL.length
+    ? '<div class="alert-strip" style="background:var(--surface2);margin-top:18px"><div class="alert-body"><strong>'+RENEWAL.length+' deals in renewal stages</strong> (Upcoming Renewal / Renewal Engagement) are tracked separately and are not part of new-commission totals.</div></div>'
+    : '';
+
+  body.innerHTML =
+    '<div style="margin-bottom:14px">'+chips+'</div>'+
+    '<div class="table-wrap"><table><thead><tr><th>Deal</th><th>AE</th><th>Stage</th><th>Package</th><th>ARR</th><th>Close</th></tr></thead><tbody>'+rows+'</tbody></table></div>'+
+    '<div style="padding:10px 0;font-size:11px;color:var(--text-dim)">'+LOST.length+' closed-lost / expired / churned · excluded from all commission figures</div>'+
+    renewalNote;
+}
+
 // ── INIT ──────────────────────────────────────────────────────────────────
 renderDashboard();
 renderDeals();
@@ -1913,6 +1993,10 @@ renderComparison();
 renderUpsells();
 renderSubHealth();
 renderStripeRecon();
+renderLost();
+// Pull live data from HubSpot on load so the view reflects current stages.
+syncFromHubSpot();
+
 </script>
 </body>
 </html>
