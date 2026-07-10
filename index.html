@@ -1522,7 +1522,7 @@ function renderStripe(){
   var now=new Date('2026-04-01');
 
   var cards=eligible.map(function(deal){
-    var sd=STRIPE[deal.id], ae=AE[deal.owner];
+    var sd=STRIPE[deal.id], ae=AE[deal.owner], live=stripeLiveFor(deal);
     var monthMap={};
     if(sd&&sd.found&&sd.invoices) sd.invoices.forEach(function(inv){monthMap[inv.date.substring(0,7)]={status:inv.status,exTax:inv.exTax,incTax:inv.incTax,ccy:inv.ccy||'USD'};});
     var cells=allMonths.map(function(m){
@@ -1543,6 +1543,7 @@ function renderStripe(){
       '<div class="stripe-meta">'+
       '<div><div class="stripe-stat-label">hs_arr</div><div class="stripe-stat-val" style="color:var(--green)">$'+fmt(deal.arr)+'</div></div>'+
       '<div><div class="stripe-stat-label">Stripe ex-tax</div><div class="stripe-stat-val" style="color:var(--blue)">'+(sd&&sd.found&&sd.stripe_arr?'$'+fmt(sd.stripe_arr):'—')+'</div></div>'+
+      '<div><div class="stripe-stat-label">Live pricing /yr</div><div class="stripe-stat-val" style="color:var(--purple)">'+(live?(live.currency+' '+fmt(live.stripe_annual,2)):'—')+'</div></div>'+
       '<div><div class="stripe-stat-label">Stripe billed</div><div class="stripe-stat-val" style="color:var(--text-muted)">'+(sd&&sd.found&&sd.stripe_billed?'$'+fmt(sd.stripe_billed):'—')+'</div></div>'+
       '<div><div class="stripe-stat-label">Currency</div><div class="stripe-stat-val" style="color:var(--text-muted)">'+(sd&&sd.found?sd.currency:'—')+'</div></div>'+
       '<div><div class="stripe-stat-label">Invoices</div><div class="stripe-stat-val" style="color:var(--text-muted)">'+(sd&&sd.found&&sd.invoices?sd.invoices.length:sd&&!sd.found?0:'—')+'</div></div>'+
@@ -1555,7 +1556,7 @@ function renderStripe(){
   }).join('');
 
   document.getElementById('stripe-body').innerHTML=
-    '<div class="alert-strip success" style="margin-bottom:20px"><div style="font-size:16px">✅</div><div class="alert-body"><strong>Invoice → Deal workflow is live.</strong> stripe_payment_confirmed is being set automatically on deals with confirmed Stripe payments.</div></div>'+
+    '<div class="alert-strip success" style="margin-bottom:20px"><div style="font-size:16px">✅</div><div class="alert-body"><strong>Stripe live sync '+(STRIPE_SYNCED_AT?('active — pricing pulled '+STRIPE_SYNCED_AT.toLocaleTimeString('en-AU',{hour:'2-digit',minute:'2-digit'})):'pending — hit Refresh data')+'.</strong> "Live pricing" = subscription items x qty + active coupon, ex-tax, across all four regional accounts. Timeline below is the 09-Jul audit snapshot.</div></div>'+
     cards;
 }
 
@@ -1563,40 +1564,81 @@ function renderStripe(){
 function renderComparison(){
   var eligible=DEALS.filter(function(d){return d.eligible;});
   var totalHs=eligible.reduce(function(s,d){return s+d.comm;},0);
-  var totalStripe=eligible.reduce(function(s,d){var sd=STRIPE[d.id];return sd&&sd.found&&sd.stripe_arr?s+(sd.stripe_arr*d.rate):s;},0);
-  var covered=eligible.filter(function(d){return STRIPE[d.id]&&STRIPE[d.id].found;});
+
+  // Stripe-side commission is only computed where Stripe bills in USD —
+  // cross-currency consolidation (rate at contract sign vs billing) is
+  // pending Kaia's FX decision, so we never fake a conversion.
+  var totalStripe=0, coveredLive=0, coveredStatic=0;
+  eligible.forEach(function(d){
+    var live=stripeLiveFor(d);
+    if(live){ coveredLive++; if(live.currency==='USD'&&live.stripe_annual) totalStripe+=live.stripe_annual*d.rate; return; }
+    var sd=STRIPE[d.id];
+    if(sd&&sd.found){ coveredStatic++; if(sd.stripe_arr) totalStripe+=sd.stripe_arr*d.rate; }
+  });
+
+  function verdictBadge(rec){
+    if(!rec) return '<span style="color:var(--text-dim);font-size:10px">—</span>';
+    var v=rec.v, cls='badge-dim';
+    if(v.indexOf('MATCH')===0) cls='badge-green';
+    else if(v.indexOf('VERIFY')===0) cls='badge-amber';
+    else if(v.indexOf('NO STRIPE')===0||v.indexOf('NO LINE ITEM')===0||v.indexOf('SEVERE')!==-1||v.indexOf('MESS')!==-1) cls='badge-red';
+    else cls='badge-amber';
+    var tip=[rec.n,rec.k?('Kaia: '+rec.k):null,rec.r?('Ready: '+rec.r):null].filter(Boolean).join(' | ').replace(/"/g,'&quot;');
+    return '<span class="badge '+cls+'" style="font-size:9px;cursor:help" title="'+tip+'">'+v+'</span>';
+  }
 
   var rows=eligible.map(function(d){
-    var sd=STRIPE[d.id], hsComm=d.comm;
-    var stripeArr=sd&&sd.found&&sd.stripe_arr?sd.stripe_arr:null;
-    var stripeComm=stripeArr?stripeArr*d.rate:null;
-    var diff=stripeComm!=null?hsComm-stripeComm:null;
-    var diffPct=diff!=null&&stripeComm?((diff/stripeComm)*100).toFixed(1):null;
-    var rowClass='', diffHtml='';
-    if(diff===null){diffHtml='<span class="diff-na">No Stripe data</span>';rowClass='';}
-    else if(Math.abs(diff)<1){diffHtml='<span class="diff-zero">Match</span>';rowClass='';}
-    else if(diff>0){diffHtml='<span class="diff-negative">HS higher $'+fmt(diff)+' ('+diffPct+'%)</span>';rowClass='winner-hs';}
-    else{diffHtml='<span class="diff-positive">Stripe higher $'+fmt(-diff)+'</span>';rowClass='winner-stripe';}
-    var note=sd&&sd.found&&sd.stripe_arr&&d.arr&&Math.abs(sd.stripe_arr-d.arr)/d.arr>0.05?'<div style="font-size:10px;color:var(--amber);margin-top:2px">ARR diff '+Math.round(Math.abs(sd.stripe_arr-d.arr)/d.arr*100)+'%</div>':'';
+    var live=stripeLiveFor(d), sd=STRIPE[d.id], rec=reconFor(d), hsComm=d.comm;
+    var stripeCell, commCell, diffHtml='', rowClass='';
+
+    if(live){
+      var ccy=live.currency||'', ann=live.stripe_annual;
+      stripeCell='<span class="stripe-val">'+ccy+' '+fmt(ann,2)+'</span>'+
+        '<div style="font-size:9px;color:var(--text-dim)">'+ccy+' '+fmt(live.stripe_amount,2)+'/mo · '+(live.account||'')+' · '+(live.interval||'')+'ly · '+(live.status||'')+'</div>';
+      if(ccy==='USD'&&ann){
+        var sComm=ann*d.rate, diff=hsComm-sComm, diffPct=sComm?((diff/sComm)*100).toFixed(1):null;
+        commCell='<span class="comm-stripe">$'+fmt(sComm,2)+'</span>';
+        if(Math.abs(diff)<1){diffHtml='<span class="diff-zero">Match</span>';}
+        else if(diff>0){diffHtml='<span class="diff-negative">HS higher $'+fmt(diff)+' ('+diffPct+'%)</span>';rowClass='winner-hs';}
+        else{diffHtml='<span class="diff-positive">Stripe higher $'+fmt(-diff)+'</span>';rowClass='winner-stripe';}
+      } else {
+        commCell='<span style="color:var(--text-dim);font-size:11px">—</span>';
+        diffHtml='<span style="color:var(--amber);font-size:10px">Local ccy · FX pending</span>';
+      }
+    } else if(sd&&sd.found&&sd.stripe_arr){
+      var sComm2=sd.stripe_arr*d.rate, diff2=hsComm-sComm2;
+      stripeCell='<span class="stripe-val">$'+fmt(sd.stripe_arr,2)+'</span><div style="font-size:9px;color:var(--text-dim)">audit snapshot</div>';
+      commCell='<span class="comm-stripe">$'+fmt(sComm2,2)+'</span>';
+      if(Math.abs(diff2)<1){diffHtml='<span class="diff-zero">Match</span>';}
+      else if(diff2>0){diffHtml='<span class="diff-negative">HS higher $'+fmt(diff2)+'</span>';rowClass='winner-hs';}
+      else{diffHtml='<span class="diff-positive">Stripe higher $'+fmt(-diff2)+'</span>';rowClass='winner-stripe';}
+    } else {
+      stripeCell='<span style="color:var(--text-dim);font-size:11px">No data</span>';
+      commCell='<span style="color:var(--text-dim);font-size:11px">—</span>';
+      diffHtml=(rec&&rec.v.indexOf('NO STRIPE')===0)?'<span class="diff-na">No Stripe record</span>':'<span class="diff-na">Not synced</span>';
+    }
+
     return '<tr class="'+rowClass+'"><td><a class="deal-link" href="https://app.hubspot.com/contacts/24214994/record/0-3/'+d.id+'" target="_blank"><div class="deal-name" title="'+d.name+'">'+d.name+upsellBadge(d.id)+'</div></a></td>'+
       '<td>'+aeChip(d.owner)+'</td><td>'+rateTxt(d)+'</td>'+
-      '<td><span class="hs-val">$'+fmt(d.arr)+'</span>'+note+'</td>'+
-      '<td><span class="stripe-val">'+(stripeArr?'$'+fmt(stripeArr,2):'<span style="color:var(--text-dim);font-size:11px">No data</span>')+'</span></td>'+
+      '<td><span class="hs-val">$'+fmt(d.arr)+'</span></td>'+
+      '<td>'+stripeCell+'</td>'+
       '<td><span class="comm-hs">$'+fmt(hsComm)+'</span></td>'+
-      '<td><span class="comm-stripe">'+(stripeComm?'$'+fmt(stripeComm,2):'<span style="color:var(--text-dim);font-size:11px">—</span>')+'</span></td>'+
-      '<td>'+diffHtml+'</td></tr>';
+      '<td>'+commCell+'</td>'+
+      '<td>'+diffHtml+'</td>'+
+      '<td>'+verdictBadge(rec)+'</td></tr>';
   }).join('');
 
+  var covered=coveredLive+coveredStatic;
   document.getElementById('comparison-body').innerHTML=
     '<div class="kpi-row" style="grid-template-columns:repeat(4,1fr)">'+
     '<div class="kpi-card"><div class="kpi-label">Commission (HS)</div><div class="kpi-value green">$'+fmt(totalHs)+'</div><div class="kpi-sub">Using hs_arr (post-discount)</div></div>'+
-    '<div class="kpi-card"><div class="kpi-label">Commission (Stripe)</div><div class="kpi-value purple">$'+fmt(totalStripe)+'</div><div class="kpi-sub">Using Stripe ex-tax ARR</div></div>'+
-    '<div class="kpi-card"><div class="kpi-label">Gross difference</div><div class="kpi-value '+(totalHs>totalStripe?'amber':'green')+'">$'+fmt(Math.abs(totalHs-totalStripe))+'</div><div class="kpi-sub">'+(totalHs>totalStripe?'HS higher':'Stripe higher')+'</div></div>'+
-    '<div class="kpi-card"><div class="kpi-label">Stripe coverage</div><div class="kpi-value">'+covered.length+'/'+eligible.length+'</div><div class="kpi-sub">Eligible deals with invoice</div></div>'+
+    '<div class="kpi-card"><div class="kpi-label">Commission (Stripe)</div><div class="kpi-value purple">$'+fmt(totalStripe)+'</div><div class="kpi-sub">USD-billed only · FX pending</div></div>'+
+    '<div class="kpi-card"><div class="kpi-label">Stripe coverage</div><div class="kpi-value">'+covered+'/'+eligible.length+'</div><div class="kpi-sub">'+coveredLive+' live · '+coveredStatic+' audit snapshot</div></div>'+
+    '<div class="kpi-card"><div class="kpi-label">Stripe last synced</div><div class="kpi-value" style="font-size:18px">'+(STRIPE_SYNCED_AT?STRIPE_SYNCED_AT.toLocaleTimeString('en-AU',{hour:'2-digit',minute:'2-digit'}):'—')+'</div><div class="kpi-sub">Pricing = items x qty + coupon, ex-tax</div></div>'+
     '</div>'+
-    '<div class="alert-strip warning" style="margin-bottom:20px"><div style="font-size:16px">⚠</div><div class="alert-body"><strong>Multi-year deals:</strong> hs_arr reflects Year 1 ACV only. Boat Electrics is a 5-year contract — commission is on Year 1 ($9,450). Banked commission for Years 2–5 is visible in the Banked Commission tab.</div></div>'+
+    '<div class="alert-strip warning" style="margin-bottom:20px"><div style="font-size:16px">⚠</div><div class="alert-body"><strong>Stripe figures are live subscription pricing</strong> (qty x unit + active coupon, ex-tax) — the steady-state charge, not the latest invoice (which may be a proration). Verdict column carries the 09-Jul reconciliation review with Kaia; hover for notes. Cross-currency commission consolidation awaits the FX decision (rate at contract sign vs billing).</div></div>'+
     '<div class="section-title">Deal-by-deal comparison</div>'+
-    '<div class="table-wrap"><table><thead><tr><th>Deal</th><th>AE</th><th>Rate</th><th>HS ARR</th><th>Stripe ARR</th><th style="color:var(--green)">Comm (HS)</th><th style="color:var(--purple)">Comm (Stripe)</th><th>Difference</th></tr></thead><tbody>'+rows+'</tbody></table></div>';
+    '<div class="table-wrap"><table><thead><tr><th>Deal</th><th>AE</th><th>Rate</th><th>HS ARR</th><th>Stripe pricing</th><th style="color:var(--green)">Comm (HS)</th><th style="color:var(--purple)">Comm (Stripe)</th><th>Difference</th><th>Recon verdict</th></tr></thead><tbody>'+rows+'</tbody></table></div>';
 }
 
 // ── UPSELL DATA ───────────────────────────────────────────────────────────
@@ -1667,6 +1709,406 @@ var LAST_SYNCED = null;
 // discovers every commissionable deal by stage, so this is what surfaces new
 // deals and drops closed-lost ones from the view.
 var HS_PROXY = 'https://workflowmax.app.n8n.cloud/webhook/commission-hub-hs';
+// ── STRIPE LIVE SYNC (v11) ─────────────────────────────────────────────────
+// Customer map + reconciliation verdicts from Commission_Deals workbook v3 (09 Jul 2026,
+// Kaia review session). Pricing methodology: subscription items (qty x unit) + coupon, ex-tax.
+var STRIPE_PROXY = 'https://workflowmax.app.n8n.cloud/webhook/commission-hub-stripe';
+var STRIPE_LIVE = {};        // keyed by stripe_customer_id — populated by syncStripe()
+var STRIPE_SYNCED_AT = null;
+var STRIPE_CUS_MAP = {
+ "amc asia (sg) pte ltd": "cus_TndJgP7w1UkDJw",
+ "mont eltham drafting": "cus_UnSgnFm5OpJGey",
+ "afi | industrial automation nz": "cus_UlxBwGn5bQKmMo",
+ "tbe environmental pty ltd": "cus_UkRVdtLX6MPhpT",
+ "event base": "cus_Q17bAYOTnoBf2A",
+ "woolf bond planning": "cus_U9wwjaqcgdjd9Y",
+ "keyts facility services": "cus_UiX87Oz6eSSPxh",
+ "asc engineers": "cus_UNAY1Vbq0iNA0j",
+ "gp structural services": "cus_UUgCBtpTvqIJze",
+ "pinnacle high pressure cleaning": "cus_Ucc6cEfQkvPyWS",
+ "turco and associates": "cus_TWNfIwb8WGP8pu",
+ "tweak design": "cus_UPqxZAl7MJusGb",
+ "am network": "cus_TK4Mh625ezaIpT",
+ "data sagacity pty ltd": "cus_QKDaUNPLDtNbIj",
+ "justo ltd": "cus_QHKYNN65RE6zHq",
+ "achm": "cus_Q8DcSAKJhJMJ22",
+ "range environmental consultants": "cus_QHHmjmXIplqs6a",
+ "le mottee group pty ltd": "cus_UlzuEJ8zS3Phxp",
+ "nelligan consulting engineers": "cus_Q0hbMwh9JQ6zRe",
+ "technigroup": "cus_QDEBJMCOSdQnXp",
+ "novatia": "cus_QE39lXaLBBVlGm",
+ "garnet building design": "cus_UkrGVTP8cwZfhX",
+ "onevision project services australia": "cus_QUuRkYDAo9Sfu8",
+ "modern environments": "cus_U5zmSOnZSphwqh",
+ "the studio bridge": "cus_UnpuICSEjsQKfa",
+ "flowstate consulting": "cus_UAnpIADPgBpdhV",
+ "wilton contracting": "cus_Q733nGa6IyKmiz",
+ "sclspec pty ltd": "cus_QJ3nILIzXWVYAS",
+ "mcclure civil management": "cus_Q5fBtZyICiSUgF",
+ "srh architecture": "cus_UcdWmy1moT3Kbd",
+ "propel marine pty ltd": "cus_Q9SBRK0LTxw9el",
+ "cr automation limited": "cus_QEzAhNttslDLpe",
+ "guyco construction (2019) ltd": "cus_Q0gMFmGyvU90Ht",
+ "pda ltd": "cus_PzOTb3oj9qiZUT",
+ "guthrie mcgoldrick (gmce)": "cus_QDreRM014bdorQ",
+ "mac network services": "cus_SuQD0gPslI8I2D",
+ "young & young architects": "cus_TzXCN0fT9p8Gv2",
+ "hf home llc": "cus_QEX8gDByrDNTi0",
+ "redibuilt homes": "cus_UnuAais5g0FlS4",
+ "marton lee limited": "cus_QGQBBqKWKGXqUq",
+ "stradegy": "cus_QGYL5XU7sQuEiX",
+ "cartledge mining and geotechnics": "cus_STcJzjfWWtsJsL",
+ "haigh workman": "cus_Q6KKcCD1OUuT2K",
+ "ttx group": "cus_TojhNZvdYajgWh",
+ "aim building & maintenance services": "cus_Q9w5ftE39xiTmW",
+ "measured group": "cus_QJ2rnH5eyuoTj3"
+};
+var RECON = {
+ "amc asia (sg) pte ltd": {
+  "v": "MATCH",
+  "n": "Tiered annual; steady invoice 624.98/yr-equiv matches HS 625.00.",
+  "r": "Yes"
+ },
+ "mont eltham drafting": {
+  "v": "MATCH",
+  "n": "50% EOFY coupon = HS discounted line (188.90 AUD).",
+  "r": "Yes"
+ },
+ "afi | industrial automation nz": {
+  "v": "MATCH",
+  "n": "59.7% coupon = HS discounted line (435.24 NZD).",
+  "r": "Yes"
+ },
+ "tbe environmental pty ltd": {
+  "v": "MATCH",
+  "n": "Qty, currency and amount match exactly. No coupon.",
+  "r": "Yes"
+ },
+ "event base": {
+  "v": "MATCH (fixed 09 Jul)",
+  "n": "FIXED in review session: old USD/30% line item deleted, new line 20 x 45 NZD with 50% disc = 450 NZD, matching Stripe cycle invoices exactly.",
+  "k": "50% for 12 months (AE mistake)",
+  "r": "Yes"
+ },
+ "woolf bond planning": {
+  "v": "MATCH (fixed 09 Jul)",
+  "n": "FIXED in review session: line item converted from USD to GBP (11 x 18.89 = 207.79), matching Stripe exactly.",
+  "k": "Converted to GBP",
+  "r": "Yes"
+ },
+ "keyts facility services": {
+  "v": "MATCH (fixed 09 Jul)",
+  "n": "FIXED in review session: old annual USD line replaced with 25 x 37.78 AUD @24% = 717.82, matching the 'Keyts - Advanced Coupon' in Stripe. First full cycle invoice lands 16 Jul - verify then.",
+  "k": "Referencing pro rated invoice - HS correct",
+  "r": "Yes"
+ },
+ "asc engineers": {
+  "v": "MATCH (fixed 09 Jul)",
+  "n": "FIXED in review session: new AUD annual line @17% disc = 282.20/mo, matching Stripe (3,386.40/yr ex-tax).",
+  "k": "Applied discount in Stripe - HS Correct",
+  "r": "Yes"
+ },
+ "gp structural services": {
+  "v": "MATCH (fixed 09 Jul)",
+  "n": "FIXED in review session: new AUD annual line = 340.00/mo, matching Stripe (4,080/yr ex-tax).",
+  "k": "Updated in HS",
+  "r": "Yes"
+ },
+ "pinnacle high pressure cleaning": {
+  "v": "MATCH (fixed 09 Jul)",
+  "n": "FIXED in review session: two new AUD lines (full 377.80 + 50%-off 188.90 P6M), matching Stripe coupon 'Advanced Upgrade (6 months 50% off)'.",
+  "k": "Updated in HS",
+  "r": "Yes"
+ },
+ "turco and associates": {
+  "v": "CURRENCY",
+  "n": "Tiered Premium, no coupon, steady 291 AUD ex-tax. HS USD. Premium - not eligible.",
+  "k": "Premium - Not Elegible",
+  "r": "No"
+ },
+ "tweak design": {
+  "v": "CURRENCY + COUPON NOT IN HS",
+  "n": "Stripe 50% coupon ('Advanced Plan Promo'); HS shows NO discount. Cycle invoices 188.90 AUD ex-tax confirm.",
+  "k": "Updated in HS",
+  "r": "Yes"
+ },
+ "am network": {
+  "v": "CURRENCY",
+  "n": "Tiered Premium, steady cycle 394 AUD ex-tax. Premium - confirm eligibility.",
+  "k": "Premium - Not Elegible",
+  "r": "No"
+ },
+ "data sagacity pty ltd": {
+  "v": "CURRENCY + COUPON NOT IN HS",
+  "n": "Stripe 50% coupon; HS shows no discount. Cycle 434.47 AUD ex-tax. Note one refunded charge (378.63) on 28 Apr.",
+  "k": "Updated in HS",
+  "r": "Yes"
+ },
+ "justo ltd": {
+  "v": "CURRENCY",
+  "n": "No coupon; cycle 358.91 GBP ex-tax.",
+  "k": "Updated in HS",
+  "r": "Yes"
+ },
+ "achm": {
+  "v": "CURRENCY",
+  "n": "No coupon; cycle 793.38 AUD ex-tax.",
+  "k": "Updated in HS",
+  "r": "Yes"
+ },
+ "range environmental consultants": {
+  "v": "CURRENCY",
+  "n": "No coupon; cycle 402.49 AUD ex-tax vs list 680.04 - item-level discount ~41% present in cycle invoices. HS shows none. VERIFY discount origin.",
+  "k": "Updated in HS",
+  "r": "Yes"
+ },
+ "le mottee group pty ltd": {
+  "v": "CURRENCY",
+  "n": "50% EOFY coupon matches HS 50% line. Currency differs only.",
+  "k": "Updated in HS",
+  "r": "Yes"
+ },
+ "nelligan consulting engineers": {
+  "v": "CURRENCY + COUPON NOT IN HS",
+  "n": "Cycle invoices: 450 - 225 discount = 225 NZD ex-tax steady (50% ITEM-LEVEL discount, invisible at subscription level). HS shows no discount.",
+  "k": "Updated in HS",
+  "r": "Yes"
+ },
+ "technigroup": {
+  "v": "CURRENCY + COUPON NOT IN HS",
+  "n": "Stripe 50%/6mo coupon 'Technigroup - Advanced'; HS shows no discount. Cycle 264.46 AUD ex-tax.",
+  "k": "Updated in HS",
+  "r": "Yes"
+ },
+ "novatia": {
+  "v": "CURRENCY",
+  "n": "No coupon; cycle 207.79 GBP ex-tax.",
+  "k": "Updated in HS",
+  "r": "Yes"
+ },
+ "garnet building design": {
+  "v": "CURRENCY + COUPON NOT IN HS",
+  "n": "Tiered Premium + 50% EOFY coupon (103 AUD). HS shows no discount. Premium - confirm eligibility.",
+  "k": "Premium - Not Elegible",
+  "r": "No"
+ },
+ "onevision project services australia": {
+  "v": "CURRENCY",
+  "n": "No coupon; cycle 377.80 AUD ex-tax.",
+  "k": "Updated in HS",
+  "r": "Yes"
+ },
+ "modern environments": {
+  "v": "CURRENCY",
+  "n": "Tiered Premium; cycle 230 NZD ex-tax. Premium - confirm eligibility.",
+  "k": "Premium - Not Elegible",
+  "r": "No"
+ },
+ "the studio bridge": {
+  "v": "COUPON NOT IN HS",
+  "n": "50% coupon 'Studio Bridge Welcome' active in Stripe (312.50 cycle), not recorded in HS. Qty + currency match.",
+  "k": "Updated in HS",
+  "r": "Yes"
+ },
+ "flowstate consulting": {
+  "v": "CURRENCY + QTY",
+  "n": "HS 5 vs Stripe 10 users. Tiered Premium, cycle 206 NZD ex-tax.",
+  "k": "Premium - Not Elegible",
+  "r": "No"
+ },
+ "wilton contracting": {
+  "v": "CURRENCY + QTY",
+  "n": "Two deals share ONE subscription (100u tiered + 20u Doc Storage), 50% coupon, cycle 249 NZD ex-tax. Wilton 2: https://app.hubspot.com/contacts/24214994/record/0-3/59153725536",
+  "k": "Wilton Comtracting downgraded to Premium. Winton 2 is Advanced. Updated in HS.",
+  "r": "Yes"
+ },
+ "sclspec pty ltd": {
+  "v": "CURRENCY + QTY + DISC MISMATCH",
+  "n": "CORRECTED: discount IS applied - at ITEM level (604.48 - 359.06 = 245.42 AUD ex-tax every cycle, ~59% off). HS records 25%. Qty 13 (HS) vs 16 (Stripe).",
+  "k": "Updated in HS",
+  "r": "Yes"
+ },
+ "mcclure civil management": {
+  "v": "CURRENCY + QTY",
+  "n": "HS 32 vs Stripe 50 users. Tiered, cycle 394 AUD ex-tax. Upsell deal.",
+  "k": "Advanced agreement signed for 24/6 start. Updated HS. DK speaking with customer."
+ },
+ "srh architecture": {
+  "v": "CURRENCY + QTY",
+  "n": "HS 38 vs Stripe 36 users. No coupon; cycle 1,360.08 AUD ex-tax.",
+  "k": "Updated in HS",
+  "r": "Yes"
+ },
+ "propel marine pty ltd": {
+  "v": "CURRENCY + QTY + DISC MISMATCH",
+  "n": "HS 81u @30% vs Stripe 73u @60.86% coupon 'Propel Marine ADV' (cycle 1,079.46 AUD ex-tax). Discount much larger than deal records.",
+  "k": "Pre-contract days. Re-aligned to 73 users (37 Admin, 36 Timesheet). Updated in HS.",
+  "r": "Yes"
+ },
+ "cr automation limited": {
+  "v": "CURRENCY + QTY + COUPON NOT IN HS",
+  "n": "HS 23 vs Stripe 22 users. 16% coupon not in HS. Cycle 831.60 NZD ex-tax. One failed charge 6 Jun (retried OK).",
+  "k": "Reduced to 22 users. Updated HS.",
+  "r": "Yes"
+ },
+ "guyco construction (2019) ltd": {
+  "v": "CURRENCY + QTY",
+  "n": "CORRECTED: discount IS applied at invoice level - June cycle 2,160 - 874.80 = 1,285.20 NZD ex-tax (~40% off, close to HS 36%). Qty 48 (Stripe) vs 56 (HS). Discount amount VARIES between cycles (May cycle had 1,825.20 off) - verify discount setup.",
+  "k": "Reduced to 8 Admin and 40 Timsheet. Updated in HS.",
+  "r": "Yes"
+ },
+ "pda ltd": {
+  "v": "CURRENCY + QTY",
+  "n": "HS 17 vs Stripe 16 users. No coupon; cycle 302.24 GBP ex-tax.",
+  "k": "Reduced to 16 users. Updated HS.",
+  "r": "Yes"
+ },
+ "guthrie mcgoldrick (gmce)": {
+  "v": "CURRENCY + QTY",
+  "n": "HS 10 vs Stripe 12 users. No coupon; cycle 453.36 AUD ex-tax.",
+  "k": "Updated in HS",
+  "r": "Yes"
+ },
+ "mac network services": {
+  "v": "CURRENCY + QTY",
+  "n": "Reference example. 17.5% ITEM-LEVEL discount (453.36 - 79.34 = 374.02 GBP ex-tax per cycle). HS 25 vs Stripe 24 users; USD vs GBP.",
+  "k": "Updated in HS",
+  "r": "Yes"
+ },
+ "ecoz pty ltd": {
+  "v": "QTY (severe gap)",
+  "n": "Same currency + 50% coupon matches HS structure, but Stripe bills 100 users vs 46 in HS. July cycle: 3,778 - 1,889 = 1,889 AUD ex-tax; payment partially refunded (406.43) on 1 Jul - review.",
+  "k": "DK discussing with customer. Updated HS to minimum value 46 users with coupon.",
+  "r": "Yes"
+ },
+ "young & young architects": {
+  "v": "QTY / LINE ITEM",
+  "n": "HS line malformed (qty 1, total as unit price). Stripe: 20 users, cycle 230 USD. Rebuild line item.",
+  "k": "Premium - Not Elegible",
+  "r": "No"
+ },
+ "hf home llc": {
+  "v": "QTY + AMOUNT",
+  "n": "Both record 10% disc. HS 22u ($495) vs Stripe 24u ($540 cycle). Frequent mid-cycle user adds (prorations in Jun).",
+  "k": "Updated to 24 users.",
+  "r": "Yes"
+ },
+ "redibuilt homes": {
+  "v": "QTY (HS > Stripe)",
+  "n": "HS 12 users vs Stripe 5 - commission base inflated. 50% EOFY coupon (94.45 AUD) not in HS either.",
+  "k": "2 combined deals (Redibuilt Homes and RediFrame)",
+  "r": "Yes"
+ },
+ "marton lee limited": {
+  "v": "VERIFY (recent change)",
+  "n": "Cycle invoices were 230 NZD ex-tax; sub now shows 12 users x 45 NZD list (540) with NO coupon after a 19 Jun update. THREE charges on 19 Jun each partially refunded (294.44 x3) - billing needs manual review in Stripe.",
+  "k": "Issues with setup of account. Now resolved. Updated HS.",
+  "r": "Yes"
+ },
+ "stradegy": {
+  "v": "VERIFY (recent change)",
+  "n": "Historic cycles: 310 NZD ex-tax at 20 users (~66% off list - item-level). Sub upgraded 20->25 users on 10 Jun; current items show NO coupon at list 1,125 NZD. Next cycle will reveal the real recurring. Also one failed charge (insufficient funds, 10 May).",
+  "k": "Udated HS",
+  "r": "Yes"
+ },
+ "cartledge mining and geotechnics": {
+  "v": "VERIFY (many changes)",
+  "n": "Sub items now 19u @10% coupon (646.04 AUD). But invoices show constant small prorations (9.76, 29.97, 34.52...) and June cycle 510.03 ex-tax. Subscription has been modified repeatedly - needs manual review. HS 15u USD.",
+  "k": "2 year contract. Update HS.",
+  "r": "Yes"
+ },
+ "haigh workman": {
+  "v": "VERIFY (amount below promo)",
+  "n": "Pricing says 30u x 45 @50% coupon = 675 NZD, matching HS. BUT actual cycle invoices charge only 413 NZD ex-tax (474.95 inc GST) - an ADDITIONAL discount beyond the 50% coupon exists at item/invoice level. Verify what was configured.",
+  "k": "Updated HS",
+  "r": "Yes"
+ },
+ "ttx group": {
+  "v": "BILLING MESS + REFUNDS",
+  "n": "NEW: the 26 May upgrade payment ($11,885.52) AND the 5 Jun manual invoice ($2,692.05) were BOTH FULLY REFUNDED - $14,577.57 of the $21,030.62 refunded volume explained. Net actually kept: $4,969.45 (2 quarterly payments + 1 manual 16u invoice). Sub still shows 62 users. Full manual reconstruction needed with Kaia.",
+  "k": "Updated HS. Stripe requires updating - customer is invoiced quarterly. Also, applied 34.5% discount (24 months) to account for sign-up and timesheet users.",
+  "r": "Yes"
+ },
+ "aim building & maintenance services": {
+  "v": "PLAN + QTY + CURRENCY",
+  "n": "Stripe: 219 users on STANDARD Plan UK (tiered), 1,015 GBP ex-tax cycle, no coupon. HS says Advanced. Product mismatch - INVESTIGATE.",
+  "k": "Updated HS. Applied 33.5% discount to all 160 users. 2 year contract. To be billed monthly. Stripe requires updating.",
+  "r": "Yes"
+ },
+ "measured group": {
+  "v": "NO LINE ITEM (severe)",
+  "n": "No line item in HubSpot. Stripe: 56 users, 51% coupon 'Measured Advanced', cycle 1,036.68 AUD ex-tax. Create line item before commission calc.",
+  "k": "Updated HS. SZ to speak with customer and add 6 users.",
+  "r": "TBC"
+ },
+ "weld australia": {
+  "v": "NO STRIPE RECORD",
+  "n": "Deal closed 30 Jun, Contract Signed. No customer/subscription in any Stripe account. Confirm onboarding with Mac.",
+  "k": "Awaiting account setup. Packaged with Weld Australia Cerification. Updated HS.",
+  "r": "Yes"
+ },
+ "consult sustainability": {
+  "v": "NO STRIPE RECORD",
+  "n": "No Stripe record by HS domain (consultsustain.co.uk), billing domain (consultconstruct.co.uk), name or contact. Contract Signed. Confirm onboarding.",
+  "k": "Awaiting account setip. Updated HS.",
+  "r": "Yes"
+ }
+};
+
+// Resolve a deal's Stripe customer: explicit id from RAW first, then the
+// workbook name map (covers deals discovered live from HubSpot).
+function resolveStripeCus(d){
+  if(d.stripe_cus_id) return d.stripe_cus_id;
+  var k = (d.name||'').toLowerCase().trim();
+  if(STRIPE_CUS_MAP[k]) return STRIPE_CUS_MAP[k];
+  // tolerant match: workbook key contained in deal name or vice-versa
+  for(var key in STRIPE_CUS_MAP){
+    if(k.indexOf(key)===0 || key.indexOf(k)===0) return STRIPE_CUS_MAP[key];
+  }
+  return null;
+}
+function reconFor(d){
+  var k=(d.name||'').toLowerCase().trim();
+  if(RECON[k]) return RECON[k];
+  for(var key in RECON){ if(k.indexOf(key)===0 || key.indexOf(k)===0) return RECON[key]; }
+  return null;
+}
+function stripeLiveFor(d){
+  var cus = resolveStripeCus(d);
+  return cus && STRIPE_LIVE[cus] ? STRIPE_LIVE[cus] : null;
+}
+
+// Pull live subscription pricing (qty x unit + coupon, ex-tax) from the n8n
+// Stripe proxy for every deal we can map to a Stripe customer. Chunked +
+// parallel so ~45 customers stays well under webhook timeout.
+function syncStripe(){
+  var status = document.getElementById('sync-status');
+  var ids = {};
+  DEALS.concat(RENEWAL).forEach(function(d){
+    var cus = resolveStripeCus(d);
+    if(cus){ ids[cus]=true; d.stripe_cus_id = cus; }
+  });
+  var all = Object.keys(ids);
+  if(!all.length) return Promise.resolve({matched:0, total:0});
+
+  var CHUNK = 15, chunks = [];
+  for(var i=0;i<all.length;i+=CHUNK) chunks.push(all.slice(i,i+CHUNK));
+
+  if(status){ status.textContent = 'HubSpot ✓ · Syncing Stripe ('+all.length+' customers)...'; }
+
+  return Promise.all(chunks.map(function(c){
+    return fetch(STRIPE_PROXY+'?customers='+c.join(','))
+      .then(function(r){ if(!r.ok) throw new Error('Stripe proxy HTTP '+r.status); return r.json(); })
+      .then(function(data){ return (data && data.subscriptions) || {}; });
+  }))
+  .then(function(results){
+    results.forEach(function(subs){
+      Object.keys(subs).forEach(function(k){ STRIPE_LIVE[k] = subs[k]; });
+    });
+    STRIPE_SYNCED_AT = new Date();
+    return {matched: Object.keys(STRIPE_LIVE).length, total: all.length};
+  });
+}
 
 function buildDeal(src){
   // src is a proxy row; merge with any manual enrichment we already hold in RAW.
@@ -1746,11 +2188,25 @@ function syncFromHubSpot(){
     var newCount = DEALS.filter(function(d){return d.isNew;}).length;
     SYNCED_ONCE = true;
     LAST_SYNCED = new Date();
-    if(status){
-      status.textContent = 'Synced '+LAST_SYNCED.toLocaleTimeString('en-AU',{hour:'2-digit',minute:'2-digit'})+' · '+DEALS.length+' active'+(newCount?' ('+newCount+' new)':'')+' · '+LOST.length+' lost';
-      status.style.color = '#63DB94';
-    }
     renderDashboard(); renderDeals(); renderAE(); renderComparison(); renderUpsells(); renderLost();
+
+    // Stage 2 — Stripe. A Stripe failure never wipes the HubSpot result;
+    // we report exactly which half worked.
+    return syncStripe()
+      .then(function(res){
+        if(status){
+          status.textContent = 'Synced '+LAST_SYNCED.toLocaleTimeString('en-AU',{hour:'2-digit',minute:'2-digit'})+' · '+DEALS.length+' active'+(newCount?' ('+newCount+' new)':'')+' · Stripe '+res.matched+'/'+res.total;
+          status.style.color = '#63DB94';
+        }
+        renderComparison(); renderStripe();
+      })
+      .catch(function(e){
+        if(status){
+          status.textContent = 'HubSpot ✓ ('+DEALS.length+' active) · Stripe failed: '+(e && e.message ? e.message : 'network error');
+          status.style.color = '#f59e0b';
+        }
+        console.error('Stripe sync failed:', e);
+      });
   })
   .catch(function(e){
     // Honest failure — no fake "Updated". Tell the user what actually happened.
