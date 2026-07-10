@@ -66,7 +66,7 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-h
 .nav-item:hover{color:#fff;background:rgba(99,219,148,0.08);}
 .nav-item.active{color:var(--sidebar-text-active);background:rgba(99,219,148,0.12);border-left-color:var(--green-bright);}
 .nav-icon{font-size:13px;width:18px;text-align:center;}
-.sidebar-footer{padding:14px 16px;border-top:1px solid var(--sidebar-border);}
+.sidebar-footer{padding:16px 16px 28px;border-top:1px solid var(--sidebar-border);margin-top:14px;}
 .sync-badge{display:flex;align-items:center;gap:6px;font-size:10px;color:var(--green-bright);font-weight:600;}
 .sync-dot{width:6px;height:6px;border-radius:50%;background:var(--green-bright);box-shadow:0 0 6px var(--green-bright);animation:pulse 2s infinite;}
 @keyframes pulse{0%,100%{opacity:1}50%{opacity:.3}}
@@ -211,17 +211,17 @@ input[type=date]{background:#fff;border:1px solid var(--border);border-radius:6p
     <div class="nav-item" onclick="showPage('comparison',this)"><span class="nav-icon">⇌</span>HS vs Stripe</div>
     <div class="nav-section">Upsells</div>
     <div class="nav-item" onclick="showPage('upsells',this)"><span class="nav-icon">↑</span>Upsell Deals <span class="pending-tag">New</span></div>
-    <div class="nav-item" onclick="showPage('cs-structure',this)"><span class="nav-icon">◎</span>CS Structure</div>
-    <div class="nav-section">Subscriptions</div>
-    <div class="nav-item" onclick="showPage('subhealth',this)"><span class="nav-icon">⬡</span>Subscription Health <span class="pending-tag" style="background:rgba(185,28,28,0.15);color:#fca5a5">14</span></div>
-    <div class="nav-item" onclick="showPage('stripe-recon',this)"><span class="nav-icon">⇌</span>Stripe Reconciliation <span style="background:rgba(99,219,148,0.15);color:#63DB94;font-size:10px;font-weight:700;padding:1px 7px;border-radius:10px">16/16</span></div>
-    <div class="nav-section">Config</div>
-    <div class="nav-item" onclick="showPage('cleanup',this)"><span class="nav-icon">⚠</span>Data Cleanup <span class="pending-tag">6</span></div>
-    <div class="nav-item" onclick="showPage('eligibility',this)"><span class="nav-icon">⊞</span>Eligibility Rules</div>
-    <div class="nav-item" onclick="showPage('classification',this)"><span class="nav-icon">⊜</span>Source vs Type</div>
-    <div class="nav-item" onclick="showPage('pending',this)"><span class="nav-icon">⧖</span>Decisions <span class="pending-tag">2</span></div>
   </div>
   <div class="sidebar-footer">
+    <div id="lock-indicator" onclick="toggleLockPanel()" style="display:flex;align-items:center;gap:6px;font-size:11px;font-weight:700;color:var(--sidebar-text);cursor:pointer;margin-bottom:10px;user-select:none">🔒 View only</div>
+    <div id="lock-panel" style="display:none;margin-bottom:10px">
+      <input id="pin-input" type="password" inputmode="numeric" placeholder="Editor PIN" style="width:100%;box-sizing:border-box;background:rgba(255,255,255,0.05);border:1px solid var(--sidebar-border);border-radius:6px;padding:7px 10px;color:#fff;font-size:11px;font-family:'DM Mono',monospace;outline:none" onkeydown="if(event.key==='Enter')submitPin()" />
+      <div style="display:flex;gap:6px;margin-top:6px">
+        <button onclick="submitPin()" style="flex:1;padding:6px 0;background:rgba(99,219,148,0.12);border:1px solid rgba(99,219,148,0.25);border-radius:6px;color:#63DB94;font-size:10px;font-weight:700;cursor:pointer;font-family:'Inter',sans-serif">Unlock</button>
+        <button onclick="lockSession()" style="flex:1;padding:6px 0;background:rgba(255,255,255,0.04);border:1px solid var(--sidebar-border);border-radius:6px;color:var(--sidebar-text);font-size:10px;font-weight:700;cursor:pointer;font-family:'Inter',sans-serif">Lock session</button>
+      </div>
+      <div id="pin-msg" style="font-size:10px;color:#f87171;margin-top:5px;min-height:12px;font-family:'DM Mono',monospace"></div>
+    </div>
     <div class="sync-badge" style="margin-bottom:10px"><div class="sync-dot"></div>Live · HubSpot + Stripe</div>
     <button onclick="syncFromHubSpot()" id="sync-btn" style="width:100%;display:flex;align-items:center;justify-content:center;gap:6px;padding:8px 0;background:rgba(99,219,148,0.12);border:1px solid rgba(99,219,148,0.25);border-radius:8px;color:#63DB94;font-size:11px;font-weight:700;cursor:pointer;font-family:'Inter',sans-serif;transition:all .15s" onmouseover="this.style.background='rgba(99,219,148,0.2)'" onmouseout="this.style.background='rgba(99,219,148,0.12)'">
       <span id="sync-icon" style="font-size:14px">⟳</span> Refresh data
@@ -359,120 +359,10 @@ input[type=date]{background:#fff;border:1px solid var(--border);border-radius:6p
 </div>
 
 <!-- ELIGIBILITY -->
-<div class="page" id="page-eligibility">
-  <div class="page-header">
-    <div class="page-eyebrow">Commission Hub</div>
-    <div class="page-title">Eligibility Rules</div>
-    <div class="page-sub">Rules as confirmed by Ryan · 01 Apr 2026</div>
-  </div>
-  <div class="page-body">
-    <div class="alert-strip success" style="margin-bottom:24px">
-      <div style="font-size:16px">✅</div>
-      <div class="alert-body"><strong>Rules confirmed by Ryan — 01 Apr 2026.</strong> ACV minimum removed. Packages: Advanced + Premium + Pro. Commission base = post-discount ARR. External channel (Organic, Inbound, Referral) always defines the type — AE Involvement only applies when no external source is set. Referral = Inbound 5%. Commissions paid quarterly.</div>
-    </div>
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px">
-      <div>
-        <div class="section-title">Eligibility Criteria</div>
-        <div style="background:var(--surface);border:1px solid var(--border);border-left:3px solid var(--green);border-radius:10px;padding:16px 18px;margin-bottom:10px;font-size:13px;color:var(--text-muted)"><strong style="color:var(--text)">Package:</strong> Advanced Subscription · Premium Subscription · Pro (when launched). Standard excluded.</div>
-        <div style="background:var(--surface);border:1px solid var(--border);border-left:3px solid var(--green);border-radius:10px;padding:16px 18px;margin-bottom:10px;font-size:13px;color:var(--text-muted)"><strong style="color:var(--text)">Billing:</strong> Annual-upfront contracts only. Monthly MRR upsell rule pending LT decision.</div>
-        <div style="background:var(--surface);border:1px solid var(--border);border-left:3px solid var(--green);border-radius:10px;padding:16px 18px;margin-bottom:10px;font-size:13px;color:var(--text-muted)"><strong style="color:var(--text)">ACV minimum:</strong> None. Commission applies to any deal value.</div>
-        <div style="background:var(--surface);border:1px solid var(--border);border-left:3px solid var(--green);border-radius:10px;padding:16px 18px;font-size:13px;color:var(--text-muted)"><strong style="color:var(--text)">Commission base:</strong> Post-discount ARR. AEs wear the discount — commission on net contracted ARR, not list price.</div>
-      </div>
-      <div>
-        <div class="section-title">Commission Rates</div>
-        <div style="background:var(--surface);border:1px solid var(--border);border-left:3px solid var(--accent);border-radius:10px;padding:16px 18px;margin-bottom:10px"><span style="font-family:'DM Mono',monospace;font-size:15px;color:var(--green)">10%</span><span style="font-size:12px;color:var(--text-muted);margin-left:8px">Outbound — AE hunted the deal with no external acquisition channel. Source = "Outbound: X", or source empty + AE created the record.</span></div>
-        <div style="background:var(--surface);border:1px solid var(--border);border-left:3px solid var(--blue);border-radius:10px;padding:16px 18px;margin-bottom:10px"><span style="font-family:'DM Mono',monospace;font-size:15px;color:var(--blue)">5%</span><span style="font-size:12px;color:var(--text-muted);margin-left:8px">Inbound — lead came through an external channel (Inbound: Paid, Organic, Referral). The channel always defines the type.</span></div>
-        <div style="background:var(--surface);border:1px solid var(--border);border-left:3px solid var(--amber);border-radius:10px;padding:16px 18px;margin-bottom:10px"><span style="font-family:'DM Mono',monospace;font-size:15px;color:var(--amber)">7.5%</span><span style="font-size:12px;color:var(--text-muted);margin-left:8px">Upsell — incremental ARR delta only, not total contract value</span></div>
-        <div class="section-title" style="margin-top:20px">Attribution Logic</div>
-        <div style="background:var(--surface);border:1px solid var(--border);border-left:3px solid var(--purple);border-radius:10px;padding:16px 18px;font-size:12.5px;color:var(--text-muted)">
-          <strong style="color:var(--text)">External channel always defines the type.</strong> If Source = Organic, Inbound or Referral, the deal is Inbound 5% regardless of AE Involvement. <strong style="color:var(--text)">AE Involvement</strong> (<code style="background:rgba(0,0,0,0.06);padding:1px 4px;border-radius:3px">ae_involvement</code>) only applies when no external source is set:
-          <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:10px">
-            <div style="padding:8px 10px;background:var(--green-bg);border:1px solid var(--green-border);border-radius:6px;font-size:11px">
-              <div style="font-weight:700;color:var(--green);margin-bottom:2px">→ Outbound 10%</div>
-              <div style="color:var(--green)">Heavy Involvement · Sourced · Self-Sourced · (empty)</div>
-              <div style="color:var(--green);margin-top:2px;font-style:italic">AE hunted the deal with no external channel</div>
-            </div>
-            <div style="padding:8px 10px;background:var(--blue-bg);border:1px solid var(--blue-border);border-radius:6px;font-size:11px">
-              <div style="font-weight:700;color:var(--blue);margin-bottom:2px">→ Inbound 5%</div>
-              <div style="color:var(--blue)">Non Sourced · Business-Generated</div>
-              <div style="color:var(--blue);margin-top:2px;font-style:italic">Someone else brought the lead</div>
-            </div>
-          </div>
-          <div style="margin-top:10px;font-size:11px;color:var(--text-dim)">Ryan reviews line by line each quarter.</div>
-        </div>
-      </div>
-    </div>
-    <div style="margin-top:20px">
-      <div class="section-title">Multi-year Deal Rules</div>
-      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:14px">
-        <div style="background:var(--surface);border:1px solid var(--border);border-left:3px solid var(--teal);border-radius:10px;padding:16px 18px"><div style="font-family:'DM Mono',monospace;font-size:10px;text-transform:uppercase;letter-spacing:.08em;color:var(--text-dim);margin-bottom:6px">Year 1 — At Close</div><div style="font-size:12.5px;color:var(--text-muted)">AE earns commission on ACV (Year 1 ARR) at the point of closing the deal.</div></div>
-        <div style="background:var(--surface);border:1px solid var(--border);border-left:3px solid var(--teal);border-radius:10px;padding:16px 18px"><div style="font-family:'DM Mono',monospace;font-size:10px;text-transform:uppercase;letter-spacing:.08em;color:var(--text-dim);margin-bottom:6px">Year 2+ — Upon Renewal</div><div style="font-size:12.5px;color:var(--text-muted)">AE earns again on each renewal (Year 2, Year 3, etc.) at the same rate. Renewal commission is banked and visible in advance.</div></div>
-        <div style="background:var(--surface);border:1px solid var(--border);border-left:3px solid var(--teal);border-radius:10px;padding:16px 18px"><div style="font-family:'DM Mono',monospace;font-size:10px;text-transform:uppercase;letter-spacing:.08em;color:var(--text-dim);margin-bottom:6px">Banked View</div><div style="font-size:12.5px;color:var(--text-muted)">AEs can see commission already provisionally earned for future years. Motivational — "I have $X already banked for next year."</div></div>
-      </div>
-    </div>
-  </div>
-</div>
+
 
 <!-- PENDING DECISIONS -->
-<div class="page" id="page-pending">
-  <div class="page-header">
-    <div class="page-eyebrow">Commission Hub</div>
-    <div class="page-title">Decisions</div>
-    <div class="page-sub">2 open items pending LT · 6 resolved</div>
-  </div>
-  <div class="page-body">
 
-    <div class="section-title">Open — Pending LT</div>
-
-    <div style="background:var(--surface);border:1px solid var(--border);border-left:3px solid var(--amber);border-radius:10px;padding:20px;margin-bottom:12px">
-      <div style="font-family:'Inter',sans-serif;font-weight:700;font-size:14px;margin-bottom:6px">1 · Monthly MRR upsell commission rule <span class="pending-tag">⧖ LT decision</span></div>
-      <div style="font-size:12.5px;color:var(--text-muted)">When an upsell is on a monthly recurring contract (not annual upfront), how is commission calculated? Options: (a) projected ARR × rate (MRR × 12), or (b) actual MRR × rate paid monthly/quarterly. Ryan: "that needs to be a business rule — not deciding today." Needs LT alignment.</div>
-    </div>
-
-    <div style="background:var(--surface);border:1px solid var(--border);border-left:3px solid var(--amber);border-radius:10px;padding:20px;margin-bottom:12px">
-      <div style="font-family:'Inter',sans-serif;font-weight:700;font-size:14px;margin-bottom:6px">2 · Multi-year deal tracking in HubSpot <span class="pending-tag">⧖ LT decision</span></div>
-      <div style="font-size:12.5px;color:var(--text-muted)">How to structurally track Year 2/3 commission entitlements in HubSpot — separate renewal deals, a custom property, or a banked commission object. Needs to be correct before paying out renewal commissions.</div>
-    </div>
-
-    <div style="background:var(--surface);border:1px solid var(--border);border-left:3px solid var(--amber);border-radius:10px;padding:20px;margin-bottom:28px">
-      <div style="font-family:'Inter',sans-serif;font-weight:700;font-size:14px;margin-bottom:6px">2 · Multi-year deal tracking in HubSpot <span class="pending-tag">⧖ LT decision</span></div>
-      <div style="font-size:12.5px;color:var(--text-muted)">How to structurally track Year 2/3 commission entitlements in HubSpot — separate renewal deals, a custom property, or a banked commission object. Needs to be correct before paying out renewal commissions.</div>
-    </div>
-
-    <div class="section-title">Resolved</div>
-
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
-      <div style="background:var(--surface);border:1px solid var(--border);border-left:3px solid var(--green);border-radius:10px;padding:16px 18px;opacity:.7">
-        <div style="font-family:'Inter',sans-serif;font-weight:700;font-size:13px;margin-bottom:4px">AE Involvement wins over Source <span class="done-tag">✓ confirmed</span></div>
-        <div style="font-size:12px;color:var(--text-muted)">Heavy Involvement or Sourced on an organic/inbound deal = Outbound 10%. AE picked it up early and drove it to close. Referral always stays at 5%. Ryan reviews quarterly.</div>
-      </div>
-      <div style="background:var(--surface);border:1px solid var(--border);border-left:3px solid var(--green);border-radius:10px;padding:16px 18px;opacity:.7">
-        <div style="font-family:'Inter',sans-serif;font-weight:700;font-size:13px;margin-bottom:4px">ACV minimum <span class="done-tag">✓ resolved</span></div>
-        <div style="font-size:12px;color:var(--text-muted)">Removed. Any deal value is now eligible.</div>
-      </div>
-      <div style="background:var(--surface);border:1px solid var(--border);border-left:3px solid var(--green);border-radius:10px;padding:16px 18px;opacity:.7">
-        <div style="font-family:'Inter',sans-serif;font-weight:700;font-size:13px;margin-bottom:4px">Package eligibility <span class="done-tag">✓ resolved</span></div>
-        <div style="font-size:12px;color:var(--text-muted)">Advanced + Premium + Pro (when launched). Standard excluded.</div>
-      </div>
-      <div style="background:var(--surface);border:1px solid var(--border);border-left:3px solid var(--green);border-radius:10px;padding:16px 18px;opacity:.7">
-        <div style="font-family:'Inter',sans-serif;font-weight:700;font-size:13px;margin-bottom:4px">Commission base <span class="done-tag">✓ resolved</span></div>
-        <div style="font-size:12px;color:var(--text-muted)">Post-discount ARR. AEs wear the discount.</div>
-      </div>
-      <div style="background:var(--surface);border:1px solid var(--border);border-left:3px solid var(--green);border-radius:10px;padding:16px 18px;opacity:.7">
-        <div style="font-family:'Inter',sans-serif;font-weight:700;font-size:13px;margin-bottom:4px">Source vs Commission Attribution <span class="done-tag">✓ resolved</span></div>
-        <div style="font-size:12px;color:var(--text-muted)">External channel always wins. Commission Attribution only matters when source is empty.</div>
-      </div>
-      <div style="background:var(--surface);border:1px solid var(--border);border-left:3px solid var(--green);border-radius:10px;padding:16px 18px;opacity:.7">
-        <div style="font-family:'Inter',sans-serif;font-weight:700;font-size:13px;margin-bottom:4px">Referral rate <span class="done-tag">✓ resolved</span></div>
-        <div style="font-size:12px;color:var(--text-muted)">Referral = Inbound 5% always. "Someone gave it to us" — already on hook for commercial payout. Not a true outbound hunt.</div>
-      </div>
-      <div style="background:var(--surface);border:1px solid var(--border);border-left:3px solid var(--green);border-radius:10px;padding:16px 18px;opacity:.7">
-        <div style="font-family:'Inter',sans-serif;font-weight:700;font-size:13px;margin-bottom:4px">Stripe payment validation <span class="done-tag">✓ built</span></div>
-        <div style="font-size:12px;color:var(--text-muted)">Infrastructure live. Workflow ON. stripe_payment_confirmed auto-set. Policy (hard gate?) TBD.</div>
-      </div>
-    </div>
-  </div>
-</div>
 <!-- UPSELLS PAGE -->
 <div class="page" id="page-upsells">
   <div class="page-header">
@@ -561,572 +451,17 @@ input[type=date]{background:#fff;border:1px solid var(--border);border-radius:6p
 </div>
 
 <!-- CS STRUCTURE PAGE -->
-<div class="page" id="page-cs-structure">
-  <div class="page-header">
-    <div class="page-eyebrow">Customer Success</div>
-    <div class="page-title">CS Structure</div>
-    <div class="page-sub">Recommended HubSpot setup for the Customer Success upsell motion — does not exist today</div>
-  </div>
-  <div class="page-body">
 
-    <div class="alert-strip danger" style="margin-bottom:24px">
-      <div style="font-size:16px">🔴</div>
-      <div class="alert-body"><strong>No CS structure exists in HubSpot today.</strong> There is no dedicated CS pipeline, no CS owner roles, and no structured way to track upsells driven by the CS team. All upsells to date were handled ad hoc by AEs and tagged manually. The recommendations below are the minimum required to run a structured CS upsell motion.</div>
-    </div>
-
-    <div class="section-title">What needs to be built</div>
-
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:24px">
-
-      <div style="background:var(--surface);border:1px solid var(--border);border-radius:10px;overflow:hidden">
-        <div style="background:var(--surface2);padding:12px 16px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:8px">
-          <div style="width:28px;height:28px;border-radius:6px;background:#d4f7e5;display:flex;align-items:center;justify-content:center;font-size:14px">1</div>
-          <div style="font-weight:700;font-size:13px">CS Pipeline in HubSpot</div>
-        </div>
-        <div style="padding:16px">
-          <div style="font-size:12px;color:var(--text-muted);line-height:1.7;margin-bottom:12px">A dedicated pipeline separates CS-driven expansion from new sales, keeps the commission model clean, and gives CS visibility over their own book.</div>
-          <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--text-dim);margin-bottom:6px">Suggested stages</div>
-          <div style="display:flex;flex-direction:column;gap:4px">
-            <div style="display:flex;align-items:center;gap:8px;font-size:12px"><div style="width:8px;height:8px;border-radius:50%;background:#63DB94;flex-shrink:0"></div>Expansion Identified</div>
-            <div style="display:flex;align-items:center;gap:8px;font-size:12px"><div style="width:8px;height:8px;border-radius:50%;background:#60a5fa;flex-shrink:0"></div>Proposal Sent</div>
-            <div style="display:flex;align-items:center;gap:8px;font-size:12px"><div style="width:8px;height:8px;border-radius:50%;background:#f59e0b;flex-shrink:0"></div>Verbal Commit</div>
-            <div style="display:flex;align-items:center;gap:8px;font-size:12px"><div style="width:8px;height:8px;border-radius:50%;background:#0D8D5C;flex-shrink:0"></div>Closed Won (Upsell)</div>
-            <div style="display:flex;align-items:center;gap:8px;font-size:12px"><div style="width:8px;height:8px;border-radius:50%;background:#dc2626;flex-shrink:0"></div>Closed Lost</div>
-          </div>
-        </div>
-      </div>
-
-      <div style="background:var(--surface);border:1px solid var(--border);border-radius:10px;overflow:hidden">
-        <div style="background:var(--surface2);padding:12px 16px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:8px">
-          <div style="width:28px;height:28px;border-radius:6px;background:#d4f7e5;display:flex;align-items:center;justify-content:center;font-size:14px">2</div>
-          <div style="font-weight:700;font-size:13px">CS Owner Roles</div>
-        </div>
-        <div style="padding:16px">
-          <div style="font-size:12px;color:var(--text-muted);line-height:1.7;margin-bottom:12px">No CS owners exist today. CS team members need to be added as HubSpot users and assigned to deals in the CS pipeline. This is required for commission tracking.</div>
-          <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--text-dim);margin-bottom:8px">Active owners today (AEs only)</div>
-          <div style="display:flex;flex-direction:column;gap:4px;font-size:12px;color:var(--text-muted)">
-            <div>Mark Dempsey · Denzel Kereama · Sina Zarei</div>
-            <div>Edgar Calvo · Aline Baleeiro</div>
-          </div>
-          <div style="margin-top:10px;padding:8px 10px;background:var(--amber-bg);border:1px solid var(--amber-border);border-radius:6px;font-size:11px;color:var(--amber);font-weight:600">
-            CS team members need to be added and given a deal owner role before upsell commission can be tracked
-          </div>
-        </div>
-      </div>
-
-      <div style="background:var(--surface);border:1px solid var(--border);border-radius:10px;overflow:hidden">
-        <div style="background:var(--surface2);padding:12px 16px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:8px">
-          <div style="width:28px;height:28px;border-radius:6px;background:#d4f7e5;display:flex;align-items:center;justify-content:center;font-size:14px">3</div>
-          <div style="font-weight:700;font-size:13px">Required Deal Properties</div>
-        </div>
-        <div style="padding:16px">
-          <div style="font-size:12px;color:var(--text-muted);line-height:1.7;margin-bottom:12px">These fields must be mandatory on every upsell deal created in the CS pipeline.</div>
-          <div style="display:flex;flex-direction:column;gap:6px">
-            <div style="display:flex;justify-content:space-between;align-items:center;font-size:12px;padding:6px 0;border-bottom:1px solid var(--border)">
-              <span style="font-weight:600">dealtype</span><span style="background:var(--green-bg);color:var(--green);padding:1px 7px;border-radius:4px;font-size:10px;font-weight:700">Existing Business</span>
-            </div>
-            <div style="display:flex;justify-content:space-between;align-items:center;font-size:12px;padding:6px 0;border-bottom:1px solid var(--border)">
-              <span style="font-weight:600">product_package (previous)</span><span style="color:var(--text-dim);font-size:11px">Standard / Premium / Advanced</span>
-            </div>
-            <div style="display:flex;justify-content:space-between;align-items:center;font-size:12px;padding:6px 0;border-bottom:1px solid var(--border)">
-              <span style="font-weight:600">product_package (new)</span><span style="color:var(--text-dim);font-size:11px">Premium / Advanced</span>
-            </div>
-            <div style="display:flex;justify-content:space-between;align-items:center;font-size:12px;padding:6px 0;border-bottom:1px solid var(--border)">
-              <span style="font-weight:600">hs_arr (delta only)</span><span style="color:var(--text-dim);font-size:11px">Incremental ARR increase</span>
-            </div>
-            <div style="display:flex;justify-content:space-between;align-items:center;font-size:12px;padding:6px 0">
-              <span style="font-weight:600">source</span><span style="background:var(--amber-bg);color:var(--amber);padding:1px 7px;border-radius:4px;font-size:10px;font-weight:700">Upsell Campaign</span>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <div style="background:var(--surface);border:1px solid var(--border);border-radius:10px;overflow:hidden">
-        <div style="background:var(--surface2);padding:12px 16px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:8px">
-          <div style="width:28px;height:28px;border-radius:6px;background:#d4f7e5;display:flex;align-items:center;justify-content:center;font-size:14px">4</div>
-          <div style="font-weight:700;font-size:13px">Package Upgrade Logic</div>
-        </div>
-        <div style="padding:16px">
-          <div style="font-size:12px;color:var(--text-muted);line-height:1.7;margin-bottom:14px">Upsell is triggered by a package upgrade. Commission applies to the ARR delta — the difference between old and new package value.</div>
-          <div style="display:flex;flex-direction:column;gap:8px">
-            <div style="display:flex;align-items:center;gap:8px;font-size:12px">
-              <span style="background:#fee2e2;color:#991b1b;padding:2px 8px;border-radius:4px;font-weight:700;font-size:11px">Standard</span>
-              <span style="color:var(--text-dim)">→</span>
-              <span style="background:#FBF5D8;color:#7a5800;padding:2px 8px;border-radius:4px;font-weight:700;font-size:11px">Premium</span>
-              <span style="color:var(--text-dim);font-size:11px">7.5% of delta ARR</span>
-            </div>
-            <div style="display:flex;align-items:center;gap:8px;font-size:12px">
-              <span style="background:#fee2e2;color:#991b1b;padding:2px 8px;border-radius:4px;font-weight:700;font-size:11px">Standard</span>
-              <span style="color:var(--text-dim)">→</span>
-              <span style="background:#d4f7e5;color:#0D8D5C;padding:2px 8px;border-radius:4px;font-weight:700;font-size:11px">Advanced</span>
-              <span style="color:var(--text-dim);font-size:11px">7.5% of delta ARR</span>
-            </div>
-            <div style="display:flex;align-items:center;gap:8px;font-size:12px">
-              <span style="background:#FBF5D8;color:#7a5800;padding:2px 8px;border-radius:4px;font-weight:700;font-size:11px">Premium</span>
-              <span style="color:var(--text-dim)">→</span>
-              <span style="background:#d4f7e5;color:#0D8D5C;padding:2px 8px;border-radius:4px;font-weight:700;font-size:11px">Advanced</span>
-              <span style="color:var(--text-dim);font-size:11px">7.5% of delta ARR</span>
-            </div>
-            <div style="margin-top:6px;padding:8px 10px;background:var(--blue-bg);border:1px solid var(--blue-border);border-radius:6px;font-size:11px;color:var(--blue)">
-              ⚠ MRR upsell rule still pending LT decision — quarterly accrual vs projected ARR × 12
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <div class="section-title">Recommended action plan</div>
-    <div style="display:flex;flex-direction:column;gap:8px">
-      <div style="display:flex;gap:14px;padding:12px 16px;background:var(--surface);border:1px solid var(--border);border-radius:8px;align-items:flex-start">
-        <div style="width:24px;height:24px;border-radius:50%;background:#0A2F28;color:#63DB94;font-size:11px;font-weight:800;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:1px">1</div>
-        <div><div style="font-weight:700;font-size:13px;margin-bottom:3px">Add CS team members as HubSpot owners</div><div style="font-size:12px;color:var(--text-muted)">Settings → Users & Teams → Invite users. Assign deal owner role. This is blocked until CS hires are confirmed.</div></div>
-      </div>
-      <div style="display:flex;gap:14px;padding:12px 16px;background:var(--surface);border:1px solid var(--border);border-radius:8px;align-items:flex-start">
-        <div style="width:24px;height:24px;border-radius:50%;background:#0A2F28;color:#63DB94;font-size:11px;font-weight:800;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:1px">2</div>
-        <div><div style="font-weight:700;font-size:13px;margin-bottom:3px">Create a dedicated CS/Upsell pipeline</div><div style="font-size:12px;color:var(--text-muted)">Settings → Deals → Pipelines → Create pipeline. Use the stages listed above. Set dealtype = Existing Business as a required field on entry.</div></div>
-      </div>
-      <div style="display:flex;gap:14px;padding:12px 16px;background:var(--surface);border:1px solid var(--border);border-radius:8px;align-items:flex-start">
-        <div style="width:24px;height:24px;border-radius:50%;background:#0A2F28;color:#63DB94;font-size:11px;font-weight:800;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:1px">3</div>
-        <div><div style="font-weight:700;font-size:13px;margin-bottom:3px">Add "Previous Package" custom property to deals</div><div style="font-size:12px;color:var(--text-muted)">Settings → Properties → Deals → Create property. Enumeration type with same options as product_package. Required field on CS pipeline. This lets the model calculate delta ARR automatically.</div></div>
-      </div>
-      <div style="display:flex;gap:14px;padding:12px 16px;background:var(--surface);border:1px solid var(--border);border-radius:8px;align-items:flex-start">
-        <div style="width:24px;height:24px;border-radius:50%;background:#0A2F28;color:#63DB94;font-size:11px;font-weight:800;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:1px">4</div>
-        <div><div style="font-weight:700;font-size:13px;margin-bottom:3px">Backfill existing upsell deals with dealtype = Existing Business</div><div style="font-size:12px;color:var(--text-muted)">The 4 active upsell deals (Wilton Contracting, SCLspec, Event Base, Propel Marine) already partially tagged. Confirm and complete all fields so they appear correctly in the commission model.</div></div>
-      </div>
-      <div style="display:flex;gap:14px;padding:12px 16px;background:var(--surface);border:1px solid var(--border);border-radius:8px;align-items:flex-start">
-        <div style="width:24px;height:24px;border-radius:50%;background:#0A2F28;color:#63DB94;font-size:11px;font-weight:800;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:1px">5</div>
-        <div><div style="font-weight:700;font-size:13px;margin-bottom:3px">Get LT decision on MRR upsell commission rule</div><div style="font-size:12px;color:var(--text-muted)">Before the CS pipeline goes live, the MRR calculation method must be decided: projected ARR (MRR × 12) or quarterly accrual. This blocks commission calculation for monthly upsells.</div></div>
-      </div>
-    </div>
-  </div>
-</div>
 <!-- DATA CLEANUP PAGE -->
 <!-- STRIPE RECONCILIATION -->
-<div class="page" id="page-stripe-recon">
-  <div class="page-header">
-    <div class="page-eyebrow">HubSpot · Stripe · Cross-reference</div>
-    <div class="page-title">Stripe Reconciliation</div>
-    <div class="page-sub">AUS team deals — HubSpot ARR vs Stripe source of truth · <span style="background:#d4f7e5;color:#0A2F28;padding:1px 7px;border-radius:4px;font-size:10px;font-weight:700">Stripe = source of truth</span></div>
-  </div>
-  <div class="page-body">
 
-    <!-- KPIs -->
-    <div class="kpi-row" style="grid-template-columns:repeat(3,1fr);margin-bottom:24px">
-      <div class="kpi-card"><div class="kpi-label">Deals reviewed</div><div class="kpi-value">16</div><div class="kpi-sub">Sina + Denzel</div></div>
-      <div class="kpi-card" style="border-color:rgba(99,219,148,0.2)"><div class="kpi-label" style="color:var(--green)">Confirmed in Stripe</div><div class="kpi-value green">16</div><div class="kpi-sub">AU · NZ · SG accounts</div></div>
-      <div class="kpi-card" style="border-color:rgba(185,28,28,0.2)"><div class="kpi-label" style="color:var(--red)">ARR divergences</div><div class="kpi-value red">6</div><div class="kpi-sub">HS ARR ≠ Stripe amount — review needed</div></div>
-    </div>
 
-    <!-- Alert -->
-    <div class="alert-strip warning" style="margin-bottom:20px">
-      <div style="font-size:16px">⚠</div>
-      <div class="alert-body"><strong>All 16 deals confirmed across 3 Stripe accounts (AU, NZ, SG/US).</strong> 6 deals show ARR divergences between HubSpot and Stripe — these are flagged below and need review before finalising commission payments.</div>
-    </div>
 
-    <!-- Sub-tabs -->
-    <div style="display:flex;gap:4px;border-bottom:1px solid var(--border);margin-bottom:20px">
-      <button onclick="reconTab('confirmed',this)" id="recon-btn-confirmed" style="padding:8px 16px;font-size:13px;font-weight:600;color:var(--green);background:none;border:none;border-bottom:2px solid var(--green);cursor:pointer;font-family:'Inter',sans-serif;margin-bottom:-1px">All confirmed — 16/16 <span style="background:var(--green-bg);color:var(--green);border-radius:20px;font-size:11px;padding:1px 7px;margin-left:4px">16</span></button>
-    </div>
-
-    <!-- Confirmed table -->
-    <div id="recon-confirmed">
-      <div class="table-wrap">
-        <table>
-          <thead><tr><th>Deal</th><th>AE</th><th>Account</th><th>HubSpot ARR</th><th>Stripe Amount</th><th>Currency</th><th>Match</th><th>Stripe Link</th></tr></thead>
-          <tbody id="recon-confirmed-body"></tbody>
-        </table>
-      </div>
-      <div style="margin-top:14px;padding:12px 14px;background:var(--surface);border:1px solid var(--border);border-radius:8px;font-size:12px;color:var(--text-muted)">
-        <strong style="color:var(--text)">Note on currency:</strong> Several deals are billed in AUD in Stripe but recorded as USD in HubSpot. Stripe amounts shown are the raw billed amount — conversion to USD may explain some divergences.
-      </div>
-    </div>
-
-    <!-- Missing table -->
-    <div id="recon-missing" style="display:none">
-      <div class="table-wrap">
-        <table>
-          <thead><tr><th>Deal</th><th>AE</th><th>HubSpot ARR</th><th>Search method used</th><th>Result</th></tr></thead>
-          <tbody id="recon-missing-body"></tbody>
-        </table>
-      </div>
-      <div style="margin-top:14px;padding:12px 14px;background:var(--amber-bg);border:1px solid var(--amber-border);border-radius:8px;font-size:12px;color:var(--amber)">
-        <strong>Action required:</strong> Sina and Denzel to confirm how each of these 9 clients are paying. If via Stripe under a different email or company name, provide the Stripe customer ID so it can be linked in HubSpot.
-      </div>
-    </div>
-
-  </div>
-</div>
-
-<div class="page" id="page-cleanup">
-  <div class="page-header">
-    <div class="page-eyebrow">Data Cleanup</div>
-    <div class="page-title">AE Action Items</div>
-    <div class="page-sub">6 deals with data issues · Must be resolved before commissions can be paid · Click any deal name to open directly in HubSpot</div>
-  </div>
-  <div class="page-body">
-
-    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:28px">
-      <div class="kpi-card"><div class="kpi-label">Deals flagged</div><div class="kpi-value amber">4</div><div class="kpi-sub">Across 3 AEs</div></div>
-      <div class="kpi-card"><div class="kpi-value red">2</div><div class="kpi-label">Critical</div><div class="kpi-sub">NZ Environmental · Instream</div></div>
-      <div class="kpi-card"><div class="kpi-label">Review needed</div><div class="kpi-value amber">2</div><div class="kpi-sub">Rural Design · TTX</div></div>
-    </div>
-
-    <!-- MARK DEMPSEY -->
-    <div style="margin-bottom:32px">
-      <div style="display:flex;align-items:center;gap:10px;padding:12px 16px;background:var(--surface2);border-radius:10px;margin-bottom:14px;border-left:4px solid var(--green)">
-        <div style="width:36px;height:36px;border-radius:50%;background:#d4f7e5;color:#0A2F28;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;flex-shrink:0">MD</div>
-        <div>
-          <div style="font-size:15px;font-weight:700">Mark Dempsey</div>
-          <div style="font-size:11px;color:var(--text-muted)">2 deals to fix · 1 resolved</div>
-        </div>
-      </div>
-
-      <!-- Deal 1 — Boat Electrics RESOLVED -->
-      <div style="border:1px solid var(--green-border);border-radius:10px;overflow:hidden;margin-bottom:10px;opacity:.7">
-        <div style="padding:12px 16px;display:flex;align-items:flex-start;justify-content:space-between;gap:12px;border-bottom:1px solid var(--border);background:var(--surface)">
-          <a href="https://app.hubspot.com/contacts/24214994/record/0-3/47416089102" target="_blank" style="font-size:14px;font-weight:700;color:var(--text);text-decoration:none">1. Boat Electrics <span style="font-size:11px;color:var(--green);font-weight:600">→ Open in HubSpot</span></a>
-          <span style="background:var(--green-bg);color:var(--green);font-size:10px;font-weight:700;padding:3px 8px;border-radius:4px;white-space:nowrap;flex-shrink:0">✓ Resolved</span>
-        </div>
-        <div style="padding:10px 16px;background:var(--green-bg);font-size:12px;color:var(--green)">
-          <strong>Multi-year contract confirmed — 5 years.</strong> Year 1 ARR = $9,450 (commission base). Years 2–5 ARR = $9,135/year (banked commission). The hs_arr was $45,990 because HubSpot summed all 5 line items — this is the TCV, not ARR. Commission Hub now uses Year 1 only ($9,450 → $945 at 10%).
-        </div>
-      </div>
-
-      <!-- Deal 2 — WorkspaceConsultants RESOLVED -->
-      <div style="border:1px solid var(--green-border);border-radius:10px;overflow:hidden;margin-bottom:10px;opacity:.7">
-        <div style="padding:12px 16px;display:flex;align-items:flex-start;justify-content:space-between;gap:12px;border-bottom:1px solid var(--border);background:var(--surface)">
-          <a href="https://app.hubspot.com/contacts/24214994/record/0-3/44451553392" target="_blank" style="font-size:14px;font-weight:700;color:var(--text);text-decoration:none">2. WorkspaceConsultants <span style="font-size:11px;color:var(--green);font-weight:600">→ Open in HubSpot</span></a>
-          <span style="background:var(--green-bg);color:var(--green);font-size:10px;font-weight:700;padding:3px 8px;border-radius:4px;white-space:nowrap;flex-shrink:0">✓ Resolved in Hub</span>
-        </div>
-        <div style="padding:10px 16px;background:var(--green-bg);font-size:12px;color:var(--green)">
-          <strong>ARR corrected to $6,750.</strong> HubSpot hs_arr was $13,500 (duplicate line item summed as TCV). Commission Hub uses $6,750 — commission $338 (Inbound 5%). Mark still needs to delete the duplicate line item in HubSpot to keep the data clean.
-        </div>
-      </div>
-
-      <!-- Deal 3 -->
-      <div style="border:1px solid var(--amber-border);border-radius:10px;overflow:hidden">
-        <div style="padding:12px 16px;display:flex;align-items:flex-start;justify-content:space-between;gap:12px;border-bottom:1px solid var(--border);background:var(--surface)">
-          <a href="https://app.hubspot.com/contacts/24214994/record/0-3/50454404460" target="_blank" style="font-size:14px;font-weight:700;color:var(--text);text-decoration:none">3. Rural Design Limited <span style="font-size:11px;color:var(--green);font-weight:600">→ Open in HubSpot</span></a>
-          <span style="background:var(--amber-bg);color:var(--amber);font-size:10px;font-weight:700;padding:3px 8px;border-radius:4px;white-space:nowrap;flex-shrink:0">🟡 Review</span>
-        </div>
-        <div style="display:grid;grid-template-columns:1fr 1fr;background:var(--surface)">
-          <div style="padding:9px 16px;border-bottom:1px solid var(--border);border-right:1px solid var(--border)"><div style="font-size:9px;text-transform:uppercase;letter-spacing:.06em;color:var(--text-dim);margin-bottom:3px">Current hs_arr</div><div style="font-size:13px">$5,625</div></div>
-          <div style="padding:9px 16px;border-bottom:1px solid var(--border)"><div style="font-size:9px;text-transform:uppercase;letter-spacing:.06em;color:var(--text-dim);margin-bottom:3px">Billing frequency</div><div style="font-size:13px;font-weight:700;color:var(--amber)">Quarterly — ineligible if confirmed</div></div>
-          <div style="padding:9px 16px;border-right:1px solid var(--border)"><div style="font-size:9px;text-transform:uppercase;letter-spacing:.06em;color:var(--text-dim);margin-bottom:3px">Deal stage</div><div style="font-size:13px">Contract Signed</div></div>
-          <div style="padding:9px 16px"><div style="font-size:9px;text-transform:uppercase;letter-spacing:.06em;color:var(--text-dim);margin-bottom:3px">Package</div><div style="font-size:13px">Advanced Subscription</div></div>
-        </div>
-        <div style="padding:10px 16px;background:#d4f7e5;border-top:1px solid #a8e8c5"><span style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:#0A2F28">Action </span><span style="font-size:12px;color:#0A2F28">Confirm if contract is annual-upfront. If yes, update recurringbillingfrequency to "annually" on the line item.</span></div>
-        <div style="padding:10px 16px;background:var(--amber-bg);border-top:1px solid var(--amber-border)"><span style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--amber)">Impact </span><span style="font-size:12px;color:#78350F">If confirmed as quarterly billing, deal becomes ineligible for commission.</span></div>
-      </div>
-    </div>
-
-    <!-- SINA ZAREI -->
-    <div style="margin-bottom:32px">
-      <div style="display:flex;align-items:center;gap:10px;padding:12px 16px;background:var(--surface2);border-radius:10px;margin-bottom:14px;border-left:4px solid var(--green)">
-        <div style="width:36px;height:36px;border-radius:50%;background:#63DB94;color:#0A2F28;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;flex-shrink:0">SZ</div>
-        <div>
-          <div style="font-size:15px;font-weight:700">Sina Zarei</div>
-          <div style="font-size:11px;color:var(--text-muted)">2 deals to fix</div>
-        </div>
-      </div>
-
-      <!-- Deal 4 -->
-      <div style="border:1px solid var(--amber-border);border-radius:10px;overflow:hidden;margin-bottom:10px">
-        <div style="padding:12px 16px;display:flex;align-items:flex-start;justify-content:space-between;gap:12px;border-bottom:1px solid var(--border);background:var(--surface)">
-          <a href="https://app.hubspot.com/contacts/24214994/record/0-3/43407740035" target="_blank" style="font-size:14px;font-weight:700;color:var(--text);text-decoration:none">4. TTX Group <span style="font-size:11px;color:var(--green);font-weight:600">→ Open in HubSpot</span></a>
-          <span style="background:var(--amber-bg);color:var(--amber);font-size:10px;font-weight:700;padding:3px 8px;border-radius:4px;white-space:nowrap;flex-shrink:0">🟡 Review</span>
-        </div>
-        <div style="display:grid;grid-template-columns:1fr 1fr;background:var(--surface)">
-          <div style="padding:9px 16px;border-bottom:1px solid var(--border);border-right:1px solid var(--border)"><div style="font-size:9px;text-transform:uppercase;letter-spacing:.06em;color:var(--text-dim);margin-bottom:3px">Current hs_arr</div><div style="font-size:13px;font-weight:700;color:var(--amber)">$8,100</div></div>
-          <div style="padding:9px 16px;border-bottom:1px solid var(--border)"><div style="font-size:9px;text-transform:uppercase;letter-spacing:.06em;color:var(--text-dim);margin-bottom:3px">Stripe invoice</div><div style="font-size:13px;font-weight:700;color:var(--amber)">$2,029 ex-tax — divergence</div></div>
-          <div style="padding:9px 16px;border-right:1px solid var(--border)"><div style="font-size:9px;text-transform:uppercase;letter-spacing:.06em;color:var(--text-dim);margin-bottom:3px">Deal stage</div><div style="font-size:13px">Active Subscription</div></div>
-          <div style="padding:9px 16px"><div style="font-size:9px;text-transform:uppercase;letter-spacing:.06em;color:var(--text-dim);margin-bottom:3px">Package</div><div style="font-size:13px">Advanced Subscription</div></div>
-        </div>
-        <div style="padding:10px 16px;background:#d4f7e5;border-top:1px solid #a8e8c5"><span style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:#0A2F28">Action </span><span style="font-size:12px;color:#0A2F28">Confirm real contracted ARR. If a discount was applied, update hs_arr to net post-discount value. Clarify if Stripe invoice is partial or full annual amount.</span></div>
-        <div style="padding:10px 16px;background:var(--amber-bg);border-top:1px solid var(--amber-border)"><span style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--amber)">Impact </span><span style="font-size:12px;color:#78350F">Commission calculated on $8,100 today. If real ARR is $2,029, commission drops from $810 → ~$203.</span></div>
-      </div>
-
-      <!-- Deal 5 -->
-      <div style="border:1px solid var(--red-border);border-radius:10px;overflow:hidden">
-        <div style="padding:12px 16px;display:flex;align-items:flex-start;justify-content:space-between;gap:12px;border-bottom:1px solid var(--border);background:var(--surface)">
-          <a href="https://app.hubspot.com/contacts/24214994/record/0-3/48887024241" target="_blank" style="font-size:14px;font-weight:700;color:var(--text);text-decoration:none">5. NZ Environmental Management <span style="font-size:11px;color:var(--green);font-weight:600">→ Open in HubSpot</span></a>
-          <span style="background:var(--red-bg);color:var(--red);font-size:10px;font-weight:700;padding:3px 8px;border-radius:4px;white-space:nowrap;flex-shrink:0">🔴 Critical</span>
-        </div>
-        <div style="display:grid;grid-template-columns:1fr 1fr;background:var(--surface)">
-          <div style="padding:9px 16px;border-bottom:1px solid var(--border);border-right:1px solid var(--border)"><div style="font-size:9px;text-transform:uppercase;letter-spacing:.06em;color:var(--text-dim);margin-bottom:3px">Current hs_arr</div><div style="font-size:13px">$2,280</div></div>
-          <div style="padding:9px 16px;border-bottom:1px solid var(--border)"><div style="font-size:9px;text-transform:uppercase;letter-spacing:.06em;color:var(--text-dim);margin-bottom:3px">Stripe data</div><div style="font-size:13px;font-weight:700;color:var(--red)">18 monthly NZD invoices since Jun 2024 — commission calculated in USD via HubSpot ARR</div></div>
-          <div style="padding:9px 16px;border-right:1px solid var(--border)"><div style="font-size:9px;text-transform:uppercase;letter-spacing:.06em;color:var(--text-dim);margin-bottom:3px">Deal stage</div><div style="font-size:13px">Active Subscription</div></div>
-          <div style="padding:9px 16px"><div style="font-size:9px;text-transform:uppercase;letter-spacing:.06em;color:var(--text-dim);margin-bottom:3px">Package</div><div style="font-size:13px">Advanced Subscription</div></div>
-        </div>
-        <div style="padding:10px 16px;background:#d4f7e5;border-top:1px solid #a8e8c5"><span style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:#0A2F28">Action </span><span style="font-size:12px;color:#0A2F28">Confirm monthly or annual contract. If monthly → deal is ineligible. If converted to annual, update billing frequency and confirm ARR.</span></div>
-        <div style="padding:10px 16px;background:var(--amber-bg);border-top:1px solid var(--amber-border)"><span style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--amber)">Impact </span><span style="font-size:12px;color:#78350F">If confirmed monthly billing, deal is ineligible and $228 commission cannot be paid.</span></div>
-      </div>
-    </div>
-
-    <!-- DENZEL KEREAMA -->
-    <div style="margin-bottom:32px">
-      <div style="display:flex;align-items:center;gap:10px;padding:12px 16px;background:var(--surface2);border-radius:10px;margin-bottom:14px;border-left:4px solid var(--green)">
-        <div style="width:36px;height:36px;border-radius:50%;background:#E8F3FF;color:#1a5fa8;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;flex-shrink:0">DK</div>
-        <div>
-          <div style="font-size:15px;font-weight:700">Denzel Kereama</div>
-          <div style="font-size:11px;color:var(--text-muted)">1 deal to fix</div>
-        </div>
-      </div>
-
-      <!-- Deal 6 -->
-      <div style="border:1px solid var(--red-border);border-radius:10px;overflow:hidden">
-        <div style="padding:12px 16px;display:flex;align-items:flex-start;justify-content:space-between;gap:12px;border-bottom:1px solid var(--border);background:var(--surface)">
-          <a href="https://app.hubspot.com/contacts/24214994/record/0-3/39059815801" target="_blank" style="font-size:14px;font-weight:700;color:var(--text);text-decoration:none">6. Instream Consulting Ltd <span style="font-size:11px;color:var(--green);font-weight:600">→ Open in HubSpot</span></a>
-          <span style="background:var(--red-bg);color:var(--red);font-size:10px;font-weight:700;padding:3px 8px;border-radius:4px;white-space:nowrap;flex-shrink:0">🔴 Critical</span>
-        </div>
-        <div style="display:grid;grid-template-columns:1fr 1fr;background:var(--surface)">
-          <div style="padding:9px 16px;border-bottom:1px solid var(--border);border-right:1px solid var(--border)"><div style="font-size:9px;text-transform:uppercase;letter-spacing:.06em;color:var(--text-dim);margin-bottom:3px">hs_arr</div><div style="font-size:13px;font-weight:700;color:var(--red)">Missing</div></div>
-          <div style="padding:9px 16px;border-bottom:1px solid var(--border)"><div style="font-size:9px;text-transform:uppercase;letter-spacing:.06em;color:var(--text-dim);margin-bottom:3px">Source</div><div style="font-size:13px;font-weight:700;color:var(--red)">Missing</div></div>
-          <div style="padding:9px 16px;border-right:1px solid var(--border)"><div style="font-size:9px;text-transform:uppercase;letter-spacing:.06em;color:var(--text-dim);margin-bottom:3px">Commission Attribution</div><div style="font-size:13px;font-weight:700;color:var(--red)">Missing</div></div>
-          <div style="padding:9px 16px"><div style="font-size:9px;text-transform:uppercase;letter-spacing:.06em;color:var(--text-dim);margin-bottom:3px">Product Package</div><div style="font-size:13px;font-weight:700;color:var(--red)">Missing</div></div>
-          <div style="padding:9px 16px;grid-column:1/-1;border-top:1px solid var(--border)"><div style="font-size:9px;text-transform:uppercase;letter-spacing:.06em;color:var(--text-dim);margin-bottom:3px">Note</div><div style="font-size:13px">stripe_payment_confirmed = true — Stripe has data for this deal</div></div>
-        </div>
-        <div style="padding:10px 16px;background:#d4f7e5;border-top:1px solid #a8e8c5"><span style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:#0A2F28">Action </span><span style="font-size:12px;color:#0A2F28">Fill in all 4 required fields: hs_arr, Source, Commission Attribution, and Product Package.</span></div>
-        <div style="padding:10px 16px;background:var(--amber-bg);border-top:1px solid var(--amber-border)"><span style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--amber)">Impact </span><span style="font-size:12px;color:#78350F">Deal is completely ineligible until all 4 fields are populated. Cannot appear in the commission model.</span></div>
-      </div>
-    </div>
-
-    <div style="border-top:1px solid var(--border);padding-top:16px;font-size:12px;color:var(--text-muted)">
-      Once all corrections are made in HubSpot, the Commission Hub will recalculate automatically. Tag Leo Xavier when each deal is resolved.
-    </div>
-  </div>
-</div>
 <!-- SOURCE vs TYPE PAGE -->
-<div class="page" id="page-classification">
-  <div class="page-header">
-    <div class="page-eyebrow">Classification Logic</div>
-    <div class="page-title">Source vs Type</div>
-    <div class="page-sub">Understanding the two fields and how they determine commission rate</div>
-  </div>
-  <div class="page-body">
 
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:28px">
-
-      <!-- SOURCE -->
-      <div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;overflow:hidden">
-        <div style="padding:14px 18px;background:#0A2F28;border-bottom:1px solid var(--sidebar-border)">
-          <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:rgba(99,219,148,0.6);margin-bottom:4px">HubSpot field</div>
-          <div style="font-size:18px;font-weight:700;color:#63DB94">Source</div>
-          <div style="font-size:12px;color:rgba(255,255,255,0.5);margin-top:4px">Where the lead originally came from. Set by the AE in HubSpot when creating the deal.</div>
-        </div>
-        <div style="padding:16px 18px">
-          <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--text-dim);margin-bottom:10px">Possible values</div>
-          <div style="display:flex;flex-direction:column;gap:6px">
-            <div style="display:flex;align-items:center;justify-content:space-between;padding:7px 10px;background:var(--surface2);border-radius:6px;font-size:12px">
-              <span style="font-weight:600">Outbound: LinkedIn</span><span style="font-size:10px;color:var(--text-dim)">AE-sourced via LinkedIn</span>
-            </div>
-            <div style="display:flex;align-items:center;justify-content:space-between;padding:7px 10px;background:var(--surface2);border-radius:6px;font-size:12px">
-              <span style="font-weight:600">Outbound: SDR's</span><span style="font-size:10px;color:var(--text-dim)">SDR-sourced, handed to AE</span>
-            </div>
-            <div style="display:flex;align-items:center;justify-content:space-between;padding:7px 10px;background:var(--surface2);border-radius:6px;font-size:12px">
-              <span style="font-weight:600">Outbound: GTM</span><span style="font-size:10px;color:var(--text-dim)">GTM campaign-sourced</span>
-            </div>
-            <div style="display:flex;align-items:center;justify-content:space-between;padding:7px 10px;background:var(--surface2);border-radius:6px;font-size:12px">
-              <span style="font-weight:600">Outbound: Paid</span><span style="font-size:10px;color:var(--text-dim)">Paid ads, AE-led outbound</span>
-            </div>
-            <div style="display:flex;align-items:center;justify-content:space-between;padding:7px 10px;background:var(--surface2);border-radius:6px;font-size:12px">
-              <span style="font-weight:600">Inbound: Paid</span><span style="font-size:10px;color:var(--text-dim)">Marketing paid ad, came inbound</span>
-            </div>
-            <div style="display:flex;align-items:center;justify-content:space-between;padding:7px 10px;background:var(--surface2);border-radius:6px;font-size:12px">
-              <span style="font-weight:600">Organic</span><span style="font-size:10px;color:var(--amber)">⚠ Ambiguous — see note below</span>
-            </div>
-            <div style="display:flex;align-items:center;justify-content:space-between;padding:7px 10px;background:var(--surface2);border-radius:6px;font-size:12px">
-              <span style="font-weight:600">Referral</span><span style="font-size:10px;color:var(--text-dim)">Always Inbound 5% regardless</span>
-            </div>
-            <div style="display:flex;align-items:center;justify-content:space-between;padding:7px 10px;background:var(--surface2);border-radius:6px;font-size:12px">
-              <span style="font-weight:600">Upsell Campaign</span><span style="font-size:10px;color:var(--text-dim)">Existing customer expansion</span>
-            </div>
-          </div>
-          <div style="margin-top:12px;padding:10px 12px;background:var(--amber-bg);border:1px solid var(--amber-border);border-radius:8px;font-size:11px;color:#78350F">
-            <strong>Organic is ambiguous.</strong> A deal marked as "Organic" could be an AE who cold-prospected a customer who had never engaged with WorkflowMAX — that's Outbound. Or it could be a customer who found the product themselves. Without Commission Attribution set, the model defaults to Inbound 5%.
-          </div>
-        </div>
-      </div>
-
-      <!-- TYPE -->
-      <div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;overflow:hidden">
-        <div style="padding:14px 18px;background:var(--surface2);border-bottom:1px solid var(--border)">
-          <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--text-dim);margin-bottom:4px">Calculated by artefact</div>
-          <div style="font-size:18px;font-weight:700;color:var(--text)">Type</div>
-          <div style="font-size:12px;color:var(--text-muted);margin-top:4px">The commission classification. Computed by the artefact from Source + Commission Attribution. Determines the rate paid to the AE.</div>
-        </div>
-        <div style="padding:16px 18px">
-          <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--text-dim);margin-bottom:10px">3 possible values</div>
-          <div style="display:flex;flex-direction:column;gap:8px">
-            <div style="padding:12px 14px;background:var(--green-bg);border:1px solid var(--green-border);border-radius:8px">
-              <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px">
-                <span style="font-size:13px;font-weight:700;color:var(--green)">Outbound</span>
-                <span style="font-family:'DM Mono',monospace;font-size:16px;font-weight:700;color:var(--green)">10%</span>
-              </div>
-              <div style="font-size:11px;color:var(--green)">AE actively hunted this deal. Source contains "Outbound" OR AE had Heavy Involvement / Sourced on an inbound/organic lead — picking it up early stage through close.</div>
-            </div>
-            <div style="padding:12px 14px;background:var(--amber-bg);border:1px solid var(--amber-border);border-radius:8px">
-              <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px">
-                <span style="font-size:13px;font-weight:700;color:var(--amber)">Upsell</span>
-                <span style="font-family:'DM Mono',monospace;font-size:16px;font-weight:700;color:var(--amber)">7.5%</span>
-              </div>
-              <div style="font-size:11px;color:#78350F">Expansion of an existing customer. Deal ID is in the confirmed upsell list OR source = "Upsell Campaign".</div>
-            </div>
-            <div style="padding:12px 14px;background:var(--blue-bg);border:1px solid var(--blue-border);border-radius:8px">
-              <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px">
-                <span style="font-size:13px;font-weight:700;color:var(--blue)">Inbound</span>
-                <span style="font-family:'DM Mono',monospace;font-size:16px;font-weight:700;color:var(--blue)">5%</span>
-              </div>
-              <div style="font-size:11px;color:var(--blue)">Lead came through an external channel AND the AE did not have Heavy Involvement. Source = Referral always = 5% regardless of involvement. Non Sourced = 5%.</div>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- DECISION LOGIC -->
-    <div class="section-title">How Type is calculated — decision order</div>
-    <div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:20px;margin-bottom:24px">
-      <div style="display:flex;flex-direction:column;gap:0">
-        <div style="display:flex;gap:16px;padding:12px 0;border-bottom:1px solid var(--border);align-items:flex-start">
-          <div style="width:24px;height:24px;border-radius:50%;background:#0A2F28;color:#63DB94;font-size:11px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:1px">1</div>
-          <div style="flex:1"><div style="font-size:13px;font-weight:700;margin-bottom:2px">Upsell?</div><div style="font-size:12px;color:var(--text-muted)">Deal ID in confirmed upsell list or Source = "Upsell Campaign" → <strong>Upsell 7.5%</strong>. Absolute priority.</div></div>
-        </div>
-        <div style="display:flex;gap:16px;padding:12px 0;border-bottom:1px solid var(--border);align-items:flex-start">
-          <div style="width:24px;height:24px;border-radius:50%;background:#0A2F28;color:#63DB94;font-size:11px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:1px">2</div>
-          <div style="flex:1"><div style="font-size:13px;font-weight:700;margin-bottom:2px">Source contains "Outbound"?</div><div style="font-size:12px;color:var(--text-muted)">→ <strong>Outbound 10%</strong>. Explicit outbound channel — no conflict possible.</div></div>
-        </div>
-        <div style="display:flex;gap:16px;padding:12px 0;border-bottom:1px solid var(--border);align-items:flex-start">
-          <div style="width:24px;height:24px;border-radius:50%;background:#0A2F28;color:#63DB94;font-size:11px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:1px">3</div>
-          <div style="flex:1"><div style="font-size:13px;font-weight:700;margin-bottom:2px">Source = "Referral"?</div><div style="font-size:12px;color:var(--text-muted)">→ <strong>Inbound 5%</strong> always. Referral overrides involvement — WorkflowMAX is already on the hook for a commercial payout.</div></div>
-        </div>
-        <div style="display:flex;gap:16px;padding:12px 0;border-bottom:1px solid var(--border);align-items:flex-start">
-          <div style="width:24px;height:24px;border-radius:50%;background:#0A2F28;color:#63DB94;font-size:11px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:1px">4</div>
-          <div style="flex:1"><div style="font-size:13px;font-weight:700;margin-bottom:2px">AE Involvement = Heavy Involvement or Sourced?</div><div style="font-size:12px;color:var(--text-muted)">→ <strong>Outbound 10%</strong>. <strong>This is the key override.</strong> Even if Source = Organic or Inbound, if the AE picked it up early and drove it to close with Heavy Involvement, they earn 10%. Ryan reviews line by line each quarter.</div></div>
-        </div>
-        <div style="display:flex;gap:16px;padding:12px 0;border-bottom:1px solid var(--border);align-items:flex-start">
-          <div style="width:24px;height:24px;border-radius:50%;background:#0A2F28;color:#63DB94;font-size:11px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:1px">5</div>
-          <div style="flex:1"><div style="font-size:13px;font-weight:700;margin-bottom:2px">Source = Inbound or Organic, no strong involvement?</div><div style="font-size:12px;color:var(--text-muted)">→ <strong>Inbound 5%</strong>. Lead came through an external channel and the AE didn't claim heavy involvement.</div></div>
-        </div>
-        <div style="display:flex;gap:16px;padding:12px 0;align-items:flex-start">
-          <div style="width:24px;height:24px;border-radius:50%;background:var(--surface2);color:var(--text-dim);font-size:11px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:1px">6</div>
-          <div style="flex:1"><div style="font-size:13px;font-weight:700;margin-bottom:2px;color:var(--text-muted)">AE Involvement = Non Sourced / no source set?</div><div style="font-size:12px;color:var(--text-muted)">Non Sourced → <strong>Inbound 5%</strong>. No source and no involvement → <strong>Outbound 10%</strong> (default — AE created the record).</div></div>
-        </div>
-      </div>
-    </div>
-
-    <!-- KEY INSIGHT -->
-    <div style="background:var(--surface2);border:1px solid var(--border);border-left:4px solid var(--green);border-radius:10px;padding:16px 18px">
-      <div style="font-size:13px;font-weight:700;margin-bottom:6px">AE Involvement wins over Source when there is a conflict</div>
-      <div style="font-size:12px;color:var(--text-muted);line-height:1.7">If a lead came in via an organic or inbound channel but the AE picked it up at early stage and drove it to close with Heavy Involvement, the AE is entitled to full commission (10%). This is intentional — the AE's work is what converted the deal, not the channel. The exception is Referral, which always stays at 5% because WorkflowMAX is already paying a commercial referral fee. Ryan reviews every Organic + Heavy Involvement deal line by line each quarter to validate the attribution.</div>
-    </div>
-
-  </div>
-</div>
 
 <!-- SUBSCRIPTION HEALTH -->
-<div class="page" id="page-subhealth">
-  <div class="page-header">
-    <div class="page-eyebrow">HubSpot · Stripe Sync</div>
-    <div class="page-title">Subscription Health</div>
-    <div class="page-sub">Audit of subscription_status vs subscription_cancelled_date across all companies · <span style="background:#fef2f2;color:#b91c1c;padding:1px 7px;border-radius:4px;font-size:10px;font-weight:700">14 sync issues detected</span></div>
-  </div>
-  <div class="page-body">
 
-    <!-- KPI row -->
-    <div class="kpi-row" style="grid-template-columns:repeat(3,1fr);margin-bottom:24px">
-      <div class="kpi-card">
-        <div class="kpi-label">Total companies</div>
-        <div class="kpi-value">41</div>
-        <div class="kpi-sub">with subscription_status set</div>
-      </div>
-      <div class="kpi-card" style="border-color:rgba(185,28,28,0.2)">
-        <div class="kpi-label" style="color:#fca5a5">Churned detected</div>
-        <div class="kpi-value red">14</div>
-        <div class="kpi-sub">subscription_cancelled_date present but status = Active</div>
-      </div>
-      <div class="kpi-card" style="border-color:rgba(99,219,148,0.2)">
-        <div class="kpi-label" style="color:var(--green)">Confirmed clean MRR</div>
-        <div class="kpi-value green">$1,167<span style="font-size:13px;font-weight:400">/mo</span></div>
-        <div class="kpi-sub">18 fully confirmed active accounts</div>
-      </div>
-      <div class="kpi-card" style="border-color:rgba(245,158,11,0.2)">
-        <div class="kpi-label" style="color:var(--amber)">MRR at risk</div>
-        <div class="kpi-value amber">$519<span style="font-size:13px;font-weight:400">/mo</span></div>
-        <div class="kpi-sub">7 accounts Cancelled in Account object · 2 not found</div>
-      </div>
-    </div>
-
-    <!-- Gap alert from Account object -->
-    <div class="alert-strip danger" style="margin-bottom:20px">
-      <div style="font-size:16px">🔴</div>
-      <div class="alert-body">
-        <strong>New gap identified — Account object vs Companies.</strong> Cross-referencing our 27 "clean active" accounts against the WorkflowMax Account object reveals 7 are marked as <strong>Cancelled</strong> and 2 are not found at all. This puts <strong>$519/mo MRR at risk</strong>. The Account object (<code style="font-size:11px">Org Subscription Status</code>) is the more reliable source of truth with 12,539 records vs the 41 we had from Companies. Needs resolution before MRR figures can be trusted.
-      </div>
-    </div>
-      <div style="font-size:16px">⚠</div>
-      <div class="alert-body">
-        <strong>Stripe → HubSpot webhook sync issue detected.</strong> The current workflow writes <code style="font-size:11px;background:rgba(255,255,255,0.1);padding:1px 5px;border-radius:3px">subscription_cancelled_date</code> when a subscription cancels but does not update <code style="font-size:11px;background:rgba(255,255,255,0.1);padding:1px 5px;border-radius:3px">subscription_status</code> to Cancelled. 13 of the 14 have a <code style="font-size:11px;background:rgba(255,255,255,0.1);padding:1px 5px;border-radius:3px">1970-01-01</code> date (Unix epoch — null timestamp from Stripe). 1 has a real cancellation date: Gestalt Enterprises, Sep 2024.
-      </div>
-    </div>
-
-    <!-- Sub-tabs -->
-    <div id="sh-tabs" style="display:flex;gap:4px;border-bottom:1px solid var(--border);margin-bottom:20px">
-      <button onclick="shTab('churned',this)" id="sh-btn-churned" style="padding:8px 16px;font-size:13px;font-weight:600;color:#fca5a5;background:none;border:none;border-bottom:2px solid #b91c1c;cursor:pointer;font-family:'Inter',sans-serif;margin-bottom:-1px">Churned detected <span style="background:rgba(185,28,28,0.15);color:#fca5a5;border-radius:20px;font-size:11px;padding:1px 7px;margin-left:4px">14</span></button>
-      <button onclick="shTab('active',this)" id="sh-btn-active" style="padding:8px 16px;font-size:13px;font-weight:400;color:var(--text-dim);background:none;border:none;border-bottom:2px solid transparent;cursor:pointer;font-family:'Inter',sans-serif;margin-bottom:-1px">Clean view — active <span style="background:var(--surface2);color:var(--text-dim);border-radius:20px;font-size:11px;padding:1px 7px;margin-left:4px">27</span></button>
-    </div>
-
-    <!-- Churned table -->
-    <div id="sh-churned">
-      <div class="table-wrap">
-        <table>
-          <thead>
-            <tr><th>Company</th><th>Domain</th><th>Cancelled date</th><th>Flag type</th><th>HubSpot</th></tr>
-          </thead>
-          <tbody id="sh-churned-body"></tbody>
-        </table>
-      </div>
-    </div>
-
-    <!-- Active table -->
-    <div id="sh-active" style="display:none">
-      <div style="font-size:13px;color:var(--text-muted);margin-bottom:12px">27 companies from HubSpot Companies — cross-referenced with WorkflowMax Account object. <strong style="color:var(--red)">7 show as Cancelled in Account object · 2 not found.</strong> Confirmed clean MRR: <strong style="color:var(--green)">$1,167/mo</strong> · At risk: <strong style="color:var(--amber)">$519/mo</strong></div>
-      <div class="table-wrap">
-        <table>
-          <thead>
-            <tr><th>Company</th><th>Domain</th><th>Plan</th><th>Account Status</th><th style="text-align:right">MRR</th><th>HubSpot</th></tr>
-          </thead>
-          <tbody id="sh-active-body"></tbody>
-          <tfoot>
-            <tr style="background:var(--green-bg);border-top:2px solid var(--border)"><td colspan="4" style="padding:10px 12px;font-weight:700;color:var(--green);font-size:13px">Confirmed clean MRR</td><td style="padding:10px 12px;text-align:right;font-weight:700;color:var(--green);font-size:14px">$1,167/mo</td><td></td></tr>
-            <tr style="background:var(--amber-bg);border-top:1px solid var(--border)"><td colspan="4" style="padding:10px 12px;font-weight:700;color:var(--amber);font-size:13px">At-risk MRR (needs validation)</td><td style="padding:10px 12px;text-align:right;font-weight:700;color:var(--amber);font-size:14px">$519/mo</td><td></td></tr>
-          </tfoot>
-        </table>
-      </div>
-    </div>
-
-    <!-- Next steps -->
-    <div class="section-title" style="margin-top:28px">Next steps</div>
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
-      <div style="background:var(--surface);border:1px solid var(--border);border-left:3px solid var(--red);border-radius:10px;padding:16px 18px">
-        <div style="font-size:13px;font-weight:700;margin-bottom:4px">1 · Fix the webhook</div>
-        <div style="font-size:12px;color:var(--text-muted)">Add a second step to the n8n/Zapier workflow that captures <code style="font-size:11px">customer.subscription.deleted</code> and updates <code style="font-size:11px">subscription_status</code> to Cancelled in HubSpot.</div>
-      </div>
-      <div style="background:var(--surface);border:1px solid var(--border);border-left:3px solid var(--amber);border-radius:10px;padding:16px 18px">
-        <div style="font-size:13px;font-weight:700;margin-bottom:4px">2 · Validate 13 epoch records in Stripe</div>
-        <div style="font-size:12px;color:var(--text-muted)">Confirm manually whether the 13 accounts with <code style="font-size:11px">1970-01-01</code> are genuinely churned or if the webhook fired incorrectly. Gestalt Enterprises (Sep 2024) is confirmed churned.</div>
-      </div>
-      <div style="background:var(--surface);border:1px solid var(--border);border-left:3px solid var(--amber);border-radius:10px;padding:16px 18px">
-        <div style="font-size:13px;font-weight:700;margin-bottom:4px">3 · Backfill status on 14 records</div>
-        <div style="font-size:12px;color:var(--text-muted)">Once confirmed, update <code style="font-size:11px">subscription_status</code> to Cancelled on the 14 affected companies. Can be done via CSV import or HubSpot workflow.</div>
-      </div>
-      <div style="background:var(--surface);border:1px solid var(--border);border-left:3px solid var(--text-dim);border-radius:10px;padding:16px 18px">
-        <div style="font-size:13px;font-weight:700;margin-bottom:4px">4 · Access WorkflowMax Account object</div>
-        <div style="font-size:12px;color:var(--text-muted)">The <code style="font-size:11px">workflowmax_org_subscription</code> property lives on the custom Account object — not accessible via MCP. Requires direct HubSpot REST API call with portal ID <code style="font-size:11px">24214994</code>.</div>
-      </div>
-    </div>
-
-  </div>
 </div>
 
 </main>
@@ -1275,6 +610,7 @@ var DEALS = RAW.map(function(d){
   var cl=classify(d), er=eligReason(d), eligible=!er;
   return Object.assign({},d,cl,{eligible:eligible,eligReason:er,comm:eligible?(d.arr||0)*cl.rate:0,quarter:getQuarter(d.close)});
 });
+applyPaidPersistence();
 
 // Populated by the HubSpot sync. LOST = closed-lost/expired/churn (control tab only,
 // never in commission totals). RENEWAL = existing customers in renewal motion.
@@ -1289,7 +625,15 @@ function aeChip(id){var a=AE[id];if(!a)return id;return '<div style="display:inl
 function pkgBadge(p){if(!p)return '<span class="badge badge-red">Missing</span>';if(p.includes("Advanced"))return '<span class="badge badge-green">Advanced</span>';if(p.includes("Premium"))return '<span class="badge badge-amber">Premium</span>';if(p.includes("Pro"))return '<span class="badge badge-teal">Pro</span>';return '<span class="badge badge-dim">Standard</span>';}
 function typeBadge(d){if(!d.eligible)return '<span class="badge badge-dim">Ineligible</span>';if(d.type==="Outbound")return '<span class="badge badge-purple">Outbound</span>';if(d.type==="Inbound")return '<span class="badge badge-blue">Inbound</span>';return '<span class="badge badge-amber">Upsell</span>';}
 function rateTxt(d){if(!d.eligible)return '<span style="color:var(--text-dim);font-family:\'DM Mono\',monospace">—</span>';var c=d.rate===.10?'green':d.rate===.075?'amber':'blue';return '<span style="color:var(--'+c+');font-family:\'DM Mono\',monospace;font-size:13px">'+(d.rate*100)+'%</span>';}
-function payoutBadge(d){if(!d.eligible)return '';if(d.paid_out)return '<span class="badge badge-green" style="font-size:9px">✓ Paid</span>';return '<span class="badge badge-amber" style="font-size:9px">Outstanding</span>';}
+function payoutBadge(d){
+  if(!d.eligible)return '';
+  var badge = d.paid_out ? '<span class="badge badge-green" style="font-size:9px">✓ Paid</span>' : '<span class="badge badge-amber" style="font-size:9px">Outstanding</span>';
+  if(typeof isEditor==='function' && isEditor()){
+    var label = d.paid_out ? 'Undo' : 'Mark paid';
+    badge += ' <button onclick="togglePaid(\''+d.id+'\')" style="margin-left:4px;padding:2px 8px;background:rgba(99,219,148,0.10);border:1px solid rgba(99,219,148,0.3);border-radius:5px;color:var(--green);font-size:9px;font-weight:700;cursor:pointer;font-family:\'Inter\',sans-serif">'+label+'</button>';
+  }
+  return badge;
+}
 function invBadge(inv){
   if(!inv) return '<span style="color:var(--red);font-size:11px">Missing</span>';
   var v=inv.toLowerCase();
@@ -1699,6 +1043,61 @@ function renderUpsells(){
       '<td class="mono" style="color:var(--text-dim)">$'+fmt(comm)+'</td>'+
       '</tr>';
   }).join('');
+}
+
+// ── EDITOR PIN + PAID PERSISTENCE ─────────────────────────────────────────
+// PIN gates write actions (Mark paid / Undo). Viewing and Refresh stay open
+// to everyone — data reads are safe; only payout state changes need the PIN.
+var EDITOR_PIN_HASH = 'abacc600ac7bf5ed9aeb6668910c9df0891a265e4190b7aab2bba6b206a5317b'; // sha256 of the PIN
+var PAID_KEY = 'ch_paid_v1';
+
+function hashPin(pin){
+  return crypto.subtle.digest('SHA-256', new TextEncoder().encode(pin)).then(function(buf){
+    return Array.from(new Uint8Array(buf)).map(function(b){return b.toString(16).padStart(2,'0');}).join('');
+  });
+}
+function isEditor(){ return sessionStorage.getItem('ch_editor')==='1'; }
+function toggleLockPanel(){
+  var p=document.getElementById('lock-panel');
+  p.style.display = p.style.display==='none'?'block':'none';
+  if(p.style.display==='block'){ var i=document.getElementById('pin-input'); if(i) i.focus(); }
+}
+function submitPin(){
+  var inp=document.getElementById('pin-input'), msg=document.getElementById('pin-msg');
+  hashPin(inp.value.trim()).then(function(h){
+    if(h===EDITOR_PIN_HASH){
+      sessionStorage.setItem('ch_editor','1');
+      inp.value=''; if(msg) msg.textContent='';
+      updateLockUI(); renderDashboard(); renderDeals(); renderAE();
+    } else {
+      if(msg) msg.textContent='Wrong PIN';
+    }
+  });
+}
+function lockSession(){
+  sessionStorage.removeItem('ch_editor');
+  var msg=document.getElementById('pin-msg'); if(msg) msg.textContent='';
+  updateLockUI(); renderDashboard(); renderDeals(); renderAE();
+}
+function updateLockUI(){
+  var ind=document.getElementById('lock-indicator');
+  if(ind) ind.innerHTML = isEditor() ? '🔓 Editor <span style="font-size:9px;color:rgba(99,219,148,0.6);font-weight:600">· click to manage</span>' : '🔒 View only <span style="font-size:9px;color:rgba(255,255,255,0.35);font-weight:600">· click to unlock</span>';
+  if(isEditor()){ var p=document.getElementById('lock-panel'); if(p) p.style.display='none'; }
+}
+
+function loadPaidMap(){ try{ return JSON.parse(localStorage.getItem(PAID_KEY)||'{}'); }catch(e){ return {}; } }
+function applyPaidPersistence(){
+  var map=loadPaidMap();
+  DEALS.forEach(function(d){ if(map.hasOwnProperty(d.id)) d.paid_out=map[d.id]; });
+}
+function togglePaid(id){
+  if(!isEditor()){ toggleLockPanel(); return; }
+  var d=DEALS.find(function(x){return x.id===id;});
+  if(!d) return;
+  d.paid_out=!d.paid_out;
+  var map=loadPaidMap(); map[id]=d.paid_out;
+  try{ localStorage.setItem(PAID_KEY, JSON.stringify(map)); }catch(e){}
+  renderDashboard(); renderDeals(); renderAE();
 }
 
 // ── SYNC ──────────────────────────────────────────────────────────────────
@@ -2185,6 +1584,7 @@ function syncFromHubSpot(){
     // Renewals — existing customers, tracked but out of commission totals.
     RENEWAL = renewal.map(function(row){ ensureAE(row.owner); return buildDeal(row); });
 
+    applyPaidPersistence();
     var newCount = DEALS.filter(function(d){return d.isNew;}).length;
     SYNCED_ONCE = true;
     LAST_SYNCED = new Date();
@@ -2232,171 +1632,6 @@ function showPage(id,el){
 }
 
 // ── SUBSCRIPTION HEALTH ───────────────────────────────────────────────────
-var SH_CHURNED = [
-  {id:"19332020391", name:"Elite Construction",                    domain:"sprayfoamsolutions.com",      cancelledDate:"1970-01-01", flag:"epoch"},
-  {id:"29936052889", name:"Max D - Designs & Printing",            domain:"—",                           cancelledDate:"1970-01-01", flag:"epoch"},
-  {id:"18286691425", name:"HPS Tech Trading (NZ) Ltd",             domain:"gp-systems.com.au",           cancelledDate:"1970-01-01", flag:"epoch"},
-  {id:"19370561070", name:"Lyda Engineering",                      domain:"lydaengineeringservices.com", cancelledDate:"1970-01-01", flag:"epoch"},
-  {id:"20008813952", name:"Intuitiv Spaces Inc.",                  domain:"intuitiv.homes",              cancelledDate:"1970-01-01", flag:"epoch"},
-  {id:"16149058477", name:"Energy Capital Projects (Pty) Ltd",     domain:"energycapital.co.za",         cancelledDate:"1970-01-01", flag:"epoch"},
-  {id:"15272745567", name:"Plimsoll",                              domain:"plimsollstudio.com",          cancelledDate:"1970-01-01", flag:"epoch"},
-  {id:"16066186311", name:"REED Marketing Communications Design",  domain:"reedmcd.com",                 cancelledDate:"1970-01-01", flag:"epoch"},
-  {id:"15269989758", name:"Eternal Technology, Inc",               domain:"eternaltech.net",             cancelledDate:"1970-01-01", flag:"epoch"},
-  {id:"16052176715", name:"Grandview Fabrication",                 domain:"gvfab.ca",                   cancelledDate:"1970-01-01", flag:"epoch"},
-  {id:"19995676005", name:"Tritan Survey",                         domain:"tritan.co.za",                cancelledDate:"1970-01-01", flag:"epoch"},
-  {id:"18709463559", name:"Gestalt Enterprises",                   domain:"digital-giant.com",           cancelledDate:"2024-09-13", flag:"real"},
-  {id:"18338664226", name:"Apex Engineering",                      domain:"apex20.com",                  cancelledDate:"1970-01-01", flag:"epoch"},
-  {id:"17065748495", name:"TELKNOLOGY, LLC",                       domain:"telknology.com",              cancelledDate:"1970-01-01", flag:"epoch"},
-];
-
-var SH_ACTIVE = [
-  {id:"53077237642", name:"LRW (London) Ltd",                                    domain:"lrw.co.uk",                   mrr:70,  plan:"Premium",   account_status:"Active"},
-  {id:"50471130386", name:"Volume Group Ltd",                                    domain:"rideshotgun.co.uk",           mrr:135, plan:"Standard",  account_status:"Cancelled"},
-  {id:"29939729243", name:"Wonderhood Studios",                                  domain:"wonderhoodstudios.com",       mrr:150, plan:"Standard",  account_status:"Active"},
-  {id:"15268178757", name:"Inglis Hall",                                         domain:"inglishall.com",              mrr:90,  plan:"Standard",  account_status:"Active"},
-  {id:"15265641141", name:"Spitfire Marketing",                                  domain:"spitfiremarketing.co.uk",     mrr:49,  plan:"Standard",  account_status:"Active"},
-  {id:"18427292980", name:"BLE Engineering Solutions Ltd",                       domain:"saithlimited.com",            mrr:90,  plan:"Standard",  account_status:"Active"},
-  {id:"15271575357", name:"AFFORDABLE BUILDING PROJECTS LIMITED",                domain:"abproj.co.uk",                mrr:20,  plan:"Standard",  account_status:"Active"},
-  {id:"18080604555", name:"Greenhouse Business Systems",                         domain:"greenhousebs.co.uk",          mrr:20,  plan:"Standard",  account_status:"Active"},
-  {id:"15681067587", name:"Dunkirk Properties",                                  domain:"legalintegratedsolutions.com",mrr:49,  plan:"Standard",  account_status:"Active"},
-  {id:"17045693522", name:"TheTin Limited",                                      domain:"thetin.net",                  mrr:185, plan:"Premium",   account_status:"Active"},
-  {id:"19464832359", name:"MIG Medical Installations Ltd",                       domain:"migltd.co.uk",                mrr:90,  plan:"Standard",  account_status:"Active"},
-  {id:"20007777448", name:"MIG Mechanical Ltd",                                  domain:"uclimate.co.uk",              mrr:49,  plan:"Standard",  account_status:"Active"},
-  {id:"15683345547", name:"Alpha to Omega Creative Business Solutions Ltd",      domain:"a2oprint.com",                mrr:20,  plan:"Standard",  account_status:"Not found"},
-  {id:"17098750741", name:"SolidPoint Ltd",                                      domain:"solidpoint.co.uk",            mrr:120, plan:"Premium",   account_status:"Active"},
-  {id:"15691107855", name:"Monksleigh Limited",                                  domain:"monksleigh.com",              mrr:70,  plan:"Standard",  account_status:"Active"},
-  {id:"18813937974", name:"Jigsol Business Solutions",                           domain:"jigsol.com",                  mrr:135, plan:"Standard",  account_status:"Not found"},
-  {id:"15693813042", name:"Victoria Covell Interiors Ltd",                       domain:"victoriacovell.com",          mrr:20,  plan:"Standard",  account_status:"Active"},
-  {id:"34026988062", name:"Web Affinity",                                        domain:"creativeaffinity.co.uk",      mrr:20,  plan:"Standard",  account_status:"Active"},
-  {id:"16149813392", name:"CSCAT LIMITED",                                       domain:"cscat.co",                    mrr:35,  plan:"Standard",  account_status:"Active"},
-  {id:"18608981639", name:"Forge Creative",                                      domain:"builtbyforge.co.uk",          mrr:20,  plan:"Standard",  account_status:"Active"},
-  {id:"15851825472", name:"MindSculptors",                                       domain:"mindsculptors.co.uk",         mrr:35,  plan:"Standard",  account_status:"Cancelled"},
-  {id:"21527710311", name:"Crush",                                               domain:"crushfff.com",                mrr:35,  plan:"Standard",  account_status:"Cancelled"},
-  {id:"15271842819", name:"Six One Creative",                                    domain:"sixone.uk.com",               mrr:20,  plan:"Standard",  account_status:"Cancelled"},
-  {id:"17301113509", name:"Haughton Design",                                     domain:"haughtondesign.co.uk",        mrr:140, plan:"Premium",   account_status:"Cancelled"},
-  {id:"15279779200", name:"Fabric Architecture Solutions Ltd",                   domain:"fabarc.co.uk",                mrr:49,  plan:"Standard",  account_status:"Cancelled"},
-  {id:"19244985109", name:"OS Hydraulics",                                       domain:"oshydraulics.com",            mrr:35,  plan:"Standard",  account_status:"Cancelled"},
-  {id:"19736629537", name:"Access2 Human Resources",                             domain:"access2hr.co.uk",             mrr:70,  plan:"Standard",  account_status:"Cancelled"},
-];
-
-function shTab(which, btn){
-  document.getElementById('sh-churned').style.display = which==='churned'?'block':'none';
-  document.getElementById('sh-active').style.display  = which==='active'?'block':'none';
-  document.getElementById('sh-btn-churned').style.fontWeight = which==='churned'?'600':'400';
-  document.getElementById('sh-btn-churned').style.color = which==='churned'?'#fca5a5':'var(--text-dim)';
-  document.getElementById('sh-btn-churned').style.borderBottom = which==='churned'?'2px solid #b91c1c':'2px solid transparent';
-  document.getElementById('sh-btn-active').style.fontWeight = which==='active'?'600':'400';
-  document.getElementById('sh-btn-active').style.color = which==='active'?'var(--green)':'var(--text-dim)';
-  document.getElementById('sh-btn-active').style.borderBottom = which==='active'?'2px solid var(--green)':'2px solid transparent';
-}
-
-function renderSubHealth(){
-  var hsBase = 'https://app.hubspot.com/contacts/24214994/record/0-2/';
-  document.getElementById('sh-churned-body').innerHTML = SH_CHURNED.map(function(r){
-    return '<tr>'+
-      '<td style="font-weight:500">'+r.name+'</td>'+
-      '<td style="font-family:\'DM Mono\',monospace;font-size:11px;color:var(--text-dim)">'+r.domain+'</td>'+
-      '<td><span style="background:'+(r.flag==='real'?'var(--red-bg)':'var(--amber-bg)')+';color:'+(r.flag==='real'?'var(--red)':'var(--amber)')+';padding:2px 8px;border-radius:20px;font-size:11px;font-weight:600;font-family:\'DM Mono\',monospace">'+r.cancelledDate+'</span></td>'+
-      '<td>'+(r.flag==='real'
-        ?'<span style="background:var(--red-bg);color:var(--red);padding:2px 8px;border-radius:20px;font-size:11px;font-weight:600">Real date</span>'
-        :'<span style="background:var(--amber-bg);color:var(--amber);padding:2px 8px;border-radius:20px;font-size:11px;font-weight:600">Epoch (null timestamp)</span>'
-      )+'</td>'+
-      '<td><a href="'+hsBase+r.id+'" target="_blank" style="font-size:12px;color:var(--green);text-decoration:none">View ↗</a></td>'+
-      '</tr>';
-  }).join('');
-
-  document.getElementById('sh-active-body').innerHTML = SH_ACTIVE.map(function(r){
-    var isAtRisk = r.account_status === 'Cancelled' || r.account_status === 'Not found';
-    var statusBadge = r.account_status === 'Active'
-      ? '<span style="background:var(--green-bg);color:var(--green);padding:2px 8px;border-radius:20px;font-size:11px;font-weight:600">Active</span>'
-      : r.account_status === 'Cancelled'
-      ? '<span style="background:var(--red-bg);color:var(--red);padding:2px 8px;border-radius:20px;font-size:11px;font-weight:600">Cancelled ⚠</span>'
-      : '<span style="background:var(--amber-bg);color:var(--amber);padding:2px 8px;border-radius:20px;font-size:11px;font-weight:600">Not found ⚠</span>';
-    return '<tr style="'+(isAtRisk?'opacity:.6':'')+'">'+
-      '<td style="font-weight:500;max-width:220px">'+(isAtRisk?'<span style="color:var(--amber)">⚠ </span>':'')+r.name+'</td>'+
-      '<td style="font-family:\'DM Mono\',monospace;font-size:11px;color:var(--text-dim)">'+r.domain+'</td>'+
-      '<td><span style="background:'+(r.plan==='Premium'?'var(--blue-bg)':'var(--surface2)')+';color:'+(r.plan==='Premium'?'var(--blue)':'var(--text-dim)')+';padding:2px 8px;border-radius:20px;font-size:11px;font-weight:600">'+r.plan+'</span></td>'+
-      '<td>'+statusBadge+'</td>'+
-      '<td style="text-align:right;font-weight:600;font-family:\'DM Mono\',monospace;color:'+(isAtRisk?'var(--amber)':'inherit')+'">$'+r.mrr+'</td>'+
-      '<td><a href="'+hsBase+r.id+'" target="_blank" style="font-size:12px;color:var(--green);text-decoration:none">View ↗</a></td>'+
-      '</tr>';
-  }).join('');
-}
-
-// ── STRIPE RECONCILIATION ─────────────────────────────────────────────────
-var RECON_CONFIRMED = [
-  // AU account
-  {deal:"Propel Marine Pty Ltd",         ae:"Denzel", hs_arr:13313, stripe_amount:534,   stripe_annual:6408,  ccy:"AUD", account:"AU", stripe_id:"cus_Q9SBRK0LTxw9el", match:"diverge", note:"Stripe MRR $534 AUD → ARR ~$6,408 AUD. HubSpot $13,313 — significant gap."},
-  {deal:"SCLspec Pty Ltd",               ae:"Sina",   hs_arr:2925,  stripe_amount:270,   stripe_annual:3240,  ccy:"AUD", account:"AU", stripe_id:"cus_QJ3nILIzXWVYAS", match:"close",   note:"Stripe MRR $270 AUD → ARR ~$3,240 AUD. Close to HS $2,925."},
-  {deal:"TTX Group",                     ae:"Sina",   hs_arr:8100,  stripe_amount:2231,  stripe_annual:2231,  ccy:"USD", account:"AU", stripe_id:"cus_TojhNZvdYajgWh", match:"diverge", note:"Single invoice $2,231 USD. HubSpot $8,100 — likely different billing period."},
-  {deal:"RHM Consultants",               ae:"Sina",   hs_arr:6150,  stripe_amount:6765,  stripe_annual:6765,  ccy:"USD", account:"AU", stripe_id:"cus_TETb2itkfPhjEl", match:"close",   note:"Stripe $6,765 USD vs HubSpot $6,150. Close match."},
-  {deal:"Coastal Demolitions",           ae:"Sina",   hs_arr:4728,  stripe_amount:433,   stripe_annual:5196,  ccy:"AUD", account:"AU", stripe_id:"cus_SeksNhcO3HjuVn", match:"close",   note:"Stripe MRR $433 AUD → ARR ~$5,196 AUD. Close to HS $4,728."},
-  {deal:"Loyalty Management Solutions",  ae:"Sina",   hs_arr:2508,  stripe_amount:341,   stripe_annual:4092,  ccy:"AUD", account:"AU", stripe_id:"cus_SzQCBEJ3xuY7N7", match:"diverge", note:"Stripe MRR $341 AUD → ARR ~$4,092 AUD. HubSpot $2,508 — gap to review."},
-  {deal:"AW Signs",                      ae:"Denzel", hs_arr:15000, stripe_amount:16500, stripe_annual:16500, ccy:"USD", account:"AU", stripe_id:"cus_TBiEOmdFamWuZr", match:"close",   note:"Stripe $16,500 USD vs HubSpot $15,000. Close match."},
-  // NZ account
-  {deal:"Wilton Contracting Ltd",        ae:"Sina",   hs_arr:10575, stripe_amount:11950, stripe_annual:11950, ccy:"NZD", account:"NZ", stripe_id:"cus_Q733nGa6IyKmiz", match:"close",   note:"Stripe total spend $11,950 NZD. Close to HS $10,575."},
-  {deal:"Event Base",                    ae:"Sina",   hs_arr:4200,  stripe_amount:7789,  stripe_annual:7789,  ccy:"NZD", account:"NZ", stripe_id:"cus_Q17bAYOTnoBf2A", match:"diverge", note:"Stripe total spend $7,789 NZD vs HubSpot $4,200 — gap to review."},
-  {deal:"Hoskin Civil",                  ae:"Sina",   hs_arr:4800,  stripe_amount:11039, stripe_annual:11039, ccy:"NZD", account:"NZ", stripe_id:"cus_TTky5OqJPdIk16", match:"diverge", note:"Stripe total spend $11,039 NZD vs HubSpot $4,800 — multi-year possible."},
-  {deal:"Idyllic Design Studio",         ae:"Sina",   hs_arr:3492,  stripe_amount:1673,  stripe_annual:1673,  ccy:"NZD", account:"NZ", stripe_id:"cus_TcKfUNF1h5wHxU", match:"close",   note:"Stripe total spend $1,673 NZD vs HubSpot $3,492."},
-  {deal:"One Picture Group",             ae:"Sina",   hs_arr:6000,  stripe_amount:2257,  stripe_annual:2257,  ccy:"NZD", account:"NZ", stripe_id:"cus_TNPILVvN1SpXOL", match:"diverge", note:"Stripe total spend $2,257 NZD vs HubSpot $6,000."},
-  {deal:"TRU Group",                     ae:"Sina",   hs_arr:4968,  stripe_amount:3923,  stripe_annual:3923,  ccy:"NZD", account:"NZ", stripe_id:"cus_SmJXFG7F77XYNT", match:"close",   note:"Stripe total spend $3,923 NZD vs HubSpot $4,968."},
-  {deal:"Fletcher Construction (ESU)",   ae:"Sina",   hs_arr:4728,  stripe_amount:2643,  stripe_annual:2643,  ccy:"NZD", account:"NZ", stripe_id:"cus_TFSxvtKXDaybnU", match:"close",   note:"Stripe total spend $2,643 NZD vs HubSpot $4,728."},
-  {deal:"Instream Consulting Ltd",       ae:"Denzel", hs_arr:1584,  stripe_amount:1811,  stripe_annual:1811,  ccy:"NZD", account:"NZ", stripe_id:"cus_SmKYKGxN6DyEMt", match:"close",   note:"Stripe total spend $1,811 NZD vs HubSpot $1,584."},
-  // US/SG account
-  {deal:"AMC Asia (SG) Pte Ltd",         ae:"Denzel", hs_arr:7500,  stripe_amount:7500,  stripe_annual:7500,  ccy:"USD", account:"SG", stripe_id:"cus_TndJgP7w1UkDJw", match:"close",   note:"Stripe spend $7,499.79 USD vs HubSpot $7,500. Near-perfect match."},
-];
-
-var RECON_MISSING = [];
-
-function reconTab(which, btn){
-  document.getElementById('recon-confirmed').style.display = which==='confirmed'?'block':'none';
-  document.getElementById('recon-missing').style.display   = which==='missing'?'block':'none';
-  document.getElementById('recon-btn-confirmed').style.fontWeight = which==='confirmed'?'600':'400';
-  document.getElementById('recon-btn-confirmed').style.color = which==='confirmed'?'var(--green)':'var(--text-dim)';
-  document.getElementById('recon-btn-confirmed').style.borderBottom = which==='confirmed'?'2px solid var(--green)':'2px solid transparent';
-  document.getElementById('recon-btn-missing').style.fontWeight = which==='missing'?'600':'400';
-  document.getElementById('recon-btn-missing').style.color = which==='missing'?'var(--amber)':'var(--text-dim)';
-  document.getElementById('recon-btn-missing').style.borderBottom = which==='missing'?'2px solid var(--amber)':'2px solid transparent';
-}
-
-function renderStripeRecon(){
-  var aeChipSmall = function(name){
-    var colors = {Denzel:'#1e40af', Sina:'#065f46'};
-    var bg = name==='Denzel'?'rgba(30,64,175,0.15)':'rgba(6,95,70,0.15)';
-    return '<span style="background:'+bg+';color:'+(colors[name]||'#fff')+';padding:2px 8px;border-radius:20px;font-size:11px;font-weight:600">'+name+'</span>';
-  };
-  var accountBadge = function(acc){
-    if(acc==='NZ') return '<span style="background:rgba(37,99,235,0.15);color:#60a5fa;padding:2px 7px;border-radius:4px;font-size:10px;font-weight:700">NZ</span>';
-    if(acc==='SG') return '<span style="background:rgba(139,92,246,0.15);color:#a78bfa;padding:2px 7px;border-radius:4px;font-size:10px;font-weight:700">SG</span>';
-    return '<span style="background:rgba(6,95,70,0.15);color:#34d399;padding:2px 7px;border-radius:4px;font-size:10px;font-weight:700">AU</span>';
-  };
-
-  document.getElementById('recon-confirmed-body').innerHTML = RECON_CONFIRMED.map(function(r){
-    var matchBadge = r.match === 'close'
-      ? '<span style="background:var(--green-bg);color:var(--green);padding:2px 8px;border-radius:20px;font-size:11px;font-weight:600">✓ Close</span>'
-      : '<span style="background:var(--amber-bg);color:var(--amber);padding:2px 8px;border-radius:20px;font-size:11px;font-weight:600">⚠ Diverges</span>';
-    return '<tr>'+
-      '<td style="font-weight:500">'+r.deal+'</td>'+
-      '<td>'+aeChipSmall(r.ae)+'</td>'+
-      '<td>'+accountBadge(r.account)+'</td>'+
-      '<td class="mono" style="color:var(--text-muted)">$'+fmt(r.hs_arr)+'</td>'+
-      '<td class="mono" style="color:var(--green)">$'+fmt(r.stripe_annual)+' <span style="font-size:10px;color:var(--text-dim)">/yr est.</span></td>'+
-      '<td><span style="background:var(--surface2);color:var(--text-dim);padding:2px 7px;border-radius:4px;font-size:10px;font-weight:600">'+r.ccy+'</span></td>'+
-      '<td>'+matchBadge+'</td>'+
-      '<td><a href="https://dashboard.stripe.com/customers/'+r.stripe_id+'" target="_blank" style="display:inline-flex;align-items:center;gap:4px;font-size:12px;color:var(--green);text-decoration:none;background:var(--green-bg);padding:3px 8px;border-radius:6px;font-weight:600">Stripe ↗</a></td>'+
-      '</tr>';
-  }).join('');
-
-  document.getElementById('recon-missing-body').innerHTML = RECON_MISSING.map(function(r){
-    return '<tr>'+
-      '<td style="font-weight:500">'+r.deal+'</td>'+
-      '<td>'+aeChipSmall(r.ae)+'</td>'+
-      '<td class="mono" style="color:var(--text-muted)">$'+fmt(r.hs_arr)+'</td>'+
-      '<td style="font-size:11px;color:var(--text-dim)">'+r.searched+'</td>'+
-      '<td><span style="background:var(--red-bg);color:var(--red);padding:2px 8px;border-radius:20px;font-size:11px;font-weight:600">Not found</span></td>'+
-      '</tr>';
-  }).join('');
-}
 
 // ── CLOSED / LOST (control view) ──────────────────────────────────────────
 function renderLost(){
@@ -2447,10 +1682,9 @@ renderBanked();
 renderStripe();
 renderComparison();
 renderUpsells();
-renderSubHealth();
-renderStripeRecon();
 renderLost();
 // Pull live data from HubSpot on load so the view reflects current stages.
+updateLockUI();
 syncFromHubSpot();
 
 </script>
