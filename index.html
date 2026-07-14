@@ -1,188 +1,1455 @@
-#!/usr/bin/env python3
-"""
-Apply v13 data updates to the current commission hub v12 file from GitHub.
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>WorkflowMAX · Commission Hub FY2026</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+/* ── v5 PALETTE on v8 STRUCTURE ───────────────────────────────── */
+:root {
+  /* Core palette — v5 green forest */
+  --bg:#F1F1F1;
+  --surface:#ffffff;
+  --surface2:#f7f8f6;
+  --border:rgba(0,0,0,0.07);
+  --border-light:rgba(0,0,0,0.12);
+  --text:#0B151F;
+  --text-muted:#6b7280;
+  --text-dim:#aaa;
+  /* Accent = v5 forest green */
+  --accent:#0D8D5C;
+  --accent-glow:rgba(13,141,92,0.10);
+  /* Green family */
+  --green:#0D8D5C;
+  --green-bright:#63DB94;
+  --green-bg:#d4f7e5;
+  --green-border:#a8e8c5;
+  /* Sidebar */
+  --sidebar-bg:#0A2F28;
+  --sidebar-border:rgba(99,219,148,0.12);
+  --sidebar-text:rgba(99,219,148,0.55);
+  --sidebar-text-active:#63DB94;
+  /* Amber / yellow */
+  --amber:#b45309;
+  --amber-bg:#FBF5D8;
+  --amber-border:#e8d987;
+  /* Red */
+  --red:#dc2626;
+  --red-bg:#fee2e2;
+  --red-border:#fca5a5;
+  /* Blue */
+  --blue:#1a5fa8;
+  --blue-bg:#E8F3FF;
+  --blue-border:#b3d9ff;
+  /* Purple — kept for Outbound badge */
+  --purple:#4f46e5;
+  --purple-bg:#ede9fe;
+  --purple-border:#c4b5fd;
+  /* Teal */
+  --teal:#0D8D5C;
+  --teal-bg:#d4f7e5;
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;font-size:14px;line-height:1.5;}
 
-Usage:
-  python3 apply_v13.py path/to/current_v12.html
-  # Outputs: v13.html in the same directory
+/* ── SIDEBAR ── */
+.app{display:flex;min-height:100vh;}
+.sidebar{width:224px;flex-shrink:0;background:var(--sidebar-bg);border-right:1px solid var(--sidebar-border);display:flex;flex-direction:column;position:sticky;top:0;height:100vh;overflow-y:auto;}
+.sidebar-logo{padding:22px 18px 18px;border-bottom:1px solid var(--sidebar-border);}
+.logo-text{font-family:'Inter',sans-serif;font-size:14px;font-weight:800;color:#fff;line-height:1.2;}
+.logo-text span{color:var(--green-bright);}
+.logo-sub{font-size:9px;color:rgba(99,219,148,0.45);letter-spacing:.06em;margin-top:3px;text-transform:uppercase;}
+.nav{padding:10px 0;flex:1;}
+.nav-section{padding:6px 16px 2px;font-size:9px;letter-spacing:.10em;text-transform:uppercase;color:rgba(99,219,148,0.3);margin-top:8px;font-weight:700;}
+.nav-item{display:flex;align-items:center;gap:8px;padding:8px 16px;cursor:pointer;color:var(--sidebar-text);font-size:12px;font-weight:600;transition:all .15s;border-left:2px solid transparent;margin:1px 0;}
+.nav-item:hover{color:#fff;background:rgba(99,219,148,0.08);}
+.nav-item.active{color:var(--sidebar-text-active);background:rgba(99,219,148,0.12);border-left-color:var(--green-bright);}
+.nav-icon{font-size:13px;width:18px;text-align:center;}
+.sidebar-footer{padding:16px 16px 28px;border-top:1px solid var(--sidebar-border);margin-top:14px;}
+.sync-badge{display:flex;align-items:center;gap:6px;font-size:10px;color:var(--green-bright);font-weight:600;}
+.sync-dot{width:6px;height:6px;border-radius:50%;background:var(--green-bright);box-shadow:0 0 6px var(--green-bright);animation:pulse 2s infinite;}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.3}}
 
-What it changes (ONLY these — no other functionality touched):
-  1. Replaces the entire `var RAW = [ ... ];` array with the reconciled 
-     47 spreadsheet deals + historical deals that don't overlap.
-  2. Removes the hardcoded stale error banner: 
-     "Data issues must be resolved before paying commissions..."
-  3. Updates one label in the page header from FY2025 → FY2026 (v13).
+/* ── MAIN LAYOUT ── */
+.main{flex:1;overflow-x:hidden;}
+.page{display:none;}
+.page.active{display:block;}
+.page-header{padding:28px 32px 22px;border-bottom:1px solid var(--border);background:#fff;}
+.page-eyebrow{font-size:10px;letter-spacing:.10em;text-transform:uppercase;color:var(--accent);margin-bottom:5px;font-weight:700;}
+.page-title{font-family:'Inter',sans-serif;font-size:24px;font-weight:800;line-height:1.1;color:var(--text);}
+.page-sub{color:var(--text-muted);font-size:12px;margin-top:5px;}
+.page-body{padding:24px 32px;}
 
-What it does NOT touch:
-  - PIN gate, Mark as paid, sidebar, syncFromHubSpot, syncStripe, 
-    STRIPE_CUS_MAP, RECON dict, classify(), all rendering functions,
-    CSS, HTML structure.
-"""
-import sys, re, os
+/* ── KPI CARDS ── */
+.kpi-row{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:20px;}
+.kpi-card{background:#fff;border:1px solid var(--border);border-radius:10px;padding:14px 16px;transition:border-color .2s;box-shadow:0 1px 3px rgba(0,0,0,0.04);}
+.kpi-card:hover{border-color:var(--accent);}
+.kpi-label{font-size:9px;font-weight:700;color:var(--text-dim);text-transform:uppercase;letter-spacing:.06em;margin-bottom:5px;}
+.kpi-value{font-family:'Inter',sans-serif;font-size:24px;font-weight:800;color:var(--text);line-height:1;}
+.kpi-value.green{color:var(--green);}
+.kpi-value.amber{color:var(--amber);}
+.kpi-value.red{color:var(--red);}
+.kpi-value.purple{color:var(--purple);}
+.kpi-value.teal{color:var(--green);}
+.kpi-sub{font-size:10px;color:var(--text-dim);margin-top:4px;}
 
-if len(sys.argv) < 2:
-    print("Usage: python3 apply_v13.py path/to/current_v12.html")
-    sys.exit(1)
+/* ── SECTION TITLE ── */
+.section-title{font-family:'Inter',sans-serif;font-size:12px;font-weight:700;letter-spacing:.02em;margin-bottom:12px;display:flex;align-items:center;gap:8px;color:var(--text);}
+.section-title::after{content:'';flex:1;height:1px;background:var(--border);}
 
-src_path = sys.argv[1]
-if not os.path.exists(src_path):
-    print(f"File not found: {src_path}")
-    sys.exit(1)
+/* ── TABLES ── */
+.table-wrap{background:#fff;border:1px solid var(--border);border-radius:10px;overflow:hidden;margin-bottom:16px;box-shadow:0 1px 3px rgba(0,0,0,0.04);}
+table{width:100%;border-collapse:collapse;}
+thead th{background:var(--surface2);padding:8px 12px;text-align:left;font-size:9px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--text-dim);border-bottom:1px solid var(--border);white-space:nowrap;}
+tbody tr{border-bottom:1px solid var(--border);transition:background .1s;}
+tbody tr:last-child{border-bottom:none;}
+tbody tr:hover{background:#fafafa;}
+td{padding:8px 12px;font-size:12px;vertical-align:middle;}
+.deal-name{font-weight:600;color:var(--text);font-size:12px;max-width:200px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.deal-link{color:inherit;text-decoration:none;}
+.deal-link:hover{color:var(--accent);}
 
-out_path = os.path.join(os.path.dirname(os.path.abspath(src_path)) or ".", "v13.html")
+/* ── BADGES ── */
+.badge{display:inline-flex;align-items:center;gap:4px;padding:2px 7px;border-radius:8px;font-size:9px;font-weight:700;white-space:nowrap;}
+.badge-green{background:var(--green-bg);color:var(--green);}
+.badge-amber{background:var(--amber-bg);color:var(--amber);}
+.badge-red{background:var(--red-bg);color:var(--red);}
+.badge-blue{background:var(--blue-bg);color:var(--blue);}
+.badge-purple{background:var(--purple-bg);color:var(--purple);}
+.badge-teal{background:var(--green-bg);color:var(--green);}
+.badge-dim{background:var(--surface2);color:var(--text-dim);border:1px solid var(--border);}
+.mono{font-family:'Inter',sans-serif;}
 
-with open(src_path, encoding="utf-8") as f:
-    content = f.read()
+/* ── ALERTS ── */
+.alert-strip{display:flex;align-items:flex-start;gap:12px;padding:12px 14px;border-radius:8px;font-size:12px;margin-bottom:14px;}
+.alert-strip.warning{background:var(--amber-bg);border:1px solid var(--amber-border);color:var(--amber);}
+.alert-strip.info{background:var(--blue-bg);border:1px solid var(--blue-border);color:var(--blue);}
+.alert-strip.danger{background:var(--red-bg);border:1px solid var(--red-border);color:var(--red);}
+.alert-strip.success{background:var(--green-bg);border:1px solid var(--green-border);color:var(--green);}
+.alert-body{color:var(--text-muted);line-height:1.5;}
+.alert-body strong{color:var(--text);}
 
-# ── DEALS FROM RECONCILIATION ─────────────────────────────────────────
-# 47 non-Premium spreadsheet deals + Wilton Contracting (Premium, kept for reference)
-# All fields pulled from HubSpot MCP query 14 Jul 2026.
-# `src` is empty because HS commission_type is authoritative — classify() ignores src when commission_type is set.
+/* ── FORM CONTROLS ── */
+select{background:#fff;border:1px solid var(--border);border-radius:6px;color:var(--text);font-family:'Inter',sans-serif;font-size:12px;padding:5px 9px;outline:none;cursor:pointer;}
+select:focus{border-color:var(--accent);}
+input[type=date]{background:#fff;border:1px solid var(--border);border-radius:6px;color:var(--text);font-family:'Inter',sans-serif;font-size:12px;padding:5px 9px;outline:none;cursor:pointer;}
+.filter-bar{display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap;align-items:center;}
+.filter-label{font-size:10px;color:var(--text-dim);font-weight:700;text-transform:uppercase;letter-spacing:.04em;}
 
-NEW_DEALS = [
-    # (id, name, owner, arr_or_None, inv, pkg, close, commission_type, ccy)
-    (60204129032, "MAC Network Services - Active", "80127257", 8976.48,  "Heavy Involvement", "Advanced Subscription", "2026-06-04", "Upsell", "GBP"),
-    (55827648549, "SRH Architecture - Active",     "80406430", 16320.96, "Heavy Involvement", "Advanced Subscription", "2026-05-29", "Inbound", "AUD"),
-    (60524876205, "AFI | Industrial Automation NZ - Active", "80406430", 9149.76, "Heavy Involvement", "Advanced Subscription", "2026-06-26", "Partner Referral", "NZD"),
-    (58902517689, "ACHM - Active",                 "80127259", 9520.56,  "Heavy Involvement", "Advanced Subscription", "2026-04-15", "Upsell", "AUD"),
-    (62458178669, "Redibuilt Homes (RediFrame) - Active", "80127259", 1700.10, "Heavy Involvement", "Advanced Subscription", "2026-08-31", "Inbound", "AUD"),
-    (60525063715, "Woolf Bond Planning - Active",  "80127257", 2493.48,  "Heavy Involvement", "Advanced Subscription", "2026-06-02", "Partner Referral", "GBP"),
-    (59814989959, "Guyco Construction (2019) Ltd - Active", "80406430", 15504.00, "Heavy Involvement", "Advanced Subscription", "2026-06-03", "Partner Referral", "NZD"),
-    (61040532507, "Keyts Facility Services - Active", "80127259", 8613.84, "Non Sourced", "Advanced Subscription", "2026-06-17", "Inbound", "AUD"),
-    (59153725536, "Wilton 2 - WCL Stop World",     "80406430", 16200.00, "Non Sourced",       "Advanced Subscription", "2026-03-11", "Upsell", "NZD"),
-    (50551214758, "Consult Construct - New Deal",  "80127257", 17658.48, "Heavy Involvement", "Advanced Subscription", "2026-06-12", "Inbound", "GBP"),
-    (49198154300, "TBE Environmental Pty Ltd - Active", "80127259", 8160.48, "Non Sourced", "Advanced Subscription", "2026-06-22", "Partner Referral", "AUD"),
-    (62458186005, "Weld Australia Certification",  "80127259", 999.00,   "Heavy Involvement", "Advanced Subscription", "2026-06-30", "Inbound", "AUD"),
-    (58630581157, "Data Sagacity Pty Ltd - Active", "80127259", 7820.46, "Heavy Involvement", "Advanced Subscription", "2026-04-28", "Upsell", "AUD"),
-    (59728027510, "Tweak Design - Active",         "80127259", 3400.20,  "Heavy Involvement", "Advanced Subscription", "2026-05-31", "Inbound", "AUD"),
-    (57980189095, "TechniGroup - Active",          "80127259", 4760.28,  "Heavy Involvement", "Advanced Subscription", "2026-06-02", "Upsell", "AUD"),
-    (55726577793, "Stradegy - Active",             "80406430", 13500.00, "Heavy Involvement", "Advanced Subscription", "2026-06-22", "Upsell", "NZD"),
-    (59963595317, "CR Automation Limited - Active", "80406430", 9979.20, "Heavy Involvement", "Advanced Subscription", "2026-05-19", "Upsell", "NZD"),
-    (43407740035, "TTX Group - Active",            "80406430", 24366.00, "Heavy Involvement", "Advanced Subscription", "2026-01-19", "Outbound", "USD"),
-    (61763921574, "Weld Australia - Active",       "80127259", 3330.00,  "Non Sourced",       "Advanced Subscription", "2026-06-29", "Inbound", "AUD"),
-    (61465710177, "EcOz Pty Ltd - Active",         "80127259", 17001.00, "Non Sourced",       "Advanced Subscription", "2026-06-29", "Upsell", "AUD"),
-    (60108184215, "OneVision Project Services Australia - Active", "80406430", 4533.60, "Heavy Involvement", "Advanced Subscription", "2026-05-19", "Partner Referral", "AUD"),
-    (61097204139, "Mont Eltham Drafting Pty Ltd - Active", "80406430", 3400.20, "Sourced", "Advanced Subscription", "2026-06-30", "Upsell", "AUD"),
-    (59963533425, "Pinnacle High Pressure Cleaning", "80127259", 3400.20, "Heavy Involvement", "Advanced Subscription", "2026-06-01", "Inbound", "AUD"),
-    (59729788711, "Nelligan Consulting Engineers - Active", "80127259", 4050.00, "Heavy Involvement", "Advanced Subscription", "2026-04-30", "Upsell", "NZD"),
-    (57610382769, "AIM Building & Maintenance Services Ltd (ADV/Upsell)", "80127257", 48237.60, "Heavy Involvement", "Advanced Subscription", "2026-04-09", "Upsell", "GBP"),
-    (49779084431, "The Studio Bridge - Previous Subscription", "80127259", 6562.50, "Heavy Involvement", "Advanced Subscription", "2026-06-03", "Outbound", "USD"),
-    (60785716638, "Haigh Workman - Active",        "80127259", 12150.00, "Heavy Involvement", "Advanced Subscription", "2026-06-29", "Upsell", "NZD"),
-    (60177699359, "Range Environmental Consultants - Active", "80127259", 6120.36, "Heavy Involvement", "Advanced Subscription", "2026-06-17", "Upsell", "AUD"),
-    (59610016653, "Justo Ltd - Active",            "80127257", 4306.92,  "Heavy Involvement", "Advanced Subscription", "2026-04-30", "Upsell", "GBP"),
-    (60332812288, "HF Home LLC - Active",          "80406430", 6480.00,  "Heavy Involvement", "Advanced Subscription", "2026-06-02", "Partner Referral", "USD"),
-    (59418404352, "GP Structural Services - Active", "80406430", 4080.00, "Heavy Involvement", "Advanced Subscription", "2026-05-08", "Inbound", "AUD"),
-    (60355671674, "McClure Civil Management - Upsell", "80127259", 7140.42, "Heavy Involvement", "Advanced Subscription", "2026-06-24", "Partner Referral", "AUD"),
-    (49908855476, "AMC Asia (SG) Pte Ltd - Active", "80127259", 7500.03, "Sourced",           "Advanced Subscription", "2026-01-12", "Outbound", "USD"),
-    (60182313494, "Guthrie McGoldrick Consulting Engineers - Active", "80406430", 5440.32, "Heavy Involvement", "Advanced Subscription", "2026-05-18", "Upsell", "AUD"),
-    (53715214102, "Event Base - Active",           "80406430", 5400.00,  "Heavy Involvement", "Advanced Subscription", "2026-03-31", "Upsell", "NZD"),
-    (60172651422, "PDA LTD - Previous Subscription", "80127257", 3626.88, "Heavy Involvement", "Advanced Subscription", "2026-05-15", "Upsell", "GBP"),
-    (59277607072, "ASC Engineers - Active",        "80406430", 3386.40,  "Heavy Involvement", "Advanced Subscription", "2026-04-22", "Inbound", "AUD"),
-    (56173724020, "Wilton Contracting Ltd - Active", "80406430", None,   "Non Sourced",       "Premium Subscription", "2026-03-04", "Upsell", "NZD"),
-    (59345087246, "Cartledge Mining and Geotechnics - Active", "80406430", 15504.96, "Heavy Involvement", "Advanced Subscription", "2026-05-27", "Upsell", "AUD"),
-    (61742528606, "Redibuilt Homes - Active",      "80127259", 2380.14,  "Non Sourced",       "Advanced Subscription", "2026-06-29", "Inbound", "AUD"),
-    (60142178083, "Le Mottee Group Pty Ltd - Active", "80127259", 3740.22, "Heavy Involvement", "Advanced Subscription", "2026-06-26", "Inbound", "AUD"),
-    (57619530845, "SCLspec Pty Ltd - Active",      "80406430", 2945.04,  "Non Sourced",       "Advanced Subscription", "2026-03-16", "Upsell", "AUD"),
-    (50267855989, "Novatia - Active",              "80127257", 2493.48,  "Heavy Involvement", "Advanced Subscription", "2026-05-05", "Upsell", "GBP"),
-    (59173531424, "Marton Lee Limited - Active",   "80406430", 6480.00,  "Sourced",           "Advanced Subscription", "2026-06-19", "Upsell", "NZD"),
-    (57830094862, "KSN / Azets Ireland - Active",  "80127257", 45000.00, "Heavy Involvement", "Advanced Subscription", "2026-05-12", "Inbound", "USD"),
-    (56162820649, "Measured Group - Active",       "80406430", 19580.94, "Heavy Involvement", "Advanced Subscription", "2026-05-05", "Upsell", "AUD"),
-    (56214795846, "Propel Marine Pty Ltd - Active", "80127259", 14863.92, "Heavy Involvement", "Advanced Subscription", "2026-04-07", "Upsell", "AUD"),
-]
+/* ── TAGS ── */
+.pending-tag{display:inline-flex;align-items:center;gap:3px;padding:2px 6px;border-radius:8px;font-size:9px;font-weight:700;background:var(--amber-bg);color:var(--amber);margin-left:4px;vertical-align:middle;}
+.done-tag{display:inline-flex;align-items:center;gap:3px;padding:2px 6px;border-radius:8px;font-size:9px;font-weight:700;background:var(--green-bg);color:var(--green);margin-left:4px;vertical-align:middle;}
+.banked-chip{display:inline-flex;align-items:center;gap:3px;padding:2px 7px;border-radius:8px;font-size:10px;font-weight:700;background:var(--green-bg);color:var(--green);}
 
-# Sort newest first for readability at the top of the array
-NEW_DEALS.sort(key=lambda d: d[6], reverse=True)
+/* ── STRIPE CARDS ── */
+.stripe-card{background:#fff;border:1px solid var(--border);border-radius:10px;overflow:hidden;margin-bottom:16px;box-shadow:0 1px 3px rgba(0,0,0,0.04);}
+.stripe-card-header{background:var(--surface2);padding:14px 18px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;}
+.stripe-card-company{font-family:'Inter',sans-serif;font-size:14px;font-weight:700;}
+.stripe-card-body{padding:18px;}
+.stripe-meta{display:grid;grid-template-columns:repeat(5,1fr);gap:12px;margin-bottom:14px;}
+.stripe-stat-label{font-size:9px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--text-dim);margin-bottom:4px;}
+.stripe-stat-val{font-family:'Inter',sans-serif;font-size:15px;font-weight:800;}
 
-def deal_line(d):
-    id_, name, owner, arr, inv, pkg, close, ct, ccy = d
-    name_esc = name.replace('"', '\\"')
-    arr_part = f'arr:{arr},' if arr is not None else ''
-    return (f'  {{id:"{id_}",name:"{name_esc}",owner:"{owner}",{arr_part}'
-            f'src:"",inv:"{inv}",pkg:"{pkg}",'
-            f'close:"{close}",paid_out:false,contract_years:1,'
-            f'commission_type:"{ct}",ccy:"{ccy}"}},')
+/* ── TIMELINE ── */
+.timeline-wrap{overflow-x:auto;padding-bottom:8px;}
+.timeline-grid{min-width:700px;}
+.timeline-months{display:flex;gap:2px;margin-bottom:6px;}
+.tmonth{flex:1;text-align:center;font-size:9px;color:var(--text-dim);letter-spacing:.04em;padding:3px 0;font-weight:600;}
+.timeline-track{display:flex;gap:2px;height:28px;}
+.tcell{flex:1;border-radius:3px;cursor:default;transition:opacity .15s;}
+.tcell:hover{opacity:.75;}
+.tcell.paid{background:var(--green-bg);border:1px solid var(--green-border);}
+.tcell.voided{background:var(--amber-bg);border:1px solid var(--amber-border);}
+.tcell.empty{background:rgba(0,0,0,0.03);border:1px solid var(--border);}
+.tcell.future{background:rgba(13,141,92,0.04);border:1px dashed var(--green-border);}
+.timeline-legend{display:flex;gap:14px;margin-top:8px;flex-wrap:wrap;}
+.tleg{display:flex;align-items:center;gap:5px;font-size:10px;color:var(--text-dim);font-weight:600;}
+.tleg-dot{width:10px;height:10px;border-radius:2px;}
 
-new_ids = {str(d[0]) for d in NEW_DEALS}
+/* ── COMPARISON ── */
+.diff-positive{color:var(--green);font-weight:700;}
+.diff-negative{color:var(--red);font-weight:700;}
+.diff-zero{color:var(--text-dim);}
+.diff-na{color:var(--text-dim);font-size:11px;}
+.hs-val{font-size:12px;color:var(--text-muted);font-weight:600;}
+.stripe-val{font-size:12px;color:var(--blue);font-weight:600;}
+.comm-hs{font-size:12px;color:var(--green);font-weight:700;}
+.comm-stripe{font-size:12px;color:var(--purple);font-weight:700;}
+.winner-hs{background:rgba(13,141,92,0.04);}
+.winner-stripe{background:rgba(79,70,229,0.04);}
 
-# ── 1. LOCATE + REPLACE RAW ARRAY ─────────────────────────────────────
-m = re.search(r'var RAW = \[', content)
-if not m:
-    print("ERROR: Could not locate 'var RAW = [' in file.")
-    sys.exit(1)
+/* ── SCROLLBAR ── */
+::-webkit-scrollbar{width:5px;height:5px;}
+::-webkit-scrollbar-track{background:transparent;}
+::-webkit-scrollbar-thumb{background:rgba(0,0,0,0.15);border-radius:3px;}
+@keyframes spin{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}
+</style>
+</head>
+<body>
+<div class="app">
+<nav class="sidebar">
+  <div class="sidebar-logo">
+    <div style="display:flex;align-items:center;gap:9px">
+      <div style="width:32px;height:32px;border-radius:50%;background:#63DB94;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:800;color:#0A2F28;flex-shrink:0">MAX</div>
+      <div>
+        <div style="font-size:14px;color:#fff;font-family:'Inter',sans-serif;">workflow<b style="font-weight:800;color:#63DB94">MAX</b></div>
+        <div style="font-size:9px;color:rgba(99,219,148,0.5);margin-top:-2px;letter-spacing:.04em;text-transform:uppercase">Commission Hub · FY2026</div>
+      </div>
+    </div>
+  </div>
+  <div class="nav">
+    <div class="nav-section">Overview</div>
+    <div class="nav-item active" onclick="showPage('dashboard',this)"><span class="nav-icon">◈</span>Dashboard</div>
+    <div class="nav-item" onclick="showPage('deals',this)"><span class="nav-icon">≡</span>Deal Table</div>
+    <div class="nav-item" onclick="showPage('lost',this)"><span class="nav-icon">⊘</span>Closed / Lost <span class="pending-tag" id="lost-tag" style="background:rgba(185,28,28,0.15);color:#fca5a5">·</span></div>
+    <div class="nav-item" onclick="showPage('ae',this)"><span class="nav-icon">◎</span>By AE</div>
+    <div class="nav-section">Multi-year</div>
+    <div class="nav-item" onclick="showPage('banked',this)"><span class="nav-icon">⬡</span>Banked Commission</div>
+    <div class="nav-section">Stripe</div>
+    <div class="nav-item" onclick="showPage('stripe',this)"><span class="nav-icon">⬡</span>Contract Timeline</div>
+    <div class="nav-item" onclick="showPage('comparison',this)"><span class="nav-icon">⇌</span>HS vs Stripe</div>
+    <div class="nav-section">Upsells</div>
+    <div class="nav-item" onclick="showPage('upsells',this)"><span class="nav-icon">↑</span>Upsell Deals <span class="pending-tag">New</span></div>
+  </div>
+  <div class="sidebar-footer">
+    <div id="lock-indicator" onclick="toggleLockPanel()" style="display:flex;align-items:center;gap:6px;font-size:11px;font-weight:700;color:var(--sidebar-text);cursor:pointer;margin-bottom:10px;user-select:none">🔒 View only</div>
+    <div id="lock-panel" style="display:none;margin-bottom:10px">
+      <input id="pin-input" type="password" inputmode="numeric" placeholder="Editor PIN" style="width:100%;box-sizing:border-box;background:rgba(255,255,255,0.05);border:1px solid var(--sidebar-border);border-radius:6px;padding:7px 10px;color:#fff;font-size:11px;font-family:'DM Mono',monospace;outline:none" onkeydown="if(event.key==='Enter')submitPin()" />
+      <div style="display:flex;gap:6px;margin-top:6px">
+        <button onclick="submitPin()" style="flex:1;padding:6px 0;background:rgba(99,219,148,0.12);border:1px solid rgba(99,219,148,0.25);border-radius:6px;color:#63DB94;font-size:10px;font-weight:700;cursor:pointer;font-family:'Inter',sans-serif">Unlock</button>
+        <button onclick="lockSession()" style="flex:1;padding:6px 0;background:rgba(255,255,255,0.04);border:1px solid var(--sidebar-border);border-radius:6px;color:var(--sidebar-text);font-size:10px;font-weight:700;cursor:pointer;font-family:'Inter',sans-serif">Lock session</button>
+      </div>
+      <div id="pin-msg" style="font-size:10px;color:#f87171;margin-top:5px;min-height:12px;font-family:'DM Mono',monospace"></div>
+    </div>
+    <div class="sync-badge" style="margin-bottom:10px"><div class="sync-dot"></div>Live · HubSpot + Stripe</div>
+    <button onclick="syncFromHubSpot()" id="sync-btn" style="width:100%;display:flex;align-items:center;justify-content:center;gap:6px;padding:8px 0;background:rgba(99,219,148,0.12);border:1px solid rgba(99,219,148,0.25);border-radius:8px;color:#63DB94;font-size:11px;font-weight:700;cursor:pointer;font-family:'Inter',sans-serif;transition:all .15s" onmouseover="this.style.background='rgba(99,219,148,0.2)'" onmouseout="this.style.background='rgba(99,219,148,0.12)'">
+      <span id="sync-icon" style="font-size:14px">⟳</span> Refresh data
+    </button>
+    <div id="sync-status" style="font-size:10px;color:rgba(99,219,148,0.5);margin-top:6px;text-align:center;min-height:14px;font-family:'DM Mono',monospace"></div>
+  </div>
+</nav>
 
-start = m.start()
-# Find the matching '];' — count brackets so nested arrays don't confuse us
-i = m.end()
-depth = 1
-while i < len(content) and depth > 0:
-    ch = content[i]
-    if ch == '[': depth += 1
-    elif ch == ']': depth -= 1
-    i += 1
-end = i  # position right after the closing ']'
-# Include the ';' that follows
-if content[end:end+1] == ';':
-    end += 1
+<main class="main">
 
-old_raw = content[start:end]
+<!-- DASHBOARD -->
+<div class="page active" id="page-dashboard">
+  <div class="page-header">
+    <div class="page-eyebrow">Commission Hub · FY2026</div>
+    <div class="page-title">Dashboard</div>
+    <div class="page-sub">Advanced + Premium + Pro · Any deal value · Annual upfront · Post-discount ARR · AE Commission Attribution wins on conflict · <span style="background:#d4f7e5;color:#0A2F28;padding:1px 7px;border-radius:4px;font-size:10px;font-weight:700">All values USD</span></div>
+  </div>
+  <div class="page-body">
+    <!-- Date range filter -->
+    <div class="filter-bar" style="margin-bottom:24px;background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:14px 18px;">
+      <span class="filter-label">PERIOD</span>
+      <select id="dash-quarter" onchange="renderDashboard()">
+        <option value="all">All time</option>
+        <option value="q2-2026">Q2 2026 (Apr–Jun)</option>
+        <option value="q1-2026">Q1 2026 (Jan–Mar)</option>
+        <option value="q4-2025">Q4 2025 (Oct–Dec)</option>
+        <option value="q3-2025">Q3 2025 (Jul–Sep)</option>
+        <option value="q2-2025">Q2 2025 (Apr–Jun)</option>
+      </select>
+      <span class="filter-label" style="margin-left:8px">STATUS</span>
+      <select id="dash-payout" onchange="renderDashboard()">
+        <option value="all">All</option>
+        <option value="outstanding">Outstanding only</option>
+        <option value="paid">Paid out only</option>
+      </select>
+      <span style="margin-left:auto;font-family:'DM Mono',monospace;font-size:10px;color:var(--text-dim)">Commissions paid quarterly</span>
+    </div>
+    <div id="dashboard-body"></div>
+  </div>
+</div>
 
-# Extract existing deal lines to preserve historical FY2025 entries not in new set
-existing_lines = re.findall(r'\{id:"(\d+)"[^{}]*\},', old_raw)
-kept_lines = []
-for line in re.finditer(r'\{id:"\d+"[^{}]*\},?', old_raw):
-    line_text = line.group(0)
-    m_id = re.match(r'\{id:"(\d+)"', line_text)
-    if m_id and m_id.group(1) in new_ids:
-        continue  # overlap — will be replaced
-    # Make sure line ends with ','
-    if not line_text.endswith(','):
-        line_text += ','
-    kept_lines.append('  ' + line_text)
+<!-- DEAL TABLE -->
+<div class="page" id="page-deals">
+  <div class="page-header">
+    <div class="page-eyebrow">Commission Hub</div>
+    <div class="page-title">Deal Table</div>
+    <div class="page-sub">All closed deals · Full eligibility and commission breakdown · <span style="background:#d4f7e5;color:#0A2F28;padding:1px 7px;border-radius:4px;font-size:10px;font-weight:700">All values USD</span></div>
+  </div>
+  <div class="page-body">
+    <div class="filter-bar">
+      <span class="filter-label">AE</span>
+      <select id="f-ae" onchange="renderDeals()">
+        <option value="">All AEs</option>
+        <option value="80127257">Mark Dempsey</option>
+        <option value="80127259">Denzel Kereama</option>
+        <option value="80406430">Sina Zarei</option>
+        <option value="85659655">Edgar Calvo</option>
+        <option value="85659656">Aline Baleeiro</option>
+      </select>
+      <span class="filter-label">Period</span>
+      <select id="f-quarter" onchange="renderDeals()">
+        <option value="">All time</option>
+        <option value="q2-2026">Q2 2026 (Apr–Jun)</option>
+        <option value="q1-2026">Q1 2026 (Jan–Mar)</option>
+        <option value="q4-2025">Q4 2025 (Oct–Dec)</option>
+        <option value="q3-2025">Q3 2025 (Jul–Sep)</option>
+        <option value="q2-2025">Q2 2025 (Apr–Jun)</option>
+      </select>
+      <span class="filter-label">Status</span>
+      <select id="f-status" onchange="renderDeals()">
+        <option value="">All</option>
+        <option value="eligible">Eligible only</option>
+        <option value="ineligible">Ineligible only</option>
+      </select>
+      <span class="filter-label">Payout</span>
+      <select id="f-payout" onchange="renderDeals()">
+        <option value="">All</option>
+        <option value="outstanding">Outstanding</option>
+        <option value="paid_out">Paid out</option>
+      </select>
+    </div>
+    <div id="deals-table"></div>
+  </div>
+</div>
 
-new_deal_lines = [deal_line(d) for d in NEW_DEALS]
+<!-- BY AE -->
+<div class="page" id="page-lost">
+  <div class="page-header">
+    <div class="page-eyebrow">HubSpot · Control view</div>
+    <div class="page-title">Closed / Lost</div>
+    <div class="page-sub">Deals in Closed Lost, Expired or Churned stages. Kept for tracking only — never counted in commission. Hit Refresh data to pull the latest from HubSpot.</div>
+  </div>
+  <div class="page-body">
+    <div id="lost-body"></div>
+  </div>
+</div>
 
-new_raw = 'var RAW = [\n' + '\n'.join(new_deal_lines + kept_lines) + '\n];'
+<div class="page" id="page-ae">
+  <div class="page-header">
+    <div class="page-eyebrow">Commission Hub</div>
+    <div class="page-title">By AE</div>
+    <div class="page-sub">Individual breakdowns · data quality issues · paid vs outstanding · <span style="background:#d4f7e5;color:#0A2F28;padding:1px 7px;border-radius:4px;font-size:10px;font-weight:700">All values USD</span></div>
+  </div>
+  <div class="page-body" id="ae-body"></div>
+</div>
 
-content = content[:start] + new_raw + content[end:]
+<!-- BANKED COMMISSION -->
+<div class="page" id="page-banked">
+  <div class="page-header">
+    <div class="page-eyebrow">Multi-year · Commission Bank</div>
+    <div class="page-title">Banked Commission</div>
+    <div class="page-sub">ACV earned at close · future renewal commission already provisionally banked · motivational view · <span style="background:#d4f7e5;color:#0A2F28;padding:1px 7px;border-radius:4px;font-size:10px;font-weight:700">All values USD</span></div>
+  </div>
+  <div class="page-body" id="banked-body"></div>
+</div>
 
-# ── 2. REMOVE HARDCODED ERROR BANNER ──────────────────────────────────
-# Match the entire alert-strip danger with the stale text (may be on one line minified)
-banner_pattern = re.compile(
-    r'\(issues>0\?\'<div class="alert-strip danger"[^\']*'
-    r'Data issues must be resolved before paying commissions[^\']*'
-    r'Rural Design billing frequency[^\']*'
-    r'Instream Consulting missing fields\.</div></div>\'"?\+?\'?\'?:\'\'\)?\+?',
-    re.DOTALL
-)
-new_content, n_replaced = banner_pattern.subn("''+", content)
-if n_replaced == 0:
-    # Try a slightly looser match if minification differs
-    looser = re.compile(
-        r'\(issues>0\?[^:]*Data issues must be resolved before paying commissions[^:]*:\'\'\)\+?',
-        re.DOTALL
-    )
-    new_content, n_replaced = looser.subn("''+", content)
+<!-- STRIPE TIMELINE -->
+<div class="page" id="page-stripe">
+  <div class="page-header">
+    <div class="page-eyebrow">Stripe · Contract Timeline</div>
+    <div class="page-title">Payment Timeline</div>
+    <div class="page-sub">Real Stripe invoices per eligible deal · Invoice → Deal workflow live · <span style="background:#d4f7e5;color:#0A2F28;padding:1px 7px;border-radius:4px;font-size:10px;font-weight:700">All values USD</span></div>
+  </div>
+  <div class="page-body" id="stripe-body"></div>
+</div>
 
-if n_replaced == 0:
-    print("WARNING: Could not locate the hardcoded error banner — it may already be removed or its text differs. RAW array was updated successfully; check the file and remove the banner manually if needed.")
-else:
-    content = new_content
-    print(f"Removed hardcoded error banner ({n_replaced} match)")
+<!-- HS vs STRIPE -->
+<div class="page" id="page-comparison">
+  <div class="page-header">
+    <div class="page-eyebrow">Stripe · Reconciliation</div>
+    <div class="page-title">HubSpot vs Stripe</div>
+    <div class="page-sub">Commission calculated two ways · highlights ARR divergence and payout impact · <span style="background:#d4f7e5;color:#0A2F28;padding:1px 7px;border-radius:4px;font-size:10px;font-weight:700">All values USD</span></div>
+  </div>
+  <div class="page-body" id="comparison-body"></div>
+</div>
 
-# ── 3. UPDATE FY LABEL ─────────────────────────────────────────────────
-content = content.replace(
-    "Commission Hub · FY2025",
-    "Commission Hub · FY2026"
-)
+<!-- ELIGIBILITY -->
 
-# ── WRITE OUTPUT ──────────────────────────────────────────────────────
-with open(out_path, "w", encoding="utf-8") as f:
-    f.write(content)
 
-# Verify
-kept_count = len(kept_lines)
-new_count = len(new_deal_lines)
-print(f"\n✓ Wrote {out_path}")
-print(f"  RAW deals: {new_count} new + {kept_count} historical = {new_count + kept_count} total")
-print(f"  Overlaps replaced: {len(new_ids & set(existing_lines))}")
-print(f"  File size: {len(content):,} chars")
+<!-- PENDING DECISIONS -->
+
+<!-- UPSELLS PAGE -->
+<div class="page" id="page-upsells">
+  <div class="page-header">
+    <div class="page-eyebrow">Upsell Deals</div>
+    <div class="page-title">Upsell Commission</div>
+    <div class="page-sub">Existing Business deals · 7.5% rate · Tracked via dealtype = Existing Business</div>
+  </div>
+  <div class="page-body">
+    <div class="alert-strip warning" style="margin-bottom:20px">
+      <div style="font-size:16px">⚠</div>
+      <div class="alert-body"><strong>Upsell structure is currently unstructured in HubSpot.</strong> The deals below were identified from <code>dealtype = Existing Business</code> set manually on some deals. Going forward, upsells will be owned by the Customer Success team using a dedicated pipeline and ownership model. See the CS Structure tab for the recommended setup.</div>
+    </div>
+
+    <div id="upsell-kpis" style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:24px"></div>
+
+    <div class="section-title">How we identified the upsells</div>
+    <div style="background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:20px;margin-bottom:24px">
+      <div style="font-size:13px;color:var(--text-muted);line-height:1.8;margin-bottom:16px">
+        Since no dedicated upsell structure exists in HubSpot today, identification was done by cross-referencing three criteria:
+      </div>
+      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:16px">
+        <div style="background:var(--surface2);border:1px solid var(--border);border-left:3px solid var(--amber);border-radius:8px;padding:14px">
+          <div style="font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--text-dim);margin-bottom:6px">Criterion 1</div>
+          <div style="font-size:13px;font-weight:700;margin-bottom:4px">dealtype = Existing Business</div>
+          <div style="font-size:11px;color:var(--text-muted)">The <code style="background:rgba(0,0,0,0.06);padding:1px 4px;border-radius:3px">dealtype</code> field already exists in HubSpot with options "New Business" and "Existing Business". Deals marked as Existing Business were the starting point of the analysis.</div>
+        </div>
+        <div style="background:var(--surface2);border:1px solid var(--border);border-left:3px solid var(--amber);border-radius:8px;padding:14px">
+          <div style="font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--text-dim);margin-bottom:6px">Criterion 2</div>
+          <div style="font-size:13px;font-weight:700;margin-bottom:4px">Deal closed after AE start date</div>
+          <div style="font-size:11px;color:var(--text-muted)">We verified when Sina Zarei (Jun 2025) and Denzel Kereama (May 2025) were added to HubSpot. Deals with <code style="background:rgba(0,0,0,0.06);padding:1px 4px;border-radius:3px">dealtype = existingbusiness</code> and <code style="background:rgba(0,0,0,0.06);padding:1px 4px;border-radius:3px">closedate</code> after that date were treated as active AE upsells.</div>
+        </div>
+        <div style="background:var(--surface2);border:1px solid var(--border);border-left:3px solid var(--amber);border-radius:8px;padding:14px">
+          <div style="font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--text-dim);margin-bottom:6px">Criterion 3</div>
+          <div style="font-size:13px;font-weight:700;margin-bottom:4px">Package upgrade confirmed</div>
+          <div style="font-size:11px;color:var(--text-muted)">For identified deals, we cross-referenced the current <code style="background:rgba(0,0,0,0.06);padding:1px 4px;border-radius:3px">product_package</code> against the deal history. All deals below show a transition from Standard to Advanced — confirming they are upgrades of existing customers, not new acquisitions.</div>
+        </div>
+      </div>
+      <div style="background:var(--amber-bg);border:1px solid var(--amber-border);border-radius:8px;padding:12px 14px;font-size:12px;color:var(--amber)">
+        <strong>Current limitation:</strong> this identification was done manually by cross-referencing data. There is no automation or dedicated pipeline. Some upsells may have gone untagged as <code>existingbusiness</code>. The CS structure described in the <strong>CS Structure</strong> tab resolves this permanently.
+      </div>
+    </div>
+
+    <div class="section-title">Identified upsell deals — Existing Business (active)</div>
+    <div class="table-wrap">
+      <table>
+        <thead><tr>
+          <th>Deal</th><th>AE</th><th>Close Date</th><th>ARR</th><th>Package</th><th>Rate</th><th>Commission</th><th>Status</th>
+        </tr></thead>
+        <tbody id="upsell-table-body"></tbody>
+      </table>
+    </div>
+
+    <div class="section-title" style="margin-top:24px">In-progress upsell deals</div>
+    <div class="alert-strip info" style="margin-bottom:14px">
+      <div style="font-size:14px">ℹ</div>
+      <div class="alert-body">These deals are still open — commission will apply if closed. Named explicitly as upsells in HubSpot deal name.</div>
+    </div>
+    <div class="table-wrap">
+      <table>
+        <thead><tr>
+          <th>Deal</th><th>AE</th><th>ARR (projected)</th><th>Stage</th><th>Potential Commission</th>
+        </tr></thead>
+        <tbody id="upsell-pipeline-body"></tbody>
+      </table>
+    </div>
+
+    <div class="section-title" style="margin-top:24px">How upsell commission works</div>
+    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px">
+      <div style="background:var(--surface);border:1px solid var(--border);border-left:3px solid var(--amber);border-radius:10px;padding:16px">
+        <div style="font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--text-dim);margin-bottom:6px">Rate</div>
+        <div style="font-size:24px;font-weight:800;color:var(--amber)">7.5%</div>
+        <div style="font-size:12px;color:var(--text-muted);margin-top:4px">Applied to incremental ARR delta — not the full contract value</div>
+      </div>
+      <div style="background:var(--surface);border:1px solid var(--border);border-left:3px solid var(--amber);border-radius:10px;padding:16px">
+        <div style="font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--text-dim);margin-bottom:6px">Trigger</div>
+        <div style="font-size:14px;font-weight:700;color:var(--text)">dealtype = Existing Business</div>
+        <div style="font-size:12px;color:var(--text-muted);margin-top:4px">Must be set on deal creation. Required field going forward.</div>
+      </div>
+      <div style="background:var(--surface);border:1px solid var(--border);border-left:3px solid var(--amber);border-radius:10px;padding:16px">
+        <div style="font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--text-dim);margin-bottom:6px">Ownership</div>
+        <div style="font-size:14px;font-weight:700;color:var(--text)">CS Team (going forward)</div>
+        <div style="font-size:12px;color:var(--text-muted);margin-top:4px">Upsells will be managed by Customer Success, not AEs. See CS Structure tab.</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- CS STRUCTURE PAGE -->
+
+<!-- DATA CLEANUP PAGE -->
+<!-- STRIPE RECONCILIATION -->
+
+
+
+<!-- SOURCE vs TYPE PAGE -->
+
+
+<!-- SUBSCRIPTION HEALTH -->
+
+</div>
+
+</main>
+</div>
+<script>
+// ── DATA ─────────────────────────────────────────────────────────────────────
+var AE = {
+  "80127257":{name:"Mark Dempsey",   initials:"MD",color:"#0D8D5C",bg:"#d4f7e5"},
+  "80127259":{name:"Denzel Kereama", initials:"DK",color:"#1a5fa8",bg:"#E8F3FF"},
+  "80406430":{name:"Sina Zarei",     initials:"SZ",color:"#0A2F28",bg:"#63DB94"},
+  "85659655":{name:"Edgar Calvo",    initials:"EC",color:"#7a5800",bg:"#FBF5D8"},
+  "85659656":{name:"Aline Baleeiro", initials:"AB",color:"#991b1b",bg:"#fee2e2"},
+};
+
+// Roster is the 5 AEs above. Any deal owned by someone else (e.g. an inactive
+// user) is attributed to a neutral "off-roster" chip so nothing crashes and the
+// AE stats stay clean. These deals are flagged for review, not silently dropped.
+function ensureAE(id){
+  if(!id) id="unassigned";
+  if(!AE[id]) AE[id]={name:"Off-roster ("+id+")",initials:"·",color:"#6b7280",bg:"#e5e7eb",offRoster:true};
+  return AE[id];
+}
+
+// paid_out = true means commission has been paid to the AE already
+// contract_years = total contracted years (for multi-year / banked view)
+// v13 (14 Jul 2026) — RAW replaced with reconciled deals from Commission_Deals workbook.
+// Historical FY2025 deals removed since focus is FY2026 commissions.
+var RAW = [
+  {id:"62458178669",name:"Redibuilt Homes (RediFrame) - Active",owner:"80127259",arr:1700.10,src:"",inv:"Heavy Involvement",pkg:"Advanced Subscription",close:"2026-08-31",paid_out:false,contract_years:1,commission_type:"Inbound",ccy:"AUD"},
+  {id:"62458186005",name:"Weld Australia Certification",owner:"80127259",arr:999.00,src:"",inv:"Heavy Involvement",pkg:"Advanced Subscription",close:"2026-06-30",paid_out:false,contract_years:1,commission_type:"Inbound",ccy:"AUD"},
+  {id:"61097204139",name:"Mont Eltham Drafting Pty Ltd - Active",owner:"80406430",arr:3400.20,src:"",inv:"Sourced",pkg:"Advanced Subscription",close:"2026-06-30",paid_out:false,contract_years:1,commission_type:"Upsell",ccy:"AUD"},
+  {id:"61763921574",name:"Weld Australia - Active",owner:"80127259",arr:3330.00,src:"",inv:"Non Sourced",pkg:"Advanced Subscription",close:"2026-06-29",paid_out:false,contract_years:1,commission_type:"Inbound",ccy:"AUD"},
+  {id:"61465710177",name:"EcOz Pty Ltd - Active",owner:"80127259",arr:17001.00,src:"",inv:"Non Sourced",pkg:"Advanced Subscription",close:"2026-06-29",paid_out:false,contract_years:1,commission_type:"Upsell",ccy:"AUD"},
+  {id:"61742528606",name:"Redibuilt Homes - Active",owner:"80127259",arr:2380.14,src:"",inv:"Non Sourced",pkg:"Advanced Subscription",close:"2026-06-29",paid_out:false,contract_years:1,commission_type:"Inbound",ccy:"AUD"},
+  {id:"60785716638",name:"Haigh Workman - Active",owner:"80127259",arr:12150.00,src:"",inv:"Heavy Involvement",pkg:"Advanced Subscription",close:"2026-06-29",paid_out:false,contract_years:1,commission_type:"Upsell",ccy:"NZD"},
+  {id:"60524876205",name:"AFI | Industrial Automation NZ - Active",owner:"80406430",arr:9149.76,src:"",inv:"Heavy Involvement",pkg:"Advanced Subscription",close:"2026-06-26",paid_out:false,contract_years:1,commission_type:"Partner Referral",ccy:"NZD"},
+  {id:"60142178083",name:"Le Mottee Group Pty Ltd - Active",owner:"80127259",arr:3740.22,src:"",inv:"Heavy Involvement",pkg:"Advanced Subscription",close:"2026-06-26",paid_out:false,contract_years:1,commission_type:"Inbound",ccy:"AUD"},
+  {id:"60355671674",name:"McClure Civil Management - Upsell",owner:"80127259",arr:7140.42,src:"",inv:"Heavy Involvement",pkg:"Advanced Subscription",close:"2026-06-24",paid_out:false,contract_years:1,commission_type:"Partner Referral",ccy:"AUD"},
+  {id:"49198154300",name:"TBE Environmental Pty Ltd - Active",owner:"80127259",arr:8160.48,src:"",inv:"Non Sourced",pkg:"Advanced Subscription",close:"2026-06-22",paid_out:false,contract_years:1,commission_type:"Partner Referral",ccy:"AUD"},
+  {id:"55726577793",name:"Stradegy - Active",owner:"80406430",arr:13500.00,src:"",inv:"Heavy Involvement",pkg:"Advanced Subscription",close:"2026-06-22",paid_out:false,contract_years:1,commission_type:"Upsell",ccy:"NZD"},
+  {id:"59173531424",name:"Marton Lee Limited - Active",owner:"80406430",arr:6480.00,src:"",inv:"Sourced",pkg:"Advanced Subscription",close:"2026-06-19",paid_out:false,contract_years:1,commission_type:"Upsell",ccy:"NZD"},
+  {id:"61040532507",name:"Keyts Facility Services - Active",owner:"80127259",arr:8613.84,src:"",inv:"Non Sourced",pkg:"Advanced Subscription",close:"2026-06-17",paid_out:false,contract_years:1,commission_type:"Inbound",ccy:"AUD"},
+  {id:"60177699359",name:"Range Environmental Consultants - Active",owner:"80127259",arr:6120.36,src:"",inv:"Heavy Involvement",pkg:"Advanced Subscription",close:"2026-06-17",paid_out:false,contract_years:1,commission_type:"Upsell",ccy:"AUD"},
+  {id:"50551214758",name:"Consult Construct - New Deal",owner:"80127257",arr:17658.48,src:"",inv:"Heavy Involvement",pkg:"Advanced Subscription",close:"2026-06-12",paid_out:false,contract_years:1,commission_type:"Inbound",ccy:"GBP"},
+  {id:"60204129032",name:"MAC Network Services - Active",owner:"80127257",arr:8976.48,src:"",inv:"Heavy Involvement",pkg:"Advanced Subscription",close:"2026-06-04",paid_out:false,contract_years:1,commission_type:"Upsell",ccy:"GBP"},
+  {id:"49779084431",name:"The Studio Bridge - Previous Subscription",owner:"80127259",arr:6562.50,src:"",inv:"Heavy Involvement",pkg:"Advanced Subscription",close:"2026-06-03",paid_out:false,contract_years:1,commission_type:"Outbound",ccy:"USD"},
+  {id:"59814989959",name:"Guyco Construction (2019) Ltd - Active",owner:"80406430",arr:15504.00,src:"",inv:"Heavy Involvement",pkg:"Advanced Subscription",close:"2026-06-03",paid_out:false,contract_years:1,commission_type:"Partner Referral",ccy:"NZD"},
+  {id:"57980189095",name:"TechniGroup - Active",owner:"80127259",arr:4760.28,src:"",inv:"Heavy Involvement",pkg:"Advanced Subscription",close:"2026-06-02",paid_out:false,contract_years:1,commission_type:"Upsell",ccy:"AUD"},
+  {id:"60525063715",name:"Woolf Bond Planning - Active",owner:"80127257",arr:2493.48,src:"",inv:"Heavy Involvement",pkg:"Advanced Subscription",close:"2026-06-02",paid_out:false,contract_years:1,commission_type:"Partner Referral",ccy:"GBP"},
+  {id:"60332812288",name:"HF Home LLC - Active",owner:"80406430",arr:6480.00,src:"",inv:"Heavy Involvement",pkg:"Advanced Subscription",close:"2026-06-02",paid_out:false,contract_years:1,commission_type:"Partner Referral",ccy:"USD"},
+  {id:"59963533425",name:"Pinnacle High Pressure Cleaning",owner:"80127259",arr:3400.20,src:"",inv:"Heavy Involvement",pkg:"Advanced Subscription",close:"2026-06-01",paid_out:false,contract_years:1,commission_type:"Inbound",ccy:"AUD"},
+  {id:"59728027510",name:"Tweak Design - Active",owner:"80127259",arr:3400.20,src:"",inv:"Heavy Involvement",pkg:"Advanced Subscription",close:"2026-05-31",paid_out:false,contract_years:1,commission_type:"Inbound",ccy:"AUD"},
+  {id:"55827648549",name:"SRH Architecture - Active",owner:"80406430",arr:16320.96,src:"",inv:"Heavy Involvement",pkg:"Advanced Subscription",close:"2026-05-29",paid_out:false,contract_years:1,commission_type:"Inbound",ccy:"AUD"},
+  {id:"59345087246",name:"Cartledge Mining and Geotechnics - Active",owner:"80406430",arr:15504.96,src:"",inv:"Heavy Involvement",pkg:"Advanced Subscription",close:"2026-05-27",paid_out:false,contract_years:1,commission_type:"Upsell",ccy:"AUD"},
+  {id:"59963595317",name:"CR Automation Limited - Active",owner:"80406430",arr:9979.20,src:"",inv:"Heavy Involvement",pkg:"Advanced Subscription",close:"2026-05-19",paid_out:false,contract_years:1,commission_type:"Upsell",ccy:"NZD"},
+  {id:"60108184215",name:"OneVision Project Services Australia - Active",owner:"80406430",arr:4533.60,src:"",inv:"Heavy Involvement",pkg:"Advanced Subscription",close:"2026-05-19",paid_out:false,contract_years:1,commission_type:"Partner Referral",ccy:"AUD"},
+  {id:"60182313494",name:"Guthrie McGoldrick Consulting Engineers - Active",owner:"80406430",arr:5440.32,src:"",inv:"Heavy Involvement",pkg:"Advanced Subscription",close:"2026-05-18",paid_out:false,contract_years:1,commission_type:"Upsell",ccy:"AUD"},
+  {id:"60172651422",name:"PDA LTD - Previous Subscription",owner:"80127257",arr:3626.88,src:"",inv:"Heavy Involvement",pkg:"Advanced Subscription",close:"2026-05-15",paid_out:false,contract_years:1,commission_type:"Upsell",ccy:"GBP"},
+  {id:"57830094862",name:"KSN / Azets Ireland - Active",owner:"80127257",arr:45000.00,src:"",inv:"Heavy Involvement",pkg:"Advanced Subscription",close:"2026-05-12",paid_out:false,contract_years:1,commission_type:"Inbound",ccy:"USD"},
+  {id:"59418404352",name:"GP Structural Services - Active",owner:"80406430",arr:4080.00,src:"",inv:"Heavy Involvement",pkg:"Advanced Subscription",close:"2026-05-08",paid_out:false,contract_years:1,commission_type:"Inbound",ccy:"AUD"},
+  {id:"56162820649",name:"Measured Group - Active",owner:"80406430",arr:19580.94,src:"",inv:"Heavy Involvement",pkg:"Advanced Subscription",close:"2026-05-05",paid_out:false,contract_years:1,commission_type:"Upsell",ccy:"AUD"},
+  {id:"50267855989",name:"Novatia - Active",owner:"80127257",arr:2493.48,src:"",inv:"Heavy Involvement",pkg:"Advanced Subscription",close:"2026-05-05",paid_out:false,contract_years:1,commission_type:"Upsell",ccy:"GBP"},
+  {id:"58630581157",name:"Data Sagacity Pty Ltd - Active",owner:"80127259",arr:7820.46,src:"",inv:"Heavy Involvement",pkg:"Advanced Subscription",close:"2026-04-28",paid_out:false,contract_years:1,commission_type:"Upsell",ccy:"AUD"},
+  {id:"59277607072",name:"ASC Engineers - Active",owner:"80406430",arr:3386.40,src:"",inv:"Heavy Involvement",pkg:"Advanced Subscription",close:"2026-04-22",paid_out:false,contract_years:1,commission_type:"Inbound",ccy:"AUD"},
+  {id:"58902517689",name:"ACHM - Active",owner:"80127259",arr:9520.56,src:"",inv:"Heavy Involvement",pkg:"Advanced Subscription",close:"2026-04-15",paid_out:false,contract_years:1,commission_type:"Upsell",ccy:"AUD"},
+  {id:"57610382769",name:"AIM Building & Maintenance Services Ltd (ADV/Upsell)",owner:"80127257",arr:48237.60,src:"",inv:"Heavy Involvement",pkg:"Advanced Subscription",close:"2026-04-09",paid_out:false,contract_years:1,commission_type:"Upsell",ccy:"GBP"},
+  {id:"56214795846",name:"Propel Marine Pty Ltd - Active",owner:"80127259",arr:14863.92,src:"",inv:"Heavy Involvement",pkg:"Advanced Subscription",close:"2026-04-07",paid_out:false,contract_years:1,commission_type:"Upsell",ccy:"AUD"},
+  {id:"59610016653",name:"Justo Ltd - Active",owner:"80127257",arr:4306.92,src:"",inv:"Heavy Involvement",pkg:"Advanced Subscription",close:"2026-04-30",paid_out:false,contract_years:1,commission_type:"Upsell",ccy:"GBP"},
+  {id:"59729788711",name:"Nelligan Consulting Engineers - Active",owner:"80127259",arr:4050.00,src:"",inv:"Heavy Involvement",pkg:"Advanced Subscription",close:"2026-04-30",paid_out:false,contract_years:1,commission_type:"Upsell",ccy:"NZD"},
+  {id:"53715214102",name:"Event Base - Active",owner:"80406430",arr:5400.00,src:"",inv:"Heavy Involvement",pkg:"Advanced Subscription",close:"2026-03-31",paid_out:false,contract_years:1,commission_type:"Upsell",ccy:"NZD"},
+  {id:"57619530845",name:"SCLspec Pty Ltd - Active",owner:"80406430",arr:2945.04,src:"",inv:"Non Sourced",pkg:"Advanced Subscription",close:"2026-03-16",paid_out:false,contract_years:1,commission_type:"Upsell",ccy:"AUD"},
+  {id:"59153725536",name:"Wilton 2 - WCL Stop World",owner:"80406430",arr:16200.00,src:"",inv:"Non Sourced",pkg:"Advanced Subscription",close:"2026-03-11",paid_out:false,contract_years:1,commission_type:"Upsell",ccy:"NZD"},
+  {id:"56173724020",name:"Wilton Contracting Ltd - Active",owner:"80406430",src:"",inv:"Non Sourced",pkg:"Premium Subscription",close:"2026-03-04",paid_out:false,contract_years:1,commission_type:"Upsell",ccy:"NZD"},
+  {id:"43407740035",name:"TTX Group - Active",owner:"80406430",arr:24366.00,src:"",inv:"Heavy Involvement",pkg:"Advanced Subscription",close:"2026-01-19",paid_out:false,contract_years:1,commission_type:"Outbound",ccy:"USD"},
+  {id:"49908855476",name:"AMC Asia (SG) Pte Ltd - Active",owner:"80127259",arr:7500.03,src:"",inv:"Sourced",pkg:"Advanced Subscription",close:"2026-01-12",paid_out:false,contract_years:1,commission_type:"Outbound",ccy:"USD"},
+];
+
+var STRIPE = {
+  "47416089102":{found:true,currency:"USD",note:"Single annual invoice. Ex-tax $9,450. hs_arr=$45,990 WRONG — 5 duplicate line items. stripe_payment_confirmed=true.",stripe_arr:9450,stripe_billed:11340,invoices:[{date:"2026-01-12",exTax:9450,incTax:11340,status:"paid"}]},
+  "43407740035":{found:true,currency:"USD",note:"Partial invoice $2,029 ex-tax. hs_arr=$9,000 — appears to be instalment only.",stripe_arr:2028.60,stripe_billed:2231.46,invoices:[{date:"2026-01-19",exTax:2028.60,incTax:2231.46,status:"paid"}]},
+  "49908855476":{found:true,currency:"USD",note:"$7,499.79 — clean match with hs_arr=$7,500.03. stripe_payment_confirmed=true.",stripe_arr:7499.79,stripe_billed:7499.79,invoices:[{date:"2026-01-16",exTax:7499.79,incTax:7499.79,status:"paid"}]},
+  "40551253088":{found:true,currency:"USD",note:"Ex-tax $6,150. hs_arr=$6,650 minor divergence. Deal ineligible (Standard pkg).",stripe_arr:6150,stripe_billed:6765,invoices:[{date:"2025-10-14",exTax:6150,incTax:6765,status:"paid"}]},
+  "39236633106":{found:true,currency:"USD",note:"First invoice voided, second paid $15,000 ex-tax. Clean match. stripe_payment_confirmed=true.",stripe_arr:15000,stripe_billed:16500,invoices:[{date:"2025-10-09",exTax:15000,incTax:16500,status:"voided"},{date:"2025-10-14",exTax:15000,incTax:16500,status:"paid"}]},
+  "45092476699":{found:true,currency:"USD",note:"Ex-tax $3,300. Matches hs_arr. Deal ineligible (ARR).",stripe_arr:3300,stripe_billed:3630,invoices:[{date:"2025-10-22",exTax:3300,incTax:3630,status:"paid"}]},
+  "50454404460":{found:true,currency:"USD",note:"Invoice $1,406 ex-tax — appears to be quarterly instalment. hs_arr=$5,625.",stripe_arr:1406.25,stripe_billed:1687.50,invoices:[{date:"2025-12-08",exTax:1406.25,incTax:1687.50,status:"paid"}]},
+  "48859557757":{found:true,currency:"USD",note:"Ex-tax $4,790. hs_arr=$4,800 — minor divergence.",stripe_arr:4789.80,stripe_billed:5508.27,invoices:[{date:"2025-11-24",exTax:4789.80,incTax:5508.27,status:"paid"}]},
+  "48887024241":{found:true,currency:"NZD",note:"18 monthly invoices (NZD). MONTHLY BILLING — likely ineligible under annual-upfront rule. Sina to confirm.",stripe_arr:2760,stripe_billed:null,invoices:[
+    {date:"2024-06-14",exTax:95,incTax:109.25,status:"paid",ccy:"NZD"},{date:"2024-07-14",exTax:95,incTax:109.25,status:"paid",ccy:"NZD"},
+    {date:"2024-08-14",exTax:190,incTax:218.5,status:"paid",ccy:"NZD"},{date:"2024-09-14",exTax:190,incTax:218.5,status:"paid",ccy:"NZD"},
+    {date:"2024-10-14",exTax:190,incTax:218.5,status:"paid",ccy:"NZD"},{date:"2024-11-14",exTax:190,incTax:218.5,status:"paid",ccy:"NZD"},
+    {date:"2024-12-14",exTax:190,incTax:218.5,status:"paid",ccy:"NZD"},{date:"2025-01-14",exTax:190,incTax:218.5,status:"paid",ccy:"NZD"},
+    {date:"2025-02-14",exTax:190,incTax:218.5,status:"paid",ccy:"NZD"},{date:"2025-03-14",exTax:190,incTax:218.5,status:"paid",ccy:"NZD"},
+    {date:"2025-04-14",exTax:190,incTax:218.5,status:"paid",ccy:"NZD"},{date:"2025-05-14",exTax:190,incTax:218.5,status:"paid",ccy:"NZD"},
+    {date:"2025-06-14",exTax:190,incTax:218.5,status:"paid",ccy:"NZD"},{date:"2025-07-14",exTax:230,incTax:264.5,status:"paid",ccy:"NZD"},
+    {date:"2025-08-14",exTax:230,incTax:264.5,status:"paid",ccy:"NZD"},{date:"2025-09-14",exTax:230,incTax:264.5,status:"paid",ccy:"NZD"},
+    {date:"2025-10-14",exTax:230,incTax:264.5,status:"paid",ccy:"NZD"},{date:"2025-11-14",exTax:230,incTax:264.5,status:"paid",ccy:"NZD"}
+  ]},
+  "56173724020":{found:false,note:"No Stripe invoice found. hs_arr=$24,300."},
+  "44451553392":{found:false,note:"No Stripe invoice found. Commission Hub uses $6,750 (correct ARR). HubSpot still shows $13,500 — Mark to delete duplicate line item."},
+  "51035653507":{found:false,note:"No Stripe invoice found. hs_arr=$9,000."},
+  "48859545474":{found:false,note:"No Stripe invoice found."},
+};
+
+// ── RULES (v8 — Ryan confirmed 01 Apr 2026) ───────────────────────────────
+// Packages: Advanced + Premium + Pro. Standard = ineligible.
+// No ACV minimum. Billing: annual-upfront only. Commission base: post-discount ARR.
+// Attribution logic: AE Involvement wins over Source when conflict exists.
+// If AE picks up inbound/organic and has Heavy Involvement end-to-end → Outbound 10%.
+// Ryan reviews line by line each quarter.
+// Referral = always Inbound 5% regardless of involvement.
+
+var ELIGIBLE_PKG = ["Advanced Subscription","Premium Subscription","Pro Subscription"];
+var UPSELL_DEAL_IDS = ["56173724020","57619530845","53715214102","56214795846"];
+
+// commission_type from HubSpot is the source of truth — set by Ryan.
+// Rates: Outbound 10% · Inbound 5% · Upsell 7.5%
+// Fallback logic applies only when commission_type is not yet populated.
+function classify(d){
+  var t = d.commission_type || "";
+  if(t==="Upsell")   return {type:"Upsell",   rate:.075};
+  if(t==="Outbound") return {type:"Outbound", rate:.10};
+  if(t==="Inbound")  return {type:"Inbound",  rate:.05};
+  // Fallback if property not yet set
+  var s=(d.src||"").toLowerCase(), i=(d.inv||"").toLowerCase();
+  if(UPSELL_DEAL_IDS.indexOf(d.id)!==-1) return {type:"Upsell",rate:.075};
+  if(s.includes("outbound")) return {type:"Outbound",rate:.10};
+  if(s==="referral") return {type:"Inbound",rate:.05};
+  if(i==="heavy involvement"||i==="sourced") return {type:"Outbound",rate:.10};
+  if(s.includes("inbound")||s==="organic") return {type:"Inbound",rate:.05};
+  if(i==="non sourced") return {type:"Inbound",rate:.05};
+  return {type:"Outbound",rate:.10};
+}
+
+function eligReason(d){
+  if(!d.pkg) return "No package set";
+  if(d.pkg==="Standard Subscription") return "Standard — not eligible (Advanced or Premium required)";
+  if(!ELIGIBLE_PKG.includes(d.pkg)) return "Package not eligible: "+d.pkg;
+  if(!d.arr) return "ARR missing";
+  return null;
+}
+
+function getQuarter(close){
+  var dt=new Date(close), m=dt.getMonth(), y=dt.getFullYear();
+  if(m<=2) return "q1-"+y;
+  if(m<=5) return "q2-"+y;
+  if(m<=8) return "q3-"+y;
+  return "q4-"+y;
+}
+
+var DEALS = RAW.map(function(d){
+  var cl=classify(d), er=eligReason(d), eligible=!er;
+  return Object.assign({},d,cl,{eligible:eligible,eligReason:er,comm:eligible?(d.arr||0)*cl.rate:0,quarter:getQuarter(d.close)});
+});
+applyPaidPersistence();
+
+// Populated by the HubSpot sync. LOST = closed-lost/expired/churn (control tab only,
+// never in commission totals). RENEWAL = existing customers in renewal motion.
+var LOST = [];
+var RENEWAL = [];
+var SYNCED_ONCE = false;
+
+// ── HELPERS ───────────────────────────────────────────────────────────────
+function fmt(n,dec){if(dec===undefined)dec=0;if(n==null)return"—";return Number(n).toLocaleString('en-US',{minimumFractionDigits:dec,maximumFractionDigits:dec});}
+function fmtD(s){if(!s)return"—";var d=new Date(s);return d.toLocaleDateString('en-AU',{day:'numeric',month:'short',year:'2-digit'});}
+function aeChip(id){var a=AE[id];if(!a)return id;return '<div style="display:inline-flex;align-items:center;gap:5px"><div style="width:20px;height:20px;border-radius:50%;background:'+a.bg+';color:'+a.color+';display:inline-flex;align-items:center;justify-content:center;font-family:\'Syne\',sans-serif;font-size:9px;font-weight:700">'+a.initials+'</div><span style="font-size:11.5px">'+a.name.split(" ")[0]+'</span></div>';}
+function pkgBadge(p){if(!p)return '<span class="badge badge-red">Missing</span>';if(p.includes("Advanced"))return '<span class="badge badge-green">Advanced</span>';if(p.includes("Premium"))return '<span class="badge badge-amber">Premium</span>';if(p.includes("Pro"))return '<span class="badge badge-teal">Pro</span>';return '<span class="badge badge-dim">Standard</span>';}
+function typeBadge(d){if(!d.eligible)return '<span class="badge badge-dim">Ineligible</span>';if(d.type==="Outbound")return '<span class="badge badge-purple">Outbound</span>';if(d.type==="Inbound")return '<span class="badge badge-blue">Inbound</span>';return '<span class="badge badge-amber">Upsell</span>';}
+function rateTxt(d){if(!d.eligible)return '<span style="color:var(--text-dim);font-family:\'DM Mono\',monospace">—</span>';var c=d.rate===.10?'green':d.rate===.075?'amber':'blue';return '<span style="color:var(--'+c+');font-family:\'DM Mono\',monospace;font-size:13px">'+(d.rate*100)+'%</span>';}
+function payoutBadge(d){
+  if(!d.eligible)return '';
+  var badge = d.paid_out ? '<span class="badge badge-green" style="font-size:9px">✓ Paid</span>' : '<span class="badge badge-amber" style="font-size:9px">Outstanding</span>';
+  if(typeof isEditor==='function' && isEditor()){
+    var label = d.paid_out ? 'Undo' : 'Mark paid';
+    badge += ' <button onclick="togglePaid(\''+d.id+'\')" style="margin-left:4px;padding:2px 8px;background:rgba(99,219,148,0.10);border:1px solid rgba(99,219,148,0.3);border-radius:5px;color:var(--green);font-size:9px;font-weight:700;cursor:pointer;font-family:\'Inter\',sans-serif">'+label+'</button>';
+  }
+  return badge;
+}
+function invBadge(inv){
+  if(!inv) return '<span style="color:var(--red);font-size:11px">Missing</span>';
+  var v=inv.toLowerCase();
+  if(v==='heavy involvement'||v==='sourced'||v==='self-sourced')
+    return '<span style="background:#d4f7e5;color:#0A2F28;padding:2px 7px;border-radius:4px;font-size:10px;font-weight:700">'+inv+'</span>';
+  if(v==='non sourced'||v==='business-generated')
+    return '<span style="background:var(--blue-bg);color:var(--blue);padding:2px 7px;border-radius:4px;font-size:10px;font-weight:700">'+inv+'</span>';
+  return '<span style="font-size:11.5px;color:var(--text-muted)">'+inv+'</span>';
+}
+function upsellBadge(id){
+  return UPSELL_DEAL_IDS.indexOf(id)!==-1
+    ? '<span style="display:inline-flex;align-items:center;gap:3px;background:#FBF5D8;color:#b45309;border:1px solid #e8d987;border-radius:4px;font-size:9px;font-weight:700;padding:1px 6px;margin-left:4px;vertical-align:middle">↑ Upsell</span>'
+    : '';
+}
+function isUpsellDeal(id){
+  return UPSELL_DEAL_IDS.indexOf(id)!==-1;
+}
+
+function filterByQuarter(deals, qval){
+  if(!qval||qval==="all") return deals;
+  return deals.filter(function(d){return d.quarter===qval;});
+}
+
+// ── DASHBOARD ─────────────────────────────────────────────────────────────
+function renderDashboard(){
+  var qf=document.getElementById('dash-quarter').value;
+  var pf=document.getElementById('dash-payout').value;
+  var deals=filterByQuarter(DEALS, qf);
+  if(pf==="outstanding") deals=deals.filter(function(d){return d.eligible&&!d.paid_out;});
+  if(pf==="paid") deals=deals.filter(function(d){return d.eligible&&d.paid_out;});
+
+  var el=deals.filter(function(d){return d.eligible;});
+  var tc=el.reduce(function(s,d){return s+d.comm;},0);
+  var ta=el.reduce(function(s,d){return s+(d.arr||0);},0);
+  var tOut=el.filter(function(d){return !d.paid_out;}).reduce(function(s,d){return s+d.comm;},0);
+  var tPaid=el.filter(function(d){return d.paid_out;}).reduce(function(s,d){return s+d.comm;},0);
+  var issues=DEALS.filter(function(d){return d.data_issue;}).length;
+
+  var aeTots={};
+  Object.keys(AE).forEach(function(id){aeTots[id]={comm:0,arr:0,deals:0,outstanding:0,paid:0};});
+  el.forEach(function(d){
+    if(!aeTots[d.owner])return;
+    aeTots[d.owner].comm+=d.comm;
+    aeTots[d.owner].arr+=(d.arr||0);
+    aeTots[d.owner].deals++;
+    if(d.paid_out) aeTots[d.owner].paid+=d.comm;
+    else aeTots[d.owner].outstanding+=d.comm;
+  });
+
+  var aeCards=Object.entries(AE).map(function(e){
+    var id=e[0],ae=e[1],s=aeTots[id];
+    return '<div style="background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:18px 20px">'+
+      '<div style="display:flex;align-items:center;gap:10px;margin-bottom:14px">'+
+      '<div style="width:36px;height:36px;border-radius:8px;background:'+ae.bg+';color:'+ae.color+';display:flex;align-items:center;justify-content:center;font-family:\'Syne\',sans-serif;font-size:13px;font-weight:800">'+ae.initials+'</div>'+
+      '<div><div style="font-family:\'Syne\',sans-serif;font-size:14px;font-weight:700">'+ae.name+'</div><div style="font-size:11px;color:var(--text-dim)">'+s.deals+' eligible deals</div></div></div>'+
+      '<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px">'+
+      '<div><div style="font-family:\'DM Mono\',monospace;font-size:9px;text-transform:uppercase;letter-spacing:.08em;color:var(--text-dim);margin-bottom:3px">Total</div><div style="font-family:\'DM Mono\',monospace;font-size:14px;color:var(--text)">$'+fmt(s.comm)+'</div></div>'+
+      '<div><div style="font-family:\'DM Mono\',monospace;font-size:9px;text-transform:uppercase;letter-spacing:.08em;color:var(--text-dim);margin-bottom:3px">Outstanding</div><div style="font-family:\'DM Mono\',monospace;font-size:14px;color:var(--amber)">$'+fmt(s.outstanding)+'</div></div>'+
+      '<div><div style="font-family:\'DM Mono\',monospace;font-size:9px;text-transform:uppercase;letter-spacing:.08em;color:var(--text-dim);margin-bottom:3px">Paid</div><div style="font-family:\'DM Mono\',monospace;font-size:14px;color:var(--green)">$'+fmt(s.paid)+'</div></div>'+
+      '</div></div>';
+  }).join('');
+
+  var elRows=el.map(function(d){
+    return '<tr'+(isUpsellDeal(d.id)?' style="background:rgba(245,158,11,0.03)"':'')+'>'+
+      '<td><a class="deal-link" href="https://app.hubspot.com/contacts/24214994/record/0-3/'+d.id+'" target="_blank"><div class="deal-name">'+d.name+upsellBadge(d.id)+'</div></a>'+
+      (d.data_issue?'<div style="font-size:10px;color:var(--amber);margin-top:2px">⚠ '+d.data_issue+'</div>':'')+'</td>'+
+      '<td>'+aeChip(d.owner)+'</td>'+
+      '<td class="mono" style="color:var(--text-muted)">$'+fmt(d.arr)+'</td>'+
+      '<td>'+typeBadge(d)+'</td>'+
+      '<td>'+rateTxt(d)+'</td>'+
+      '<td class="mono" style="color:var(--green)">$'+fmt(d.comm)+'</td>'+
+      '<td>'+payoutBadge(d)+'</td>'+
+      '</tr>';
+  }).join('');
+
+  document.getElementById('dashboard-body').innerHTML=
+    '<div class="kpi-row">'+
+    '<div class="kpi-card"><div class="kpi-label">Total Commission</div><div class="kpi-value green">$'+fmt(tc)+'</div><div class="kpi-sub">'+el.length+' eligible deals</div></div>'+
+    '<div class="kpi-card"><div class="kpi-label">Outstanding</div><div class="kpi-value amber">$'+fmt(tOut)+'</div><div class="kpi-sub">Not yet paid out</div></div>'+
+    '<div class="kpi-card"><div class="kpi-label">Paid Out</div><div class="kpi-value">$'+fmt(tPaid)+'</div><div class="kpi-sub">Paid to AEs</div></div>'+
+    '<div class="kpi-card"><div class="kpi-label">Data Issues</div><div class="kpi-value red">'+issues+'</div><div class="kpi-sub">Must resolve before paying</div></div>'+
+    '</div>'+
+    ''+
+    '<div class="section-title">Commission by AE</div>'+
+    '<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-bottom:28px">'+aeCards+'</div>'+
+    '<div class="section-title">Eligible Deals</div>'+
+    '<div class="table-wrap"><table><thead><tr><th>Deal</th><th>AE</th><th>ARR</th><th>Type</th><th>Rate</th><th>Commission</th><th>Payout</th></tr></thead><tbody>'+elRows+'</tbody></table></div>';
+}
+
+// ── DEAL TABLE ────────────────────────────────────────────────────────────
+function renderDeals(){
+  var aeF=document.getElementById('f-ae').value;
+  var qF=document.getElementById('f-quarter').value;
+  var stF=document.getElementById('f-status').value;
+  var poF=document.getElementById('f-payout').value;
+  var deals=DEALS.slice();
+  if(aeF) deals=deals.filter(function(d){return d.owner===aeF;});
+  deals=filterByQuarter(deals,qF);
+  if(stF==='eligible') deals=deals.filter(function(d){return d.eligible;});
+  if(stF==='ineligible') deals=deals.filter(function(d){return !d.eligible;});
+  if(poF==='outstanding') deals=deals.filter(function(d){return d.eligible&&!d.paid_out;});
+  if(poF==='paid_out') deals=deals.filter(function(d){return d.eligible&&d.paid_out;});
+
+  var rows=deals.map(function(d){
+    var issues=[];
+    if(!d.arr)issues.push('ARR');if(!d.src)issues.push('Source');if(!d.inv)issues.push('Commission Attribution');if(!d.pkg)issues.push('Package');
+    return '<tr style="'+(d.eligible?'':'opacity:.4')+(isUpsellDeal(d.id)?';background:rgba(245,158,11,0.03)':'')+'">'+
+      '<td><a class="deal-link" href="https://app.hubspot.com/contacts/24214994/record/0-3/'+d.id+'" target="_blank"><div class="deal-name" title="'+d.name+'">'+d.name+upsellBadge(d.id)+'</div></a>'+
+      (d.data_issue?'<div style="font-size:10px;color:var(--amber);margin-top:1px">⚠ '+d.data_issue.substring(0,60)+'...</div>':'')+'</td>'+
+      '<td>'+aeChip(d.owner)+'</td>'+
+      '<td>'+pkgBadge(d.pkg)+'</td>'+
+      '<td style="font-size:11.5px;color:var(--text-muted)">'+(d.src||'<span style="color:var(--red);font-size:11px">Missing</span>')+'</td>'+
+      '<td>'+(d.inv?invBadge(d.inv):'<span style="color:var(--red);font-size:11px">Missing</span>')+'</td>'+
+      '<td>'+(d.arr?'<span class="mono" style="color:var(--text-muted)">$'+fmt(d.arr)+'</span>':'<span style="color:var(--red);font-family:\'DM Mono\',monospace;font-size:11px">Missing</span>')+'</td>'+
+      '<td>'+typeBadge(d)+'</td>'+
+      '<td>'+rateTxt(d)+'</td>'+
+      '<td>'+(d.eligible&&d.arr?'<span class="mono" style="color:var(--green)">$'+fmt(d.comm)+'</span>':'<span style="color:var(--red);font-size:11px;font-style:italic" title="'+((d.eligReason)||'Ineligible')+'">'+(d.eligReason||'Ineligible')+'</span>')+'</td>'+
+      '<td>'+payoutBadge(d)+'</td>'+
+      '<td>'+(d.stripe_cus_id?'<a href="https://dashboard.stripe.com/customers/'+d.stripe_cus_id+'" target="_blank" style="display:inline-flex;align-items:center;gap:3px;font-size:11px;color:var(--green);text-decoration:none;background:var(--green-bg);padding:2px 7px;border-radius:5px;font-weight:600">Stripe ↗</a>':'<span style="font-size:11px;color:var(--text-dim)">—</span>')+'</td>'+
+      '<td style="font-size:11px;color:var(--text-dim)">'+fmtD(d.close)+'</td>'+
+      '</tr>';
+  }).join('');
+
+  var totalComm = deals.reduce(function(s,d){return s+d.comm;},0);
+  var upsellCount = deals.filter(function(d){return isUpsellDeal(d.id);}).length;
+
+  document.getElementById('deals-table').innerHTML=
+    '<div class="table-wrap"><table><thead><tr><th>Deal</th><th>AE</th><th>Package</th><th>Source</th><th>AE Involvement</th><th>ARR</th><th>Type</th><th>Rate</th><th>Commission</th><th>Payout</th><th>Stripe</th><th>Close</th></tr></thead><tbody>'+rows+'</tbody></table></div>'+
+    '<div style="padding:10px 0;font-size:11px;color:var(--text-dim)">'+deals.length+' deals · '+deals.filter(function(d){return d.eligible;}).length+' eligible'+(upsellCount?' · <span style="color:#b45309;font-weight:700">'+upsellCount+' upsell</span>':'')+'  · $'+fmt(totalComm)+'</div>';
+}
+
+// ── BY AE ─────────────────────────────────────────────────────────────────
+function renderAE(){
+  document.getElementById('ae-body').innerHTML=Object.entries(AE).map(function(e){
+    var id=e[0],ae=e[1];
+    var my=DEALS.filter(function(d){return d.owner===id;});
+    var el=my.filter(function(d){return d.eligible;});
+    var tc=el.reduce(function(s,d){return s+d.comm;},0);
+    var outstanding=el.filter(function(d){return !d.paid_out;}).reduce(function(s,d){return s+d.comm;},0);
+    var iss=my.filter(function(d){return d.data_issue||!d.arr||!d.src||!d.inv||!d.pkg;});
+    var rows=my.map(function(d){
+      return '<tr style="'+(d.eligible?'':'opacity:.4')+(isUpsellDeal(d.id)?';background:rgba(245,158,11,0.03)':'')+'">'+
+        '<td><a class="deal-link" href="https://app.hubspot.com/contacts/24214994/record/0-3/'+d.id+'" target="_blank"><div class="deal-name" title="'+d.name+'">'+d.name+upsellBadge(d.id)+'</div></a>'+
+        (d.data_issue?'<div style="font-size:10px;color:var(--amber);margin-top:1px">⚠</div>':'')+'</td>'+
+        '<td>'+pkgBadge(d.pkg)+'</td>'+
+        '<td style="font-size:11.5px;color:var(--text-muted)">'+(d.src||'<span style="color:var(--red);font-size:11px">Missing</span>')+'</td>'+
+        '<td>'+(d.inv?invBadge(d.inv):'<span style="color:var(--red);font-size:11px">Missing</span>')+'</td>'+
+        '<td>'+(d.arr?'<span class="mono" style="color:var(--text-muted)">$'+fmt(d.arr)+'</span>':'<span style="color:var(--red);font-family:\'DM Mono\',monospace;font-size:11px">Missing</span>')+'</td>'+
+        '<td>'+typeBadge(d)+'</td>'+
+        '<td>'+rateTxt(d)+'</td>'+
+        '<td>'+(d.eligible&&d.arr?'<span class="mono" style="color:var(--green)">$'+fmt(d.comm)+'</span>':'<span style="color:var(--red);font-size:11px;font-style:italic" title="'+(d.eligReason||'Ineligible')+'">'+(d.eligReason||'Ineligible')+'</span>')+'</td>'+
+        '<td>'+payoutBadge(d)+'</td>'+
+        '<td>'+(d.stripe_cus_id?'<a href="https://dashboard.stripe.com/customers/'+d.stripe_cus_id+'" target="_blank" style="display:inline-flex;align-items:center;gap:3px;font-size:11px;color:var(--green);text-decoration:none;background:var(--green-bg);padding:2px 7px;border-radius:5px;font-weight:600">Stripe ↗</a>':'<span style="font-size:11px;color:var(--text-dim)">—</span>')+'</td>'+
+        '</tr>';
+    }).join('');
+    return '<div style="margin-bottom:36px">'+
+      '<div style="display:flex;align-items:center;gap:12px;margin-bottom:16px">'+
+      '<div style="width:44px;height:44px;border-radius:10px;background:'+ae.bg+';color:'+ae.color+';display:flex;align-items:center;justify-content:center;font-family:\'Syne\',sans-serif;font-size:16px;font-weight:800">'+ae.initials+'</div>'+
+      '<div><div style="font-family:\'Syne\',sans-serif;font-size:18px;font-weight:800">'+ae.name+'</div>'+
+      '<div style="font-size:12px;color:var(--text-dim)">'+my.length+' total · '+el.length+' eligible · <span style="color:var(--green)">$'+fmt(tc)+' commission</span> · <span style="color:var(--amber)">$'+fmt(outstanding)+' outstanding</span></div></div></div>'+
+      (iss.length?'<div class="alert-strip warning" style="margin-bottom:12px"><div style="font-size:16px">⚠</div><div class="alert-body"><strong>'+iss.length+' deal'+(iss.length>1?'s':'')+' with data issues or missing fields</strong></div></div>':'')+
+      '<div class="table-wrap"><table><thead><tr><th>Deal</th><th>Package</th><th>Source</th><th>AE Involvement</th><th>ARR</th><th>Type</th><th>Rate</th><th>Commission</th><th>Payout</th><th>Stripe</th></tr></thead><tbody>'+rows+'</tbody></table></div></div>';
+  }).join('<hr style="border:none;border-top:1px solid var(--border);margin:0 0 36px">');
+}
+
+// ── BANKED COMMISSION (multi-year) ────────────────────────────────────────
+function renderBanked(){
+  var multiYear=DEALS.filter(function(d){return d.eligible&&d.contract_years>1;});
+  var standardNote='<div class="alert-strip success" style="margin-bottom:20px"><div style="font-size:16px">📋</div><div class="alert-body"><strong>Multi-year standard (Mark Dempsey · Boat Electrics):</strong> One line item per contract year, each with its own billing start date and annual frequency. <code>hs_arr</code> on the deal = Year 1 ACV only. HubSpot sums all line items as TCV — the Commission Hub uses Year 1 only for commission calculation. Sina and Denzel to follow the same structure when updating their deals.</div></div>';
+  if(!multiYear.length){
+    document.getElementById('banked-body').innerHTML=
+      standardNote+
+      '<div class="alert-strip info"><div style="font-size:16px">ℹ</div><div class="alert-body"><strong>No multi-year deals currently active.</strong> Boat Electrics (Mark) is a 5-year contract — once contract_years is confirmed for other deals, they will appear here.</div></div>'+
+      '<div class="section-title">How it works</div>'+
+      '<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:14px">'+
+      '<div style="background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:18px"><div style="font-family:\'DM Mono\',monospace;font-size:10px;text-transform:uppercase;color:var(--text-dim);margin-bottom:8px">Year 1 · Paid at close</div><div style="font-size:12.5px;color:var(--text-muted)">AE earns full rate × Year 1 ACV at close. Paid in the quarter of close.</div></div>'+
+      '<div style="background:var(--surface);border:1px solid var(--teal-bg);border-left:2px solid var(--teal);border-radius:10px;padding:18px"><div style="font-family:\'DM Mono\',monospace;font-size:10px;text-transform:uppercase;color:var(--teal);margin-bottom:8px">Year 2+ · Banked</div><div style="font-size:12.5px;color:var(--text-muted)">Commission for renewal years is provisionally earned at close — visible here as banked. Paid in the quarter of each renewal.</div></div>'+
+      '<div style="background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:18px"><div style="font-family:\'DM Mono\',monospace;font-size:10px;text-transform:uppercase;color:var(--text-dim);margin-bottom:8px">Motivation</div><div style="font-size:12.5px;color:var(--text-muted)">AEs can see what\'s already in the bank for future years — a "sandbagged moment" of ongoing motivation.</div></div>'+
+      '</div>'+
+      '<div class="alert-strip warning" style="margin-top:20px"><div style="font-size:16px">⧖</div><div class="alert-body"><strong>Pending LT decision:</strong> How to track multi-year commission entitlements structurally in HubSpot (separate renewal deals, custom property, or banked commission object).</div></div>';
+    return;
+  }
+
+  var aeBanked={};Object.keys(AE).forEach(function(id){aeBanked[id]=0;});
+  var cards=multiYear.map(function(d){
+    var banked=0;
+    var yearRows='';
+    for(var y=1;y<=d.contract_years;y++){
+      var isY1=y===1;
+      // Use banked_years for accurate per-year ARR if available
+      var yearArr = d.arr;
+      if(!isY1 && d.banked_years){
+        var byEntry = d.banked_years.find(function(b){return b.year===y;});
+        if(byEntry) yearArr = byEntry.arr;
+      }
+      var comm = yearArr * d.rate;
+      banked+=isY1?0:comm;
+      if(aeBanked[d.owner]!==undefined&&!isY1) aeBanked[d.owner]+=comm;
+      var closeYear=new Date(d.close).getFullYear();
+      yearRows+='<tr>'+
+        '<td class="mono" style="color:var(--text-dim)">Year '+y+' · '+(closeYear+y-1)+'</td>'+
+        '<td class="mono" style="color:var(--text-muted)">$'+fmt(yearArr)+'</td>'+
+        '<td>'+rateTxt(d)+'</td>'+
+        '<td class="mono" style="color:var(--green)">$'+fmt(comm)+'</td>'+
+        '<td>'+(isY1?'<span class="badge badge-green" style="font-size:9px">Paid at close</span>':'<span class="banked-chip">Banked</span>')+'</td>'+
+        '</tr>';
+    }
+    return '<div class="stripe-card" style="margin-bottom:16px">'+
+      '<div class="stripe-card-header"><div><div class="stripe-card-company">'+d.name+'</div><div style="font-size:11px;color:var(--text-dim);margin-top:2px">'+AE[d.owner].name+' · '+d.contract_years+'-year contract · Closed '+fmtD(d.close)+'</div></div>'+
+      '<span class="banked-chip">$'+fmt(banked)+' banked</span></div>'+
+      '<div class="stripe-card-body"><div class="table-wrap" style="margin:0"><table><thead><tr><th>Period</th><th>ARR</th><th>Rate</th><th>Commission</th><th>Status</th></tr></thead><tbody>'+yearRows+'</tbody></table></div></div></div>';
+  }).join('');
+
+  var totalBanked=Object.values(aeBanked).reduce(function(s,v){return s+v;},0);
+  document.getElementById('banked-body').innerHTML=
+    standardNote+
+    '<div class="kpi-row" style="grid-template-columns:repeat(3,1fr)">'+
+    '<div class="kpi-card"><div class="kpi-label">Total Banked</div><div class="kpi-value teal">$'+fmt(totalBanked)+'</div><div class="kpi-sub">Future renewal commissions provisionally earned</div></div>'+
+    '<div class="kpi-card"><div class="kpi-label">Multi-year Deals</div><div class="kpi-value">'+multiYear.length+'</div><div class="kpi-sub">Contracts with Year 2+ renewals</div></div>'+
+    '<div class="kpi-card"><div class="kpi-label">Paid quarterly</div><div class="kpi-value green">Q</div><div class="kpi-sub">Renewal commission paid in quarter of renewal</div></div>'+
+    '</div>'+cards;
+}
+
+// ── STRIPE TIMELINE ───────────────────────────────────────────────────────
+function renderStripe(){
+  var eligible=DEALS.filter(function(d){return d.eligible;});
+  var allMonths=[];
+  var d=new Date('2025-06-01'), end=new Date('2026-12-01');
+  for(;d<=end;d.setMonth(d.getMonth()+1)) allMonths.push(new Date(d));
+  var now=new Date('2026-04-01');
+
+  var cards=eligible.map(function(deal){
+    var sd=STRIPE[deal.id], ae=AE[deal.owner], live=stripeLiveFor(deal);
+    var monthMap={};
+    if(sd&&sd.found&&sd.invoices) sd.invoices.forEach(function(inv){monthMap[inv.date.substring(0,7)]={status:inv.status,exTax:inv.exTax,incTax:inv.incTax,ccy:inv.ccy||'USD'};});
+    var cells=allMonths.map(function(m){
+      var k=m.getFullYear()+'-'+String(m.getMonth()+1).padStart(2,'0');
+      var closeMonth=deal.close.substring(0,7), isAfterClose=k>=closeMonth, inv=monthMap[k], isAfterNow=m>now;
+      if(!sd||!sd.found) return isAfterClose?'<div class="tcell" style="background:rgba(255,255,255,.04);border:1px solid var(--border)" title="No Stripe data"></div>':'<div class="tcell empty"></div>';
+      if(inv) return '<div class="tcell '+inv.status+'" title="'+inv.status.toUpperCase()+' · USD $'+fmt(inv.exTax)+' ex-tax'+(inv.ccy&&inv.ccy!=='USD'?' (billed in '+inv.ccy+')':'')+'" ></div>';
+      if(isAfterClose&&!isAfterNow) return '<div class="tcell empty"></div>';
+      if(isAfterNow&&isAfterClose) return '<div class="tcell future"></div>';
+      return '<div class="tcell empty"></div>';
+    }).join('');
+    var monthLabels=allMonths.map(function(m){return '<div class="tmonth">'+m.toLocaleDateString('en',{month:'short'}).toUpperCase()+'<br><span style="font-size:8px">'+String(m.getFullYear()).slice(-2)+'</span></div>';}).join('');
+    var stripeBadge=!sd?'<span class="badge badge-dim">—</span>':!sd.found?'<span class="badge badge-amber">No invoice</span>':'<span class="badge badge-green">✓ Invoice found</span>';
+    var divergent=sd&&sd.found&&sd.stripe_arr&&deal.arr&&Math.abs(sd.stripe_arr-deal.arr)/deal.arr>0.1;
+    return '<div class="stripe-card">'+
+      '<div class="stripe-card-header"><div><div class="stripe-card-company">'+deal.name+upsellBadge(deal.id)+'</div><div style="font-size:11px;color:var(--text-dim);margin-top:2px">'+ae.name+' · Closed '+fmtD(deal.close)+'</div></div>'+stripeBadge+'</div>'+
+      '<div class="stripe-card-body">'+
+      '<div class="stripe-meta">'+
+      '<div><div class="stripe-stat-label">hs_arr</div><div class="stripe-stat-val" style="color:var(--green)">$'+fmt(deal.arr)+'</div></div>'+
+      '<div><div class="stripe-stat-label">Stripe ex-tax</div><div class="stripe-stat-val" style="color:var(--blue)">'+(sd&&sd.found&&sd.stripe_arr?'$'+fmt(sd.stripe_arr):'—')+'</div></div>'+
+      '<div><div class="stripe-stat-label">Live pricing /yr</div><div class="stripe-stat-val" style="color:var(--purple)">'+(live?(live.currency+' '+fmt(live.stripe_annual,2)):'—')+'</div></div>'+
+      '<div><div class="stripe-stat-label">Stripe billed</div><div class="stripe-stat-val" style="color:var(--text-muted)">'+(sd&&sd.found&&sd.stripe_billed?'$'+fmt(sd.stripe_billed):'—')+'</div></div>'+
+      '<div><div class="stripe-stat-label">Currency</div><div class="stripe-stat-val" style="color:var(--text-muted)">'+(sd&&sd.found?sd.currency:'—')+'</div></div>'+
+      '<div><div class="stripe-stat-label">Invoices</div><div class="stripe-stat-val" style="color:var(--text-muted)">'+(sd&&sd.found&&sd.invoices?sd.invoices.length:sd&&!sd.found?0:'—')+'</div></div>'+
+      '</div>'+
+      (sd&&sd.note?'<div class="alert-strip '+(divergent?'warning':'success')+'" style="margin-bottom:14px"><div style="font-size:14px">'+(divergent?'⚠':'ℹ')+'</div><div class="alert-body">'+sd.note+'</div></div>':'')+
+      '<div style="font-family:\'DM Mono\',monospace;font-size:10px;color:var(--text-dim);margin-bottom:8px">PAYMENT TIMELINE — hover for details</div>'+
+      '<div class="timeline-wrap"><div class="timeline-grid"><div class="timeline-months">'+monthLabels+'</div><div class="timeline-track">'+cells+'</div></div></div>'+
+      '<div class="timeline-legend"><div class="tleg"><div class="tleg-dot" style="background:var(--green-bg);border:1px solid rgba(61,214,140,.3)"></div>Paid</div><div class="tleg"><div class="tleg-dot" style="background:var(--amber-bg);border:1px solid rgba(245,158,11,.3)"></div>Voided</div><div class="tleg"><div class="tleg-dot" style="background:rgba(255,255,255,.03);border:1px solid var(--border)"></div>No invoice</div><div class="tleg"><div class="tleg-dot" style="background:rgba(124,106,245,.06);border:1px dashed rgba(124,106,245,.2)"></div>Future</div></div>'+
+      '</div></div>';
+  }).join('');
+
+  document.getElementById('stripe-body').innerHTML=
+    '<div class="alert-strip success" style="margin-bottom:20px"><div style="font-size:16px">✅</div><div class="alert-body"><strong>Stripe live sync '+(STRIPE_SYNCED_AT?('active — pricing pulled '+STRIPE_SYNCED_AT.toLocaleTimeString('en-AU',{hour:'2-digit',minute:'2-digit'})):'pending — hit Refresh data')+'.</strong> "Live pricing" = subscription items x qty + active coupon, ex-tax, across all four regional accounts. Timeline below is the 09-Jul audit snapshot.</div></div>'+
+    cards;
+}
+
+// ── HS vs STRIPE ──────────────────────────────────────────────────────────
+function renderComparison(){
+  var eligible=DEALS.filter(function(d){return d.eligible;});
+  var totalHs=eligible.reduce(function(s,d){return s+d.comm;},0);
+
+  // Stripe-side commission is only computed where Stripe bills in USD —
+  // cross-currency consolidation (rate at contract sign vs billing) is
+  // pending Kaia's FX decision, so we never fake a conversion.
+  var totalStripe=0, coveredLive=0, coveredStatic=0;
+  eligible.forEach(function(d){
+    var live=stripeLiveFor(d);
+    if(live){ coveredLive++; if(live.currency==='USD'&&live.stripe_annual) totalStripe+=live.stripe_annual*d.rate; return; }
+    var sd=STRIPE[d.id];
+    if(sd&&sd.found){ coveredStatic++; if(sd.stripe_arr) totalStripe+=sd.stripe_arr*d.rate; }
+  });
+
+  function verdictBadge(rec){
+    if(!rec) return '<span style="color:var(--text-dim);font-size:10px">—</span>';
+    var v=rec.v, cls='badge-dim';
+    if(v.indexOf('MATCH')===0) cls='badge-green';
+    else if(v.indexOf('VERIFY')===0) cls='badge-amber';
+    else if(v.indexOf('NO STRIPE')===0||v.indexOf('NO LINE ITEM')===0||v.indexOf('SEVERE')!==-1||v.indexOf('MESS')!==-1) cls='badge-red';
+    else cls='badge-amber';
+    var tip=[rec.n,rec.k?('Kaia: '+rec.k):null,rec.r?('Ready: '+rec.r):null].filter(Boolean).join(' | ').replace(/"/g,'&quot;');
+    return '<span class="badge '+cls+'" style="font-size:9px;cursor:help" title="'+tip+'">'+v+'</span>';
+  }
+
+  var rows=eligible.map(function(d){
+    var live=stripeLiveFor(d), sd=STRIPE[d.id], rec=reconFor(d), hsComm=d.comm;
+    var stripeCell, commCell, diffHtml='', rowClass='';
+
+    if(live){
+      var ccy=live.currency||'', ann=live.stripe_annual;
+      stripeCell='<span class="stripe-val">'+ccy+' '+fmt(ann,2)+'</span>'+
+        '<div style="font-size:9px;color:var(--text-dim)">'+ccy+' '+fmt(live.stripe_amount,2)+'/mo · '+(live.account||'')+' · '+(live.interval||'')+'ly · '+(live.status||'')+'</div>';
+      if(ccy==='USD'&&ann){
+        var sComm=ann*d.rate, diff=hsComm-sComm, diffPct=sComm?((diff/sComm)*100).toFixed(1):null;
+        commCell='<span class="comm-stripe">$'+fmt(sComm,2)+'</span>';
+        if(Math.abs(diff)<1){diffHtml='<span class="diff-zero">Match</span>';}
+        else if(diff>0){diffHtml='<span class="diff-negative">HS higher $'+fmt(diff)+' ('+diffPct+'%)</span>';rowClass='winner-hs';}
+        else{diffHtml='<span class="diff-positive">Stripe higher $'+fmt(-diff)+'</span>';rowClass='winner-stripe';}
+      } else {
+        commCell='<span style="color:var(--text-dim);font-size:11px">—</span>';
+        diffHtml='<span style="color:var(--amber);font-size:10px">Local ccy · FX pending</span>';
+      }
+    } else if(sd&&sd.found&&sd.stripe_arr){
+      var sComm2=sd.stripe_arr*d.rate, diff2=hsComm-sComm2;
+      stripeCell='<span class="stripe-val">$'+fmt(sd.stripe_arr,2)+'</span><div style="font-size:9px;color:var(--text-dim)">audit snapshot</div>';
+      commCell='<span class="comm-stripe">$'+fmt(sComm2,2)+'</span>';
+      if(Math.abs(diff2)<1){diffHtml='<span class="diff-zero">Match</span>';}
+      else if(diff2>0){diffHtml='<span class="diff-negative">HS higher $'+fmt(diff2)+'</span>';rowClass='winner-hs';}
+      else{diffHtml='<span class="diff-positive">Stripe higher $'+fmt(-diff2)+'</span>';rowClass='winner-stripe';}
+    } else {
+      stripeCell='<span style="color:var(--text-dim);font-size:11px">No data</span>';
+      commCell='<span style="color:var(--text-dim);font-size:11px">—</span>';
+      diffHtml=(rec&&rec.v.indexOf('NO STRIPE')===0)?'<span class="diff-na">No Stripe record</span>':'<span class="diff-na">Not synced</span>';
+    }
+
+    return '<tr class="'+rowClass+'"><td><a class="deal-link" href="https://app.hubspot.com/contacts/24214994/record/0-3/'+d.id+'" target="_blank"><div class="deal-name" title="'+d.name+'">'+d.name+upsellBadge(d.id)+'</div></a></td>'+
+      '<td>'+aeChip(d.owner)+'</td><td>'+rateTxt(d)+'</td>'+
+      '<td><span class="hs-val">$'+fmt(d.arr)+'</span></td>'+
+      '<td>'+stripeCell+'</td>'+
+      '<td><span class="comm-hs">$'+fmt(hsComm)+'</span></td>'+
+      '<td>'+commCell+'</td>'+
+      '<td>'+diffHtml+'</td>'+
+      '<td>'+verdictBadge(rec)+'</td></tr>';
+  }).join('');
+
+  var covered=coveredLive+coveredStatic;
+  document.getElementById('comparison-body').innerHTML=
+    '<div class="kpi-row" style="grid-template-columns:repeat(4,1fr)">'+
+    '<div class="kpi-card"><div class="kpi-label">Commission (HS)</div><div class="kpi-value green">$'+fmt(totalHs)+'</div><div class="kpi-sub">Using hs_arr (post-discount)</div></div>'+
+    '<div class="kpi-card"><div class="kpi-label">Commission (Stripe)</div><div class="kpi-value purple">$'+fmt(totalStripe)+'</div><div class="kpi-sub">USD-billed only · FX pending</div></div>'+
+    '<div class="kpi-card"><div class="kpi-label">Stripe coverage</div><div class="kpi-value">'+covered+'/'+eligible.length+'</div><div class="kpi-sub">'+coveredLive+' live · '+coveredStatic+' audit snapshot</div></div>'+
+    '<div class="kpi-card"><div class="kpi-label">Stripe last synced</div><div class="kpi-value" style="font-size:18px">'+(STRIPE_SYNCED_AT?STRIPE_SYNCED_AT.toLocaleTimeString('en-AU',{hour:'2-digit',minute:'2-digit'}):'—')+'</div><div class="kpi-sub">Pricing = items x qty + coupon, ex-tax</div></div>'+
+    '</div>'+
+    '<div class="alert-strip warning" style="margin-bottom:20px"><div style="font-size:16px">⚠</div><div class="alert-body"><strong>Stripe figures are live subscription pricing</strong> (qty x unit + active coupon, ex-tax) — the steady-state charge, not the latest invoice (which may be a proration). Verdict column carries the 09-Jul reconciliation review with Kaia; hover for notes. Cross-currency commission consolidation awaits the FX decision (rate at contract sign vs billing).</div></div>'+
+    '<div class="section-title">Deal-by-deal comparison</div>'+
+    '<div class="table-wrap"><table><thead><tr><th>Deal</th><th>AE</th><th>Rate</th><th>HS ARR</th><th>Stripe pricing</th><th style="color:var(--green)">Comm (HS)</th><th style="color:var(--purple)">Comm (Stripe)</th><th>Difference</th><th>Recon verdict</th></tr></thead><tbody>'+rows+'</tbody></table></div>';
+}
+
+// ── UPSELL DATA ───────────────────────────────────────────────────────────
+var UPSELLS_ACTIVE = [
+  {id:"56173724020", name:"Wilton Contracting Ltd",  owner:"80406430", arr:10575, prevPkg:"Standard Subscription", newPkg:"Advanced Subscription", close:"2026-03-04", status:"Active"},
+  {id:"57619530845", name:"SCLspec Pty Ltd",          owner:"80406430", arr:2925,  prevPkg:"Standard Subscription", newPkg:"Advanced Subscription", close:"2026-03-16", status:"Active"},
+  {id:"53715214102", name:"Event Base",               owner:"80406430", arr:4200,  prevPkg:"Standard Subscription", newPkg:"Advanced Subscription", close:"2026-03-31", status:"Active"},
+  {id:"56214795846", name:"Propel Marine Pty Ltd",    owner:"80127259", arr:13313, prevPkg:"Standard Subscription", newPkg:"Advanced Subscription", close:"2026-04-07", status:"Active"},
+];
+
+var UPSELLS_PIPELINE = [
+  {id:"56135905417", name:"Dave Clark Australia",    owner:"80406430", arr:15000, stage:"Discovery Call"},
+  {id:"55922604894", name:"FourPL",                  owner:"80406430", arr:26400, stage:"Discovery Call"},
+  {id:"56162820649", name:"Measured Group",          owner:"80406430", arr:17100, stage:"Proposal Sent"},
+];
+
+function pkgUpgradeLabel(prev, next) {
+  var pShort = function(p){ return p.includes('Advanced')?'Advanced':p.includes('Premium')?'Premium':'Standard'; };
+  return '<span style="background:#fee2e2;color:#991b1b;padding:1px 6px;border-radius:3px;font-size:10px;font-weight:700">'+pShort(prev)+'</span>'+
+    '<span style="color:var(--text-dim);margin:0 4px;font-size:11px">→</span>'+
+    '<span style="background:#d4f7e5;color:#0D8D5C;padding:1px 6px;border-radius:3px;font-size:10px;font-weight:700">'+pShort(next)+'</span>';
+}
+
+function renderUpsells(){
+  var UPSELL_RATE = 0.075;
+  var totalArr = UPSELLS_ACTIVE.reduce(function(s,d){return s+d.arr;},0);
+  var totalComm = totalArr * UPSELL_RATE;
+  var totalPipeline = UPSELLS_PIPELINE.reduce(function(s,d){return s+d.arr;},0);
+
+  document.getElementById('upsell-kpis').innerHTML =
+    '<div class="kpi-card"><div class="kpi-label">Active Upsell ARR</div><div class="kpi-value green">$'+fmt(totalArr)+'</div><div class="kpi-sub">'+UPSELLS_ACTIVE.length+' closed deals</div></div>'+
+    '<div class="kpi-card"><div class="kpi-label">Upsell Commission</div><div class="kpi-value amber">$'+fmt(totalComm)+'</div><div class="kpi-sub">7.5% · outstanding</div></div>'+
+    '<div class="kpi-card"><div class="kpi-label">Pipeline (potential)</div><div class="kpi-value">$'+fmt(totalPipeline)+'</div><div class="kpi-sub">'+UPSELLS_PIPELINE.length+' in-progress deals</div></div>';
+
+  document.getElementById('upsell-table-body').innerHTML = UPSELLS_ACTIVE.map(function(d){
+    var ae = AE[d.owner];
+    var comm = d.arr * UPSELL_RATE;
+    return '<tr>'+
+      '<td><a class="deal-link" href="https://app.hubspot.com/contacts/24214994/record/0-3/'+d.id+'" target="_blank"><div class="deal-name">'+d.name+'</div></a></td>'+
+      '<td>'+(ae?'<div style="display:inline-flex;align-items:center;gap:5px"><div style="width:20px;height:20px;border-radius:50%;background:'+ae.bg+';color:'+ae.color+';display:inline-flex;align-items:center;justify-content:center;font-size:9px;font-weight:700">'+ae.initials+'</div><span style="font-size:11.5px">'+ae.name.split(" ")[0]+'</span></div>':d.owner)+'</td>'+
+      '<td style="font-size:11px;color:var(--text-dim)">'+fmtD(d.close)+'</td>'+
+      '<td class="mono" style="color:var(--text-muted)">$'+fmt(d.arr)+'</td>'+
+      '<td>'+pkgUpgradeLabel(d.prevPkg, d.newPkg)+'</td>'+
+      '<td class="mono" style="color:var(--amber)">7.5%</td>'+
+      '<td class="mono" style="color:var(--green)">$'+fmt(comm)+'</td>'+
+      '<td><span class="badge badge-green">'+d.status+'</span></td>'+
+      '</tr>';
+  }).join('');
+
+  document.getElementById('upsell-pipeline-body').innerHTML = UPSELLS_PIPELINE.map(function(d){
+    var ae = AE[d.owner];
+    var comm = d.arr * UPSELL_RATE;
+    return '<tr style="opacity:.7">'+
+      '<td><a class="deal-link" href="https://app.hubspot.com/contacts/24214994/record/0-3/'+d.id+'" target="_blank"><div class="deal-name">'+d.name+'</div></a></td>'+
+      '<td>'+(ae?ae.name.split(" ")[0]:d.owner)+'</td>'+
+      '<td class="mono" style="color:var(--text-muted)">$'+fmt(d.arr)+'</td>'+
+      '<td><span class="badge badge-amber">'+d.stage+'</span></td>'+
+      '<td class="mono" style="color:var(--text-dim)">$'+fmt(comm)+'</td>'+
+      '</tr>';
+  }).join('');
+}
+
+// ── EDITOR PIN + PAID PERSISTENCE ─────────────────────────────────────────
+// PIN gates write actions (Mark paid / Undo). Viewing and Refresh stay open
+// to everyone — data reads are safe; only payout state changes need the PIN.
+var EDITOR_PIN_HASH = 'abacc600ac7bf5ed9aeb6668910c9df0891a265e4190b7aab2bba6b206a5317b'; // sha256 of the PIN
+var PAID_KEY = 'ch_paid_v1';
+
+function hashPin(pin){
+  return crypto.subtle.digest('SHA-256', new TextEncoder().encode(pin)).then(function(buf){
+    return Array.from(new Uint8Array(buf)).map(function(b){return b.toString(16).padStart(2,'0');}).join('');
+  });
+}
+function isEditor(){ return sessionStorage.getItem('ch_editor')==='1'; }
+function toggleLockPanel(){
+  var p=document.getElementById('lock-panel');
+  p.style.display = p.style.display==='none'?'block':'none';
+  if(p.style.display==='block'){ var i=document.getElementById('pin-input'); if(i) i.focus(); }
+}
+function submitPin(){
+  var inp=document.getElementById('pin-input'), msg=document.getElementById('pin-msg');
+  hashPin(inp.value.trim()).then(function(h){
+    if(h===EDITOR_PIN_HASH){
+      sessionStorage.setItem('ch_editor','1');
+      inp.value=''; if(msg) msg.textContent='';
+      updateLockUI(); renderDashboard(); renderDeals(); renderAE();
+    } else {
+      if(msg) msg.textContent='Wrong PIN';
+    }
+  });
+}
+function lockSession(){
+  sessionStorage.removeItem('ch_editor');
+  var msg=document.getElementById('pin-msg'); if(msg) msg.textContent='';
+  updateLockUI(); renderDashboard(); renderDeals(); renderAE();
+}
+function updateLockUI(){
+  var ind=document.getElementById('lock-indicator');
+  if(ind) ind.innerHTML = isEditor() ? '🔓 Editor <span style="font-size:9px;color:rgba(99,219,148,0.6);font-weight:600">· click to manage</span>' : '🔒 View only <span style="font-size:9px;color:rgba(255,255,255,0.35);font-weight:600">· click to unlock</span>';
+  if(isEditor()){ var p=document.getElementById('lock-panel'); if(p) p.style.display='none'; }
+}
+
+function loadPaidMap(){ try{ return JSON.parse(localStorage.getItem(PAID_KEY)||'{}'); }catch(e){ return {}; } }
+function applyPaidPersistence(){
+  var map=loadPaidMap();
+  DEALS.forEach(function(d){ if(map.hasOwnProperty(d.id)) d.paid_out=map[d.id]; });
+}
+function togglePaid(id){
+  if(!isEditor()){ toggleLockPanel(); return; }
+  var d=DEALS.find(function(x){return x.id===id;});
+  if(!d) return;
+  d.paid_out=!d.paid_out;
+  var map=loadPaidMap(); map[id]=d.paid_out;
+  try{ localStorage.setItem(PAID_KEY, JSON.stringify(map)); }catch(e){}
+  renderDashboard(); renderDeals(); renderAE();
+}
+
+// ── SYNC ──────────────────────────────────────────────────────────────────
+var LAST_SYNCED = null;
+
+// Route all HubSpot traffic through the n8n proxy (never call api.hubapi.com
+// directly from the browser — CORS + no auth would fail silently). The proxy
+// discovers every commissionable deal by stage, so this is what surfaces new
+// deals and drops closed-lost ones from the view.
+var HS_PROXY = 'https://workflowmax.app.n8n.cloud/webhook/commission-hub-hs';
+// ── STRIPE LIVE SYNC (v11) ─────────────────────────────────────────────────
+// Customer map + reconciliation verdicts from Commission_Deals workbook v3 (09 Jul 2026,
+// Kaia review session). Pricing methodology: subscription items (qty x unit) + coupon, ex-tax.
+var STRIPE_PROXY = 'https://workflowmax.app.n8n.cloud/webhook/commission-hub-stripe';
+var STRIPE_LIVE = {};        // keyed by stripe_customer_id — populated by syncStripe()
+var STRIPE_SYNCED_AT = null;
+var STRIPE_CUS_MAP = {
+ "amc asia (sg) pte ltd": "cus_TndJgP7w1UkDJw",
+ "mont eltham drafting": "cus_UnSgnFm5OpJGey",
+ "afi | industrial automation nz": "cus_UlxBwGn5bQKmMo",
+ "tbe environmental pty ltd": "cus_UkRVdtLX6MPhpT",
+ "event base": "cus_Q17bAYOTnoBf2A",
+ "woolf bond planning": "cus_U9wwjaqcgdjd9Y",
+ "keyts facility services": "cus_UiX87Oz6eSSPxh",
+ "asc engineers": "cus_UNAY1Vbq0iNA0j",
+ "gp structural services": "cus_UUgCBtpTvqIJze",
+ "pinnacle high pressure cleaning": "cus_Ucc6cEfQkvPyWS",
+ "turco and associates": "cus_TWNfIwb8WGP8pu",
+ "tweak design": "cus_UPqxZAl7MJusGb",
+ "am network": "cus_TK4Mh625ezaIpT",
+ "data sagacity pty ltd": "cus_QKDaUNPLDtNbIj",
+ "justo ltd": "cus_QHKYNN65RE6zHq",
+ "achm": "cus_Q8DcSAKJhJMJ22",
+ "range environmental consultants": "cus_QHHmjmXIplqs6a",
+ "le mottee group pty ltd": "cus_UlzuEJ8zS3Phxp",
+ "nelligan consulting engineers": "cus_Q0hbMwh9JQ6zRe",
+ "technigroup": "cus_QDEBJMCOSdQnXp",
+ "novatia": "cus_QE39lXaLBBVlGm",
+ "garnet building design": "cus_UkrGVTP8cwZfhX",
+ "onevision project services australia": "cus_QUuRkYDAo9Sfu8",
+ "modern environments": "cus_U5zmSOnZSphwqh",
+ "the studio bridge": "cus_UnpuICSEjsQKfa",
+ "flowstate consulting": "cus_UAnpIADPgBpdhV",
+ "wilton contracting": "cus_Q733nGa6IyKmiz",
+ "sclspec pty ltd": "cus_QJ3nILIzXWVYAS",
+ "mcclure civil management": "cus_Q5fBtZyICiSUgF",
+ "srh architecture": "cus_UcdWmy1moT3Kbd",
+ "propel marine pty ltd": "cus_Q9SBRK0LTxw9el",
+ "cr automation limited": "cus_QEzAhNttslDLpe",
+ "guyco construction (2019) ltd": "cus_Q0gMFmGyvU90Ht",
+ "pda ltd": "cus_PzOTb3oj9qiZUT",
+ "guthrie mcgoldrick (gmce)": "cus_QDreRM014bdorQ",
+ "mac network services": "cus_SuQD0gPslI8I2D",
+ "young & young architects": "cus_TzXCN0fT9p8Gv2",
+ "hf home llc": "cus_QEX8gDByrDNTi0",
+ "redibuilt homes": "cus_UnuAais5g0FlS4",
+ "marton lee limited": "cus_QGQBBqKWKGXqUq",
+ "stradegy": "cus_QGYL5XU7sQuEiX",
+ "cartledge mining and geotechnics": "cus_STcJzjfWWtsJsL",
+ "haigh workman": "cus_Q6KKcCD1OUuT2K",
+ "ttx group": "cus_TojhNZvdYajgWh",
+ "aim building & maintenance services": "cus_Q9w5ftE39xiTmW",
+ "measured group": "cus_QJ2rnH5eyuoTj3"
+};
+var RECON = {
+ "amc asia (sg) pte ltd": {"v":"MATCH","n":"Tiered annual; steady invoice 624.98/yr-equiv matches HS 625.00.","r":"Yes"},
+ "mont eltham drafting": {"v":"MATCH","n":"50% EOFY coupon = HS discounted line (188.90 AUD).","r":"Yes"},
+ "afi | industrial automation nz": {"v":"MATCH","n":"59.7% coupon = HS discounted line (435.24 NZD).","r":"Yes"},
+ "tbe environmental pty ltd": {"v":"MATCH","n":"Qty, currency and amount match exactly. No coupon.","r":"Yes"},
+ "event base": {"v":"MATCH (fixed 09 Jul)","n":"FIXED in review session: old USD/30% line item deleted, new line 20 x 45 NZD with 50% disc = 450 NZD, matching Stripe cycle invoices exactly.","k":"50% for 12 months (AE mistake)","r":"Yes"},
+ "woolf bond planning": {"v":"MATCH (fixed 09 Jul)","n":"FIXED in review session: line item converted from USD to GBP (11 x 18.89 = 207.79), matching Stripe exactly.","k":"Converted to GBP","r":"Yes"},
+ "keyts facility services": {"v":"MATCH (fixed 09 Jul)","n":"FIXED in review session: old annual USD line replaced with 25 x 37.78 AUD @24% = 717.82, matching the 'Keyts - Advanced Coupon' in Stripe. First full cycle invoice lands 16 Jul - verify then.","k":"Referencing pro rated invoice - HS correct","r":"Yes"},
+ "asc engineers": {"v":"MATCH (fixed 09 Jul)","n":"FIXED in review session: new AUD annual line @17% disc = 282.20/mo, matching Stripe (3,386.40/yr ex-tax).","k":"Applied discount in Stripe - HS Correct","r":"Yes"},
+ "gp structural services": {"v":"MATCH (fixed 09 Jul)","n":"FIXED in review session: new AUD annual line = 340.00/mo, matching Stripe (4,080/yr ex-tax).","k":"Updated in HS","r":"Yes"},
+ "pinnacle high pressure cleaning": {"v":"MATCH (fixed 09 Jul)","n":"FIXED in review session: two new AUD lines (full 377.80 + 50%-off 188.90 P6M), matching Stripe coupon 'Advanced Upgrade (6 months 50% off)'.","k":"Updated in HS","r":"Yes"},
+ "turco and associates": {"v":"CURRENCY","n":"Tiered Premium, no coupon, steady 291 AUD ex-tax. HS USD. Premium - not eligible.","k":"Premium - Not Elegible","r":"No"},
+ "tweak design": {"v":"CURRENCY + COUPON NOT IN HS","n":"Stripe 50% coupon ('Advanced Plan Promo'); HS shows NO discount. Cycle invoices 188.90 AUD ex-tax confirm.","k":"Updated in HS","r":"Yes"},
+ "am network": {"v":"CURRENCY","n":"Tiered Premium, steady cycle 394 AUD ex-tax. Premium - confirm eligibility.","k":"Premium - Not Elegible","r":"No"},
+ "data sagacity pty ltd": {"v":"CURRENCY + COUPON NOT IN HS","n":"Stripe 50% coupon; HS shows no discount. Cycle 434.47 AUD ex-tax. Note one refunded charge (378.63) on 28 Apr.","k":"Updated in HS","r":"Yes"},
+ "justo ltd": {"v":"CURRENCY","n":"No coupon; cycle 358.91 GBP ex-tax.","k":"Updated in HS","r":"Yes"},
+ "achm": {"v":"CURRENCY","n":"No coupon; cycle 793.38 AUD ex-tax.","k":"Updated in HS","r":"Yes"},
+ "range environmental consultants": {"v":"CURRENCY","n":"No coupon; cycle 402.49 AUD ex-tax vs list 680.04 - item-level discount ~41% present in cycle invoices. HS shows none. VERIFY discount origin.","k":"Updated in HS","r":"Yes"},
+ "le mottee group pty ltd": {"v":"CURRENCY","n":"50% EOFY coupon matches HS 50% line. Currency differs only.","k":"Updated in HS","r":"Yes"},
+ "nelligan consulting engineers": {"v":"CURRENCY + COUPON NOT IN HS","n":"Cycle invoices: 450 - 225 discount = 225 NZD ex-tax steady (50% ITEM-LEVEL discount, invisible at subscription level). HS shows no discount.","k":"Updated in HS","r":"Yes"},
+ "technigroup": {"v":"CURRENCY + COUPON NOT IN HS","n":"Stripe 50%/6mo coupon 'Technigroup - Advanced'; HS shows no discount. Cycle 264.46 AUD ex-tax.","k":"Updated in HS","r":"Yes"},
+ "novatia": {"v":"CURRENCY","n":"No coupon; cycle 207.79 GBP ex-tax.","k":"Updated in HS","r":"Yes"},
+ "garnet building design": {"v":"CURRENCY + COUPON NOT IN HS","n":"Tiered Premium + 50% EOFY coupon (103 AUD). HS shows no discount. Premium - confirm eligibility.","k":"Premium - Not Elegible","r":"No"},
+ "onevision project services australia": {"v":"CURRENCY","n":"No coupon; cycle 377.80 AUD ex-tax.","k":"Updated in HS","r":"Yes"},
+ "modern environments": {"v":"CURRENCY","n":"Tiered Premium; cycle 230 NZD ex-tax. Premium - confirm eligibility.","k":"Premium - Not Elegible","r":"No"},
+ "the studio bridge": {"v":"COUPON NOT IN HS","n":"50% coupon 'Studio Bridge Welcome' active in Stripe (312.50 cycle), not recorded in HS. Qty + currency match.","k":"Updated in HS","r":"Yes"},
+ "flowstate consulting": {"v":"CURRENCY + QTY","n":"HS 5 vs Stripe 10 users. Tiered Premium, cycle 206 NZD ex-tax.","k":"Premium - Not Elegible","r":"No"},
+ "wilton contracting": {"v":"CURRENCY + QTY","n":"Two deals share ONE subscription (100u tiered + 20u Doc Storage), 50% coupon, cycle 249 NZD ex-tax. Wilton 2: https://app.hubspot.com/contacts/24214994/record/0-3/59153725536","k":"Wilton Comtracting downgraded to Premium. Winton 2 is Advanced. Updated in HS.","r":"Yes"},
+ "sclspec pty ltd": {"v":"CURRENCY + QTY + DISC MISMATCH","n":"CORRECTED: discount IS applied - at ITEM level (604.48 - 359.06 = 245.42 AUD ex-tax every cycle, ~59% off). HS records 25%. Qty 13 (HS) vs 16 (Stripe).","k":"Updated in HS","r":"Yes"},
+ "mcclure civil management": {"v":"CURRENCY + QTY","n":"HS 32 vs Stripe 50 users. Tiered, cycle 394 AUD ex-tax. Upsell deal.","k":"Advanced agreement signed for 24/6 start. Updated HS. DK speaking with customer."},
+ "srh architecture": {"v":"CURRENCY + QTY","n":"HS 38 vs Stripe 36 users. No coupon; cycle 1,360.08 AUD ex-tax.","k":"Updated in HS","r":"Yes"},
+ "propel marine pty ltd": {"v":"CURRENCY + QTY + DISC MISMATCH","n":"HS 81u @30% vs Stripe 73u @60.86% coupon 'Propel Marine ADV' (cycle 1,079.46 AUD ex-tax). Discount much larger than deal records.","k":"Pre-contract days. Re-aligned to 73 users (37 Admin, 36 Timesheet). Updated in HS.","r":"Yes"},
+ "cr automation limited": {"v":"CURRENCY + QTY + COUPON NOT IN HS","n":"HS 23 vs Stripe 22 users. 16% coupon not in HS. Cycle 831.60 NZD ex-tax. One failed charge 6 Jun (retried OK).","k":"Reduced to 22 users. Updated HS.","r":"Yes"},
+ "guyco construction (2019) ltd": {"v":"CURRENCY + QTY","n":"CORRECTED: discount IS applied at invoice level - June cycle 2,160 - 874.80 = 1,285.20 NZD ex-tax (~40% off, close to HS 36%). Qty 48 (Stripe) vs 56 (HS). Discount amount VARIES between cycles (May cycle had 1,825.20 off) - verify discount setup.","k":"Reduced to 8 Admin and 40 Timsheet. Updated in HS.","r":"Yes"},
+ "pda ltd": {"v":"CURRENCY + QTY","n":"HS 17 vs Stripe 16 users. No coupon; cycle 302.24 GBP ex-tax.","k":"Reduced to 16 users. Updated HS.","r":"Yes"},
+ "guthrie mcgoldrick (gmce)": {"v":"CURRENCY + QTY","n":"HS 10 vs Stripe 12 users. No coupon; cycle 453.36 AUD ex-tax.","k":"Updated in HS","r":"Yes"},
+ "mac network services": {"v":"CURRENCY + QTY","n":"Reference example. 17.5% ITEM-LEVEL discount (453.36 - 79.34 = 374.02 GBP ex-tax per cycle). HS 25 vs Stripe 24 users; USD vs GBP.","k":"Updated in HS","r":"Yes"},
+ "ecoz pty ltd": {"v":"QTY (severe gap)","n":"Same currency + 50% coupon matches HS structure, but Stripe bills 100 users vs 46 in HS. July cycle: 3,778 - 1,889 = 1,889 AUD ex-tax; payment partially refunded (406.43) on 1 Jul - review.","k":"DK discussing with customer. Updated HS to minimum value 46 users with coupon.","r":"Yes"},
+ "young & young architects": {"v":"QTY / LINE ITEM","n":"HS line malformed (qty 1, total as unit price). Stripe: 20 users, cycle 230 USD. Rebuild line item.","k":"Premium - Not Elegible","r":"No"},
+ "hf home llc": {"v":"QTY + AMOUNT","n":"Both record 10% disc. HS 22u ($495) vs Stripe 24u ($540 cycle). Frequent mid-cycle user adds (prorations in Jun).","k":"Updated to 24 users.","r":"Yes"},
+ "redibuilt homes": {"v":"QTY (HS > Stripe)","n":"HS 12 users vs Stripe 5 - commission base inflated. 50% EOFY coupon (94.45 AUD) not in HS either.","k":"2 combined deals (Redibuilt Homes and RediFrame)","r":"Yes"},
+ "marton lee limited": {"v":"VERIFY (recent change)","n":"Cycle invoices were 230 NZD ex-tax; sub now shows 12 users x 45 NZD list (540) with NO coupon after a 19 Jun update. THREE charges on 19 Jun each partially refunded (294.44 x3) - billing needs manual review in Stripe.","k":"Issues with setup of account. Now resolved. Updated HS.","r":"Yes"},
+ "stradegy": {"v":"VERIFY (recent change)","n":"Historic cycles: 310 NZD ex-tax at 20 users (~66% off list - item-level). Sub upgraded 20->25 users on 10 Jun; current items show NO coupon at list 1,125 NZD. Next cycle will reveal the real recurring. Also one failed charge (insufficient funds, 10 May).","k":"Udated HS","r":"Yes"},
+ "cartledge mining and geotechnics": {"v":"VERIFY (many changes)","n":"Sub items now 19u @10% coupon (646.04 AUD). But invoices show constant small prorations (9.76, 29.97, 34.52...) and June cycle 510.03 ex-tax. Subscription has been modified repeatedly - needs manual review. HS 15u USD.","k":"2 year contract. Update HS.","r":"Yes"},
+ "haigh workman": {"v":"VERIFY (amount below promo)","n":"Pricing says 30u x 45 @50% coupon = 675 NZD, matching HS. BUT actual cycle invoices charge only 413 NZD ex-tax (474.95 inc GST) - an ADDITIONAL discount beyond the 50% coupon exists at item/invoice level. Verify what was configured.","k":"Updated HS","r":"Yes"},
+ "ttx group": {"v":"BILLING MESS + REFUNDS","n":"NEW: the 26 May upgrade payment ($11,885.52) AND the 5 Jun manual invoice ($2,692.05) were BOTH FULLY REFUNDED - $14,577.57 of the $21,030.62 refunded volume explained. Net actually kept: $4,969.45 (2 quarterly payments + 1 manual 16u invoice). Sub still shows 62 users. Full manual reconstruction needed with Kaia.","k":"Updated HS. Stripe requires updating - customer is invoiced quarterly. Also, applied 34.5% discount (24 months) to account for sign-up and timesheet users.","r":"Yes"},
+ "aim building & maintenance services": {"v":"PLAN + QTY + CURRENCY","n":"Stripe: 219 users on STANDARD Plan UK (tiered), 1,015 GBP ex-tax cycle, no coupon. HS says Advanced. Product mismatch - INVESTIGATE.","k":"Updated HS. Applied 33.5% discount to all 160 users. 2 year contract. To be billed monthly. Stripe requires updating.","r":"Yes"},
+ "measured group": {"v":"NO LINE ITEM (severe)","n":"No line item in HubSpot. Stripe: 56 users, 51% coupon 'Measured Advanced', cycle 1,036.68 AUD ex-tax. Create line item before commission calc.","k":"Updated HS. SZ to speak with customer and add 6 users.","r":"TBC"},
+ "weld australia": {"v":"NO STRIPE RECORD","n":"Deal closed 30 Jun, Contract Signed. No customer/subscription in any Stripe account. Confirm onboarding with Mac.","k":"Awaiting account setup. Packaged with Weld Australia Cerification. Updated HS.","r":"Yes"},
+ "consult sustainability": {"v":"NO STRIPE RECORD","n":"No Stripe record by HS domain (consultsustain.co.uk), billing domain (consultconstruct.co.uk), name or contact. Contract Signed. Confirm onboarding.","k":"Awaiting account setip. Updated HS.","r":"Yes"}
+};
+
+// Resolve a deal's Stripe customer: explicit id from RAW first, then the
+// workbook name map (covers deals discovered live from HubSpot).
+function resolveStripeCus(d){
+  if(d.stripe_cus_id) return d.stripe_cus_id;
+  var k = (d.name||'').toLowerCase().trim();
+  if(STRIPE_CUS_MAP[k]) return STRIPE_CUS_MAP[k];
+  // tolerant match: workbook key contained in deal name or vice-versa
+  for(var key in STRIPE_CUS_MAP){
+    if(k.indexOf(key)===0 || key.indexOf(k)===0) return STRIPE_CUS_MAP[key];
+  }
+  return null;
+}
+function reconFor(d){
+  var k=(d.name||'').toLowerCase().trim();
+  if(RECON[k]) return RECON[k];
+  for(var key in RECON){ if(k.indexOf(key)===0 || key.indexOf(k)===0) return RECON[key]; }
+  return null;
+}
+function stripeLiveFor(d){
+  var cus = resolveStripeCus(d);
+  return cus && STRIPE_LIVE[cus] ? STRIPE_LIVE[cus] : null;
+}
+
+// Pull live subscription pricing (qty x unit + coupon, ex-tax) from the n8n
+// Stripe proxy for every deal we can map to a Stripe customer. Chunked +
+// parallel so ~45 customers stays well under webhook timeout.
+function syncStripe(){
+  var status = document.getElementById('sync-status');
+  var ids = {};
+  DEALS.concat(RENEWAL).forEach(function(d){
+    var cus = resolveStripeCus(d);
+    if(cus){ ids[cus]=true; d.stripe_cus_id = cus; }
+  });
+  var all = Object.keys(ids);
+  if(!all.length) return Promise.resolve({matched:0, total:0});
+
+  var CHUNK = 15, chunks = [];
+  for(var i=0;i<all.length;i+=CHUNK) chunks.push(all.slice(i,i+CHUNK));
+
+  if(status){ status.textContent = 'HubSpot ✓ · Syncing Stripe ('+all.length+' customers)...'; }
+
+  return Promise.all(chunks.map(function(c){
+    return fetch(STRIPE_PROXY+'?customers='+c.join(','))
+      .then(function(r){ if(!r.ok) throw new Error('Stripe proxy HTTP '+r.status); return r.json(); })
+      .then(function(data){ return (data && data.subscriptions) || {}; });
+  }))
+  .then(function(results){
+    results.forEach(function(subs){
+      Object.keys(subs).forEach(function(k){ STRIPE_LIVE[k] = subs[k]; });
+    });
+    STRIPE_SYNCED_AT = new Date();
+    return {matched: Object.keys(STRIPE_LIVE).length, total: all.length};
+  });
+}
+
+function buildDeal(src){
+  // src is a proxy row; merge with any manual enrichment we already hold in RAW.
+  var prior = RAW.find(function(d){ return d.id === src.dealId; }) || {};
+  ensureAE(src.owner);
+  var arr = src.arr;
+  if(prior.arr_locked){ arr = prior.arr; } // keep manually corrected ARR
+  return {
+    id: src.dealId,
+    name: src.name || prior.name || src.dealId,
+    owner: src.owner || prior.owner || 'unassigned',
+    arr: (arr != null ? arr : (prior.arr != null ? prior.arr : null)),
+    src: src.source || prior.src || '',
+    inv: src.ae_involvement || prior.inv || '',
+    pkg: src.product_package || prior.pkg || '',
+    close: src.close || prior.close || '',
+    commission_type: src.commission_type || prior.commission_type || '',
+    // preserved manual fields
+    paid_out: prior.paid_out || false,
+    contract_years: prior.contract_years || 1,
+    banked_years: prior.banked_years,
+    arr_locked: prior.arr_locked,
+    data_issue: prior.data_issue,
+    stripe_cus_id: prior.stripe_cus_id,
+    // live stage info from HubSpot
+    stage_label: src.stage_label,
+    dealstage: src.dealstage,
+    isNew: !RAW.find(function(d){ return d.id === src.dealId; })
+  };
+}
+
+function syncFromHubSpot(){
+  var btn = document.getElementById('sync-btn');
+  var icon = document.getElementById('sync-icon');
+  var status = document.getElementById('sync-status');
+  if(btn){ btn.disabled = true; }
+  if(icon){ icon.style.animation = 'spin 1s linear infinite'; icon.style.display = 'inline-block'; }
+  if(status){ status.textContent = 'Syncing from HubSpot...'; status.style.color = 'rgba(99,219,148,0.5)'; }
+
+  return fetch(HS_PROXY, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({})
+  })
+  .then(function(r){
+    if(!r.ok) throw new Error('Proxy returned HTTP '+r.status);
+    return r.json();
+  })
+  .then(function(data){
+    if(!Array.isArray(data)){
+      // proxy error payloads come back as an object (e.g. credential error)
+      var msg = (data && data.message) ? data.message : 'Unexpected response from proxy';
+      throw new Error(msg);
+    }
+
+    var active = [], renewal = [], lost = [];
+    data.forEach(function(row){
+      if(row.bucket === 'lost') lost.push(row);
+      else if(row.bucket === 'renewal') renewal.push(row);
+      else active.push(row);
+    });
+
+    // Commission view = active bucket only. This both discovers new deals and
+    // removes anything now closed-lost (it simply isn't in the active bucket).
+    DEALS.length = 0;
+    active.forEach(function(row){
+      var d = buildDeal(row);
+      var cl = classify(d), er = eligReason(d), eligible = !er;
+      DEALS.push(Object.assign({}, d, cl, {eligible:eligible, eligReason:er, comm: eligible?(d.arr||0)*cl.rate:0, quarter:getQuarter(d.close)}));
+    });
+
+    // Control tab — closed-lost / expired / churn. Enriched name/owner where known.
+    LOST = lost.map(function(row){ ensureAE(row.owner); return buildDeal(row); });
+    // Renewals — existing customers, tracked but out of commission totals.
+    RENEWAL = renewal.map(function(row){ ensureAE(row.owner); return buildDeal(row); });
+
+    applyPaidPersistence();
+    var newCount = DEALS.filter(function(d){return d.isNew;}).length;
+    SYNCED_ONCE = true;
+    LAST_SYNCED = new Date();
+    renderDashboard(); renderDeals(); renderAE(); renderComparison(); renderUpsells(); renderLost();
+
+    // Stage 2 — Stripe. A Stripe failure never wipes the HubSpot result;
+    // we report exactly which half worked.
+    return syncStripe()
+      .then(function(res){
+        if(status){
+          status.textContent = 'Synced '+LAST_SYNCED.toLocaleTimeString('en-AU',{hour:'2-digit',minute:'2-digit'})+' · '+DEALS.length+' active'+(newCount?' ('+newCount+' new)':'')+' · Stripe '+res.matched+'/'+res.total;
+          status.style.color = '#63DB94';
+        }
+        renderComparison(); renderStripe();
+      })
+      .catch(function(e){
+        if(status){
+          status.textContent = 'HubSpot ✓ ('+DEALS.length+' active) · Stripe failed: '+(e && e.message ? e.message : 'network error');
+          status.style.color = '#f59e0b';
+        }
+        console.error('Stripe sync failed:', e);
+      });
+  })
+  .catch(function(e){
+    // Honest failure — no fake "Updated". Tell the user what actually happened.
+    if(status){
+      status.textContent = 'Sync failed: '+(e && e.message ? e.message : 'network error');
+      status.style.color = '#f87171';
+    }
+    console.error('Commission Hub sync failed:', e);
+  })
+  .finally(function(){
+    if(btn){ btn.disabled = false; }
+    if(icon){ icon.style.animation = ''; }
+  });
+}
+
+// ── NAV ───────────────────────────────────────────────────────────────────
+function showPage(id,el){
+  document.querySelectorAll('.page').forEach(function(p){p.classList.remove('active');});
+  document.querySelectorAll('.nav-item').forEach(function(n){n.classList.remove('active');});
+  document.getElementById('page-'+id).classList.add('active');
+  el.classList.add('active');
+  document.querySelector('.main').scrollTop=0;
+}
+
+// ── CLOSED / LOST (control view) ──────────────────────────────────────────
+function renderLost(){
+  var tag = document.getElementById('lost-tag');
+  if(tag) tag.textContent = LOST.length ? LOST.length : '·';
+
+  var body = document.getElementById('lost-body');
+  if(!body) return;
+
+  if(!SYNCED_ONCE){
+    body.innerHTML = '<div class="alert-strip" style="background:var(--surface2)"><div class="alert-body">No data yet. Click <strong>Refresh data</strong> in the sidebar to pull closed-lost, expired and churned deals from HubSpot.</div></div>';
+    return;
+  }
+
+  var byStage = {};
+  LOST.forEach(function(d){ byStage[d.stage_label]=(byStage[d.stage_label]||0)+1; });
+  var chips = Object.keys(byStage).map(function(k){
+    return '<span class="badge badge-dim" style="margin-right:6px">'+k.replace(/_/g,' ')+': '+byStage[k]+'</span>';
+  }).join('');
+
+  var rows = LOST.sort(function(a,b){return (b.close||'').localeCompare(a.close||'');}).map(function(d){
+    return '<tr style="opacity:.75">'+
+      '<td><a class="deal-link" href="https://app.hubspot.com/contacts/24214994/record/0-3/'+d.id+'" target="_blank"><div class="deal-name" title="'+d.name+'">'+d.name+'</div></a></td>'+
+      '<td>'+aeChip(d.owner)+'</td>'+
+      '<td><span class="badge badge-red">'+(d.stage_label||'lost').replace(/_/g,' ')+'</span></td>'+
+      '<td>'+pkgBadge(d.pkg)+'</td>'+
+      '<td>'+(d.arr?'<span class="mono" style="color:var(--text-dim)">$'+fmt(d.arr)+'</span>':'<span style="color:var(--text-dim);font-size:11px">—</span>')+'</td>'+
+      '<td style="font-size:11px;color:var(--text-dim)">'+fmtD(d.close)+'</td>'+
+      '</tr>';
+  }).join('');
+
+  var renewalNote = RENEWAL.length
+    ? '<div class="alert-strip" style="background:var(--surface2);margin-top:18px"><div class="alert-body"><strong>'+RENEWAL.length+' deals in renewal stages</strong> (Upcoming Renewal / Renewal Engagement) are tracked separately and are not part of new-commission totals.</div></div>'
+    : '';
+
+  body.innerHTML =
+    '<div style="margin-bottom:14px">'+chips+'</div>'+
+    '<div class="table-wrap"><table><thead><tr><th>Deal</th><th>AE</th><th>Stage</th><th>Package</th><th>ARR</th><th>Close</th></tr></thead><tbody>'+rows+'</tbody></table></div>'+
+    '<div style="padding:10px 0;font-size:11px;color:var(--text-dim)">'+LOST.length+' closed-lost / expired / churned · excluded from all commission figures</div>'+
+    renewalNote;
+}
+
+// ── INIT ──────────────────────────────────────────────────────────────────
+renderDashboard();
+renderDeals();
+renderAE();
+renderBanked();
+renderStripe();
+renderComparison();
+renderUpsells();
+renderLost();
+// Pull live data from HubSpot on load so the view reflects current stages.
+updateLockUI();
+syncFromHubSpot();
+
+</script>
+</body>
+</html>
