@@ -4,6 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>WorkflowMAX · Commission Hub FY2026</title>
+<!-- v15 · 2026-07-15 · CS-attributed deals added (Sales_and_Upsell.xlsx reconciled vs HubSpot) -->
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
 /* ── v5 PALETTE on v8 STRUCTURE ───────────────────────────────── */
@@ -368,7 +369,7 @@ input[type=date]{background:#fff;border:1px solid var(--border);border-radius:6p
   <div class="page-header">
     <div class="page-eyebrow">Upsell Deals</div>
     <div class="page-title">Upsell Commission</div>
-    <div class="page-sub">Existing Business deals · 7.5% rate · Tracked via dealtype = Existing Business</div>
+    <div class="page-sub">AE upsells (7.5%) · CS layer (2.5%) · CS-attributed deals from the CS Sales &amp; Upsell sheet</div>
   </div>
   <div class="page-body">
     <div class="alert-strip warning" style="margin-bottom:20px">
@@ -428,6 +429,72 @@ input[type=date]{background:#fff;border:1px solid var(--border);border-radius:6p
         <tbody id="upsell-pipeline-body"></tbody>
       </table>
     </div>
+
+
+    <!-- ============ CS-ATTRIBUTED DEALS (v15) ============ -->
+    <div class="section-title" style="margin-top:28px">Customer Success &mdash; attributed deals</div>
+    <div class="alert-strip" style="margin-bottom:16px;background:#f3e8ff;border:1px solid #d8b4fe">
+      <div style="font-size:16px">&#128101;</div>
+      <div class="alert-body" style="color:#581c87"><strong>Source: CS Sales &amp; Upsell sheet, reconciled against HubSpot (15 Jul 2026).</strong> These are the deals where Liz Tobin, David Oliver (UK) or David Solley (AU/NZ) drove or supported the sale. CS layer is <strong>2.5% on top</strong> of the AE 7.5% (both on delta ARR). Figures below are indicative: they apply 2.5% to the full sheet amount because delta ARR is not yet a HubSpot field, and payout requires Kaia's sign-off.</div>
+    </div>
+
+    <div id="cs-kpis" style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:24px"></div>
+
+    <div class="section-title">What makes these CS deals &mdash; the pattern</div>
+    <div style="background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:20px;margin-bottom:20px">
+      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:14px">
+        <div style="background:var(--surface2);border:1px solid var(--border);border-left:3px solid #7a3b8f;border-radius:8px;padding:14px">
+          <div style="font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--text-dim);margin-bottom:6px">Signal 1 &mdash; Naming</div>
+          <div style="font-size:13px;font-weight:700;margin-bottom:4px">"Upsell" / "(ADV/Upsell)" in deal name</div>
+          <div style="font-size:11px;color:var(--text-muted)">Almost all are Standard &rarr; Advanced package upgrades on an existing account, tagged only via the deal name convention.</div>
+        </div>
+        <div style="background:var(--surface2);border:1px solid var(--border);border-left:3px solid #7a3b8f;border-radius:8px;padding:14px">
+          <div style="font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--text-dim);margin-bottom:6px">Signal 2 &mdash; Fields</div>
+          <div style="font-size:13px;font-weight:700;margin-bottom:4px">dealtype = Existing Business &middot; commission_type = Upsell</div>
+          <div style="font-size:11px;color:var(--text-muted)">Set on most, but inconsistently &mdash; several CS deals carry Inbound/Outbound or nothing. Name convention is currently more reliable than the fields.</div>
+        </div>
+        <div style="background:var(--surface2);border:1px solid var(--border);border-left:3px solid #991b1b;border-radius:8px;padding:14px">
+          <div style="font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--text-dim);margin-bottom:6px">The gap</div>
+          <div style="font-size:13px;font-weight:700;margin-bottom:4px">customer_success_owner is empty on 100% of them</div>
+          <div style="font-size:11px;color:var(--text-muted)">CS attribution today lives only in the spreadsheet. Until the CS Owner property is backfilled, HubSpot cannot report any of this.</div>
+        </div>
+      </div>
+      <div style="font-size:12px;color:var(--text-muted);line-height:1.7">
+        Two profiles emerge: <strong>package upsells</strong> on existing accounts (the naming convention above), and <strong>CS-sourced net-new logos</strong> (intros/referrals by Liz &mdash; e.g. KSN, Haworth Tompkins, Studio CO2) where the deal looks like normal new business in HubSpot and CS involvement is invisible. Eligibility review rule used for the candidate list below: <code style="background:rgba(0,0,0,0.06);padding:1px 4px;border-radius:3px">dealname contains "upsell"</code> OR <code style="background:rgba(0,0,0,0.06);padding:1px 4px;border-radius:3px">dealtype = existingbusiness</code> OR <code style="background:rgba(0,0,0,0.06);padding:1px 4px;border-radius:3px">commission_type = Upsell</code>, with no CS person recorded in the sheet.
+      </div>
+    </div>
+
+    <div class="section-title">CS deals &mdash; won (signed or active)</div>
+    <div class="table-wrap" style="margin-bottom:20px">
+      <table>
+        <thead><tr><th>Deal</th><th>Region</th><th>CS</th><th>Status</th><th>Close</th><th>Amount</th><th>CS 2.5%</th><th>Links</th></tr></thead>
+        <tbody id="cs-won-body"></tbody>
+      </table>
+    </div>
+
+    <div class="section-title">CS deals &mdash; open pipeline, lost &amp; unmatched</div>
+    <div class="table-wrap" style="margin-bottom:8px">
+      <table>
+        <thead><tr><th>Deal</th><th>Region</th><th>CS</th><th>Status</th><th>Close</th><th>Amount</th><th>CS 2.5%</th><th>Links</th></tr></thead>
+        <tbody id="cs-pipe-body"></tbody>
+      </table>
+    </div>
+    <div style="margin-bottom:24px;padding:12px 14px;background:var(--amber-bg);border:1px solid var(--amber-border);border-radius:8px;font-size:12px;color:var(--amber)">
+      <strong>5 sheet deals have no HubSpot match by name</strong> (Consult Sustainability, Glass Canvas, asset55.com, AlphaChase, STL Projects) &mdash; likely renamed or deleted since the sheet export. Katestone and PBA NZ moved to Closed-Lost in HubSpot after the sheet snapshot. Stripe links appear automatically where the customer is already mapped; unmapped ones need their Stripe customer ID added to the workbook map.
+    </div>
+
+    <div class="section-title">Candidates for CS review &mdash; pattern-matched, no CS person recorded</div>
+    <div class="alert-strip warning" style="margin-bottom:12px">
+      <div style="font-size:16px">&#9888;</div>
+      <div class="alert-body">These open/signed HubSpot deals match the CS-upsell pattern but have <strong>no CS person in the sheet</strong>. Liz / David / David to confirm involvement and claim where applicable.</div>
+    </div>
+    <div class="table-wrap" style="margin-bottom:24px">
+      <table>
+        <thead><tr><th>Deal</th><th>AE owner</th><th>Amount</th><th>Why flagged</th><th>Link</th></tr></thead>
+        <tbody id="cs-review-body"></tbody>
+      </table>
+    </div>
+    <!-- ============ /CS-ATTRIBUTED DEALS ============ -->
 
     <div class="section-title" style="margin-top:24px">How upsell commission works</div>
     <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px">
@@ -1029,6 +1096,169 @@ var UPSELLS_PIPELINE = [
   {id:"56162820649", name:"Measured Group",          owner:"80406430", arr:17100, stage:"Proposal Sent"},
 ];
 
+
+// == CS UPSELL DATA (v15) =====================================================
+// Source: CS Sales_and_Upsell sheet (Liz/Kaia), reconciled against HubSpot on
+// 15 Jul 2026. `amt` = sheet amount (home ccy); `hsAmt`+`ccy` shown when the
+// HubSpot raw currency differs. `st` reflects the CURRENT HubSpot stage.
+var CS_PEOPLE = {
+  "LT":{name:"Liz Tobin",    id:"78726790", initials:"LT", color:"#7a3b8f", bg:"#f3e8ff"},
+  "DO":{name:"David Oliver", id:"79208786", initials:"DO", color:"#0e7490", bg:"#cffafe"},
+  "DS":{name:"David Solley", id:"73104579", initials:"DS", color:"#9a3412", bg:"#ffedd5"}
+};
+var CS_RATE = 0.025; // 2.5% CS layer on top of AE 7.5% (Kaia-confirmed structure)
+
+var CS_UPSELLS = [
+  // ---- UK -- won / signed / active ----
+  {id:"57610382769",name:"AIM Building & Maintenance Services Ltd (ADV/Upsell)",region:"UK",cs:"LT",amt:63840,ccy:"GBP",hsAmt:48237.60,close:"2026-04-09",st:"signed",kind:"Upsell"},
+  {id:"57830094862",name:"KSN / Azets Ireland",region:"UK",cs:"LT",amt:60000,close:"2026-05-12",st:"active",kind:"CS-sourced new"},
+  {id:"",name:"Consult Sustainability - New Deal",region:"UK",cs:"LT",amt:24600,close:"2026-06-12",st:"missing",kind:"CS-sourced new",flag:"No HubSpot deal match by name (likely renamed). Recon workbook: Contract Signed, no Stripe record yet."},
+  {id:"50454404460",name:"Rural Design Limited - New Deal",region:"UK",cs:"DO",amt:5625,close:"2025-11-27",st:"signed",kind:"CS-sourced new"},
+  {id:"48859545474",name:"Sheltons Group Malta",region:"UK",cs:"LT",amt:3750,close:"2025-12-03",st:"signed",kind:"CS-sourced new"},
+  {id:"47416089102",name:"Boat Electrics - Active",region:"UK",cs:"LT",amt:45990,close:"2025-11-27",st:"active",kind:"CS-sourced new",flag:"HS ARR $45,990 = 5 duplicated line items. Stripe real ARR $9,450."},
+  {id:"60525063715",name:"Woolf Bond Planning - Active",region:"UK",cs:"",csNote:"Adv upgrade by Josh - attribution TBC",amt:3300,ccy:"GBP",hsAmt:2493.48,close:"2026-06-02",st:"active",kind:"Upsell"},
+  {id:"50267855989",name:"Novatia - Active",region:"UK",cs:"DO",amt:3300,close:"2026-05-05",st:"active",kind:"CS-sourced new"},
+  {id:"45116544551",name:"R3 Data Recovery - Active",region:"UK",cs:"DO",amt:1826.40,ccy:"GBP",hsAmt:1826.40,close:"2025-11-10",st:"active",kind:"CS-sourced new",flag:"GBP mirrored 1:1 into company currency in HS (rate not configured)."},
+  {id:"57826723084",name:"Woolf Bond Planning - Standard Active",region:"UK",cs:"",csNote:"Intro via Liz - sale by Josh & Mark",amt:1750,close:"2026-04-30",st:"active",kind:"CS intro"},
+  // ---- UK -- open pipeline ----
+  {id:"57230599346",name:"Lumensol Ltd - (ADV/Upsell)",region:"UK",cs:"LT",amt:34500,close:"2026-04-30",st:"open",kind:"Upsell"},
+  {id:"56136023161",name:"Haworth Tompkins - New Deal",region:"UK",cs:"LT",amt:24000,close:"2026-03-31",st:"open",kind:"CS-sourced new",flag:"hs_arr reads $288,000 in HubSpot - needs correction."},
+  {id:"",name:"Glass Canvas Group Limited - ADV/Upsell",region:"UK",cs:"DO",amt:3000,close:"2026-07-31",st:"missing",kind:"Upsell",flag:"No HubSpot deal match by name."},
+  {id:"41554323752",name:"Treval Engineering Limited - New Deal",region:"UK",cs:"DO",amt:7500,close:"2026-06-30",st:"open",kind:"CS-sourced new"},
+  {id:"57610451469",name:"400 - New Deal",region:"UK",cs:"DO",amt:15000,close:"2026-07-14",st:"open",kind:"CS-sourced new",flag:"hs_arr $7,500 vs amount $15,000 - confirm contract years."},
+  {id:"58986177598",name:"SDS - (ADV/Upsell)",region:"UK",cs:"DO",amt:12500,close:"2026-06-30",st:"open",kind:"Upsell"},
+  {id:"59186042204",name:"Studio CO2 - New Deal",region:"UK",cs:"LT",amt:15000,close:"2026-06-30",st:"open",kind:"CS-sourced new"},
+  {id:"60322293358",name:"CAD Architects Ltd - ADV / Upsell",region:"UK",cs:"LT",amt:9600,close:"2026-06-30",st:"open",kind:"Upsell"},
+  {id:"52031612537",name:"C. Lewis & Company - New Deal",region:"UK",cs:"LT",amt:15000,close:"2026-01-31",st:"open",kind:"CS-sourced new"},
+  {id:"",name:"asset55.com - New Deal",region:"UK",cs:"LT",amt:9600,close:"2026-06-30",st:"missing",kind:"CS-sourced new",flag:"No HubSpot deal match by name."},
+  {id:"58295766108",name:"Caledonian Climate Partners Ltd - (ADV/Upsell)",region:"UK",cs:"LT",amt:7500,close:"2026-04-30",st:"open",kind:"Upsell"},
+  {id:"",name:"AlphaChase Engineering Services Ltd - (ADV/Upsell)",region:"UK",cs:"DO",amt:7500,close:"2026-04-30",st:"missing",kind:"Upsell",flag:"No HubSpot deal match by name."},
+  {id:"",name:"STL Projects Ltd - Upsell",region:"UK",cs:"LT",amt:3000,close:"2026-05-31",st:"missing",kind:"Upsell",flag:"No HubSpot deal match by name."},
+  {id:"57865668944",name:"LRW (London) Ltd - (ADV/Upsell)",region:"UK",cs:"LT",amt:0,close:"2026-04-30",st:"open",kind:"Upsell",flag:"No amount set in HubSpot."},
+  {id:"57610390927",name:"Xcession - (ADV/Upsell)",region:"UK",cs:"LT",amt:30000,close:"2026-04-30",st:"open",kind:"Upsell"},
+  {id:"60247353133",name:"Wincer Kievenaar Architects Limited - New Deal",region:"UK",cs:"LT",amt:5400,close:"2026-06-30",st:"signed",kind:"CS-sourced new",flag:"Sheet note: signed but possibly not paid - account still Standard."},
+  // ---- AU / NZ -- won / active ----
+  {id:"56214795846",name:"Propel Marine Pty Ltd - Active",region:"AU/NZ",cs:"DS",amt:45645.12,close:"2026-04-07",st:"active",kind:"Upsell",flag:"Commission runs on delta ARR $13,313 (upgrade delta), not the full contract."},
+  {id:"43407740035",name:"TTX Group - Active",region:"AU/NZ",cs:"DS",amt:16200,close:"2026-01-19",st:"active",kind:"Upsell"},
+  {id:"56173724020",name:"Wilton Contracting Ltd - Active",region:"AU/NZ",cs:"DS",amt:10575,close:"2026-03-04",st:"active",kind:"Upsell"},
+  {id:"59153725536",name:"Wilton 2 - WCL Stop World",region:"AU/NZ",cs:"DS",amt:9000,close:"2026-03-11",st:"active",kind:"Upsell"},
+  {id:"48886874948",name:"Idyllic Design Studio",region:"AU/NZ",cs:"DS",amt:3492,close:"2025-12-16",st:"active",kind:"CS-sourced new",flag:"Premium package - outside the Advanced/Pro eligibility rule."},
+  // ---- AU / NZ -- open pipeline ----
+  {id:"61024683800",name:"RED Fire Engineers Pty Ltd - upsell",region:"AU/NZ",cs:"DS",amt:18000,close:"2026-07-31",st:"open",kind:"Upsell"},
+  {id:"60786331160",name:"DKJ Welding 2025 Ltd - Upsell",region:"AU/NZ",cs:"DS",amt:30000,close:"2026-07-31",st:"open",kind:"Upsell"},
+  {id:"60459540364",name:"Proactive 4 Health - Upsell",region:"AU/NZ",cs:"DS",amt:19200,close:"2026-06-30",st:"open",kind:"Upsell"},
+  {id:"60764454768",name:"Silverstripe Limited - Upsell",region:"AU/NZ",cs:"DS",amt:18000,close:"2026-07-31",st:"open",kind:"Upsell"},
+  {id:"61129575266",name:"Mecha (upsell)",region:"AU/NZ",cs:"DS",amt:15000,close:"2026-07-30",st:"open",kind:"Upsell"},
+  {id:"60108231319",name:"Incite Energy - Upsell",region:"AU/NZ",cs:"DS",amt:9000,close:"2026-06-30",st:"open",kind:"Upsell"},
+  {id:"60177550686",name:"Katestone Environmental (upsell)",region:"AU/NZ",cs:"DS",amt:7500,close:"2026-06-28",st:"lost",kind:"Upsell",flag:"Now Closed-Lost in HubSpot (sheet still had it Open)."},
+  {id:"57829880473",name:"Blue Barn Consulting Limited (Adv upsell)",region:"AU/NZ",cs:"DS",amt:6000,close:"2026-05-08",st:"open",kind:"Upsell"},
+  {id:"60316974218",name:"Aquatic One Pty Ltd - Upsell",region:"AU/NZ",cs:"DS",amt:3600,close:"2026-06-30",st:"open",kind:"Upsell"},
+  {id:"58902451108",name:"OCTA Associates Limited (Upsell)",region:"AU/NZ",cs:"DS",amt:30000,close:"2026-05-30",st:"open",kind:"Upsell"},
+  {id:"55922604894",name:"FourPL (Adv upsell)",region:"AU/NZ",cs:"DS",amt:26400,close:"2026-03-31",st:"open",kind:"Upsell"},
+  {id:"58951341866",name:"Mapien - Upsell",region:"AU/NZ",cs:"DS",amt:36000,close:"2026-05-31",st:"open",kind:"Upsell"},
+  {id:"59087018005",name:"Greater Group Pty Ltd - Upsell",region:"AU/NZ",cs:"DS",amt:36000,ccy:"AUD",hsAmt:36000,close:"2026-05-31",st:"signed",kind:"Upsell",flag:"Progressed to Signed since the sheet snapshot."},
+  {id:"57060844613",name:"PBA NZ (Advanced Upsell)",region:"AU/NZ",cs:"DS",amt:10500,close:"2026-05-08",st:"lost",kind:"Upsell",flag:"Now Closed-Lost in HubSpot (sheet had it Stalled)."},
+  {id:"59225096723",name:"Compliance OHS - Upsell",region:"AU/NZ",cs:"DS",amt:4500,close:"2026-07-31",st:"open",kind:"Upsell"}
+];
+
+// Deals in HubSpot that match the CS-upsell pattern but have NO CS person in
+// the sheet -- candidates for Liz / the two Davids to review and claim.
+var CS_REVIEW = [
+  {id:"61743990081",name:"5accel Pty Ltd (cs upsell)",amt:15000,owner:"80406430",why:"Deal name literally says 'cs upsell'"},
+  {id:"62437587590",name:"B Batch Shopfitters Ltd - Upsell",amt:30000,owner:"80127257",why:"Listed under 'CS Team Effort' in the sheet; commission_type = Upsell"},
+  {id:"62115573150",name:"Locator Worx Limited - Upsell",amt:41100,owner:"80127259",why:"commission_type = Upsell"},
+  {id:"62458169465",name:"Trace Environmental Unit Trust - Upsell",amt:7500,ccy:"AUD",owner:"80127259",why:"Signed; Existing Business + commission_type Upsell"},
+  {id:"60182308405",name:"Pulse White Noise Acoustics Pty Ltd - Upsell",amt:6000,owner:"80127259",why:"Signed; Existing Business"},
+  {id:"61745629251",name:"GSD Advisors - Upsell",amt:9300,owner:"80127259",why:"commission_type = Upsell"},
+  {id:"61745629029",name:"Perspektiv - Upsell",amt:11400,ccy:"AUD",owner:"80127259",why:"Existing Business + Upsell"},
+  {id:"61743992075",name:"Asset Management Engineers - Upsell",amt:15600,owner:"80127259",why:"commission_type = Upsell"},
+  {id:"61625567913",name:"JMG - (upsell)",amt:20100,owner:"80406430",why:"commission_type = Upsell"},
+  {id:"60967515780",name:"Design Process (upsell)",amt:14100,owner:"80406430",why:"Upsell naming"},
+  {id:"61024939589",name:"TRAFFICA (upsell/partner)",amt:37500,owner:"80406430",why:"Upsell naming (partner-linked)"},
+  {id:"61742527598",name:"Vantage Point Security Group Services Pte Ltd - Upsell",amt:19500,owner:"80127259",why:"commission_type = Upsell"},
+  {id:"60039287598",name:"BroadReach Consulting - Upsell",amt:14400,owner:"80127259",why:"Upsell naming"},
+  {id:"58208774176",name:"Rhelm Pty Ltd - Upsell",amt:12900,owner:"80127259",why:"Upsell naming"},
+  {id:"60108229283",name:"PM Kennedy Land Surveyor - Upsell",amt:9600,owner:"80127259",why:"Upsell naming"},
+  {id:"58098040759",name:"Gyde Consulting Pty Limited (Upsell)",amt:18000,owner:"80406430",why:"Existing Business + Upsell"},
+  {id:"57397574041",name:"The Bite Project - Advanced Upsell",amt:36000,owner:"",why:"Advanced upsell naming; owner off-roster"},
+  {id:"51016102251",name:"BCD Group Limited - Upsell",amt:32130.96,owner:"80127259",why:"Upsell naming"},
+  {id:"59185251851",name:"Symmetry Commercial (Upsell)",amt:6600,owner:"80406430",why:"Upsell naming"},
+  {id:"61625319296",name:"Complete Projects Limited (upsell)",amt:3000,owner:"80406430",why:"commission_type = Upsell"},
+  {id:"59225157682",name:"Arriscar Pty Limited - Upsell",amt:3300,owner:"80127259",why:"Existing Business + Upsell"},
+  {id:"62122078317",name:"Origin Fire Consultants (upsell)",amt:4500,owner:"80406430",why:"commission_type = Upsell"},
+  {id:"60316987272",name:"Morecroft Contractors (katalyst upsell)",amt:4800,owner:"80406430",why:"Upsell naming (partner katalyst)"}
+];
+
+function csChip(code, note){
+  if(!code){
+    return '<span style="font-size:10.5px;color:var(--text-dim);font-style:italic" title="'+(note||'')+'">'+(note||'-')+'</span>';
+  }
+  var p = CS_PEOPLE[code];
+  return '<div style="display:inline-flex;align-items:center;gap:5px"><div style="width:20px;height:20px;border-radius:50%;background:'+p.bg+';color:'+p.color+';display:inline-flex;align-items:center;justify-content:center;font-size:9px;font-weight:700">'+p.initials+'</div><span style="font-size:11.5px">'+p.name.split(" ")[0]+'</span></div>';
+}
+function csStatusBadge(st){
+  if(st==='active')  return '<span class="badge badge-green">Active</span>';
+  if(st==='signed')  return '<span class="badge" style="background:var(--blue-bg);color:var(--blue)">Signed</span>';
+  if(st==='open')    return '<span class="badge badge-amber">Open</span>';
+  if(st==='lost')    return '<span style="background:#fee2e2;color:#991b1b;padding:2px 8px;border-radius:20px;font-size:10px;font-weight:700">Closed-Lost</span>';
+  return '<span style="background:#fee2e2;color:#991b1b;padding:2px 8px;border-radius:20px;font-size:10px;font-weight:700">Not in HubSpot</span>';
+}
+function csRegionChip(r){
+  return '<span style="background:var(--surface2);color:var(--text-muted);padding:1px 7px;border-radius:20px;font-size:10px;font-weight:700">'+r+'</span>';
+}
+function csAmtCell(d){
+  var main = d.amt ? '$'+fmt(d.amt) : '<span style="color:var(--text-dim)">-</span>';
+  var sub = (d.ccy && d.ccy!=='USD' && d.hsAmt) ? '<div style="font-size:10px;color:var(--text-dim)">'+d.ccy+' '+fmt(d.hsAmt,2)+' in HS</div>' : '';
+  return '<span class="mono" style="color:var(--text-muted)">'+main+'</span>'+sub;
+}
+function csHsLink(d){
+  if(!d.id) return '<span style="font-size:11px;color:var(--text-dim)">-</span>';
+  return '<a href="https://app.hubspot.com/contacts/24214994/record/0-3/'+d.id+'" target="_blank" style="display:inline-flex;align-items:center;gap:3px;font-size:11px;color:var(--blue);text-decoration:none;background:var(--blue-bg);padding:2px 7px;border-radius:5px;font-weight:600">HS &#8599;</a>';
+}
+function csRow(d, dim){
+  var comm = d.amt * CS_RATE;
+  var flag = d.flag ? '<div style="font-size:10px;color:var(--amber);margin-top:2px">&#9888; '+d.flag+'</div>' : '';
+  return '<tr'+(dim?' style="opacity:'+dim+'"':'')+'>'+
+    '<td><div class="deal-name" title="'+d.name+'">'+d.name+'</div>'+flag+'</td>'+
+    '<td>'+csRegionChip(d.region)+'</td>'+
+    '<td>'+csChip(d.cs, d.csNote)+'</td>'+
+    '<td>'+csStatusBadge(d.st)+'</td>'+
+    '<td style="font-size:11px;color:var(--text-dim)">'+fmtD(d.close)+'</td>'+
+    '<td>'+csAmtCell(d)+'</td>'+
+    '<td class="mono" style="color:var(--green)">'+(d.amt&&d.st!=='lost'?'$'+fmt(comm,2):'-')+'</td>'+
+    '<td style="white-space:nowrap">'+csHsLink(d)+' '+stripeLinkCell(d)+'</td>'+
+  '</tr>';
+}
+function renderCsUpsells(){
+  var won  = CS_UPSELLS.filter(function(d){return d.st==='active'||d.st==='signed';});
+  var pipe = CS_UPSELLS.filter(function(d){return d.st==='open';});
+  var gone = CS_UPSELLS.filter(function(d){return d.st==='lost'||d.st==='missing';});
+
+  var wonArr  = won.reduce(function(s,d){return s+(d.amt||0);},0);
+  var wonComm = wonArr * CS_RATE;
+  var pipeArr = pipe.reduce(function(s,d){return s+(d.amt||0);},0);
+
+  document.getElementById('cs-kpis').innerHTML =
+    '<div class="kpi-card"><div class="kpi-label">Won CS-attributed ARR</div><div class="kpi-value green">$'+fmt(wonArr)+'</div><div class="kpi-sub">'+won.length+' deals signed or active</div></div>'+
+    '<div class="kpi-card"><div class="kpi-label">Indicative CS commission</div><div class="kpi-value amber">$'+fmt(wonComm)+'</div><div class="kpi-sub">2.5% of full amount - delta ARR & sign-off pending</div></div>'+
+    '<div class="kpi-card"><div class="kpi-label">Open CS pipeline</div><div class="kpi-value">$'+fmt(pipeArr)+'</div><div class="kpi-sub">'+pipe.length+' open deals</div></div>'+
+    '<div class="kpi-card"><div class="kpi-label">Lost / not in HubSpot</div><div class="kpi-value" style="color:#991b1b">'+gone.length+'</div><div class="kpi-sub">See flags on rows below</div></div>';
+
+  document.getElementById('cs-won-body').innerHTML  = won.map(function(d){return csRow(d);}).join('');
+  document.getElementById('cs-pipe-body').innerHTML = pipe.concat(gone).map(function(d){return csRow(d, d.st==='lost'||d.st==='missing'?'.55':'.85');}).join('');
+
+  document.getElementById('cs-review-body').innerHTML = CS_REVIEW.map(function(d){
+    var ae = AE[d.owner];
+    return '<tr>'+
+      '<td><a class="deal-link" href="https://app.hubspot.com/contacts/24214994/record/0-3/'+d.id+'" target="_blank"><div class="deal-name" title="'+d.name+'">'+d.name+'</div></a></td>'+
+      '<td>'+(ae?ae.name.split(" ")[0]:'-')+'</td>'+
+      '<td class="mono" style="color:var(--text-muted)">$'+fmt(d.amt)+(d.ccy&&d.ccy!=='USD'?' <span style="font-size:9px;color:var(--text-dim)">'+d.ccy+'</span>':'')+'</td>'+
+      '<td style="font-size:11px;color:var(--text-muted)">'+d.why+'</td>'+
+      '<td>'+csHsLink(d)+'</td>'+
+    '</tr>';
+  }).join('');
+}
+
 function pkgUpgradeLabel(prev, next) {
   var pShort = function(p){ return p.includes('Advanced')?'Advanced':p.includes('Premium')?'Premium':'Standard'; };
   return '<span style="background:#fee2e2;color:#991b1b;padding:1px 6px;border-radius:3px;font-size:10px;font-weight:700">'+pShort(prev)+'</span>'+
@@ -1380,7 +1610,7 @@ function syncFromHubSpot(){
     var newCount = DEALS.filter(function(d){return d.isNew;}).length;
     SYNCED_ONCE = true;
     LAST_SYNCED = new Date();
-    renderDashboard(); renderDeals(); renderAE(); renderComparison(); renderUpsells(); renderLost();
+    renderDashboard(); renderDeals(); renderAE(); renderComparison(); renderUpsells(); renderCsUpsells(); renderLost();
 
     // Stage 2 — Stripe. A Stripe failure never wipes the HubSpot result;
     // we report exactly which half worked.
@@ -1472,6 +1702,7 @@ renderBanked();
 renderStripe();
 renderComparison();
 renderUpsells();
+renderCsUpsells();
 renderLost();
 // Pull live data from HubSpot on load so the view reflects current stages.
 updateLockUI();
