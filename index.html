@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>WorkflowMAX · Commission Hub FY2026</title>
-<!-- v16 · 2026-07-15 · dedicated CS Commission page: KPIs paid vs pending, by-CS-owner cards, AE x CS ledger (ch_cs_paid_v1), delta_arr basis -->
+<!-- v17 · 2026-07-22 · Liz confirmations locked: 8 upsells (Solley 5, Oliver 2, Liz 1), TBC new-deal rows removed, deltaPending flags on 6 records (delta ARR to be confirmed by Ryan/Kaia), Woolf Bond marked noCsComm, Novatia re-tagged Upsell, Event Base + SCLSpec added, Glass Canvas wonConfirmed -->
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
 /* ── v5 PALETTE on v8 STRUCTURE ───────────────────────────────── */
@@ -507,10 +507,10 @@ input[type=date]{background:#fff;border:1px solid var(--border);border-radius:6p
           <div style="font-size:13px;font-weight:700;margin-bottom:4px">dealtype = Existing Business &middot; commission_type = Upsell</div>
           <div style="font-size:11px;color:var(--text-muted)">Set on roughly a third, blank on the rest &mdash; the name convention is currently more reliable than the fields.</div>
         </div>
-        <div style="background:var(--surface2);border:1px solid var(--border);border-left:3px solid #991b1b;border-radius:8px;padding:14px">
-          <div style="font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--text-dim);margin-bottom:6px">The gap</div>
-          <div style="font-size:13px;font-weight:700;margin-bottom:4px">customer_success_owner is empty on 100% of them</div>
-          <div style="font-size:11px;color:var(--text-muted)">CS attribution today lives only in the spreadsheet. The "Deal | Set CS Owner from Company" workflow + backfill closes this gap.</div>
+        <div style="background:var(--surface2);border:1px solid var(--border);border-left:3px solid #0D8D5C;border-radius:8px;padding:14px">
+          <div style="font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--text-dim);margin-bottom:6px">Closing the gap</div>
+          <div style="font-size:13px;font-weight:700;margin-bottom:4px">customer_success_owner backfilled on the 8 confirmed upsells</div>
+          <div style="font-size:11px;color:var(--text-muted)">Historical attribution now lives in HubSpot. The <em>Deal | Set CS Owner from Company</em> workflow (Solley / Oliver / Liz branches) keeps future upsells in sync automatically &mdash; provided Company.Customer Success Owner is set.</div>
         </div>
       </div>
       <div style="font-size:12px;color:var(--text-muted);line-height:1.7">
@@ -1143,21 +1143,14 @@ var CS_RATE = 0.025;              // CS layer (Kaia-confirmed, on delta ARR)
 var CS_PAID_KEY = 'ch_cs_paid_v1'; // separate from AE ch_paid_v1
 
 var CS_UPSELLS = [
-  // ---- UK -- won / signed / active ----
+  // ---- UK -- won upsells (Liz-confirmed 22 Jul 2026) ----
   {id:"57610382769",name:"AIM Building & Maintenance Services Ltd (ADV/Upsell)",region:"UK",cs:"LT",amt:63840,ccy:"GBP",hsAmt:48237.60,close:"2026-04-09",st:"signed",kind:"Upsell",ct:"Upsell"},
-  {id:"57830094862",name:"KSN / Azets Ireland",region:"UK",cs:"LT",amt:60000,close:"2026-05-12",st:"active",kind:"CS-sourced new"},
-  {id:"",name:"Consult Sustainability - New Deal",region:"UK",cs:"LT",amt:24600,close:"2026-06-12",st:"missing",kind:"CS-sourced new",flag:"No HubSpot deal match by name (likely renamed). Recon workbook: Contract Signed, no Stripe record yet."},
-  {id:"50454404460",name:"Rural Design Limited - New Deal",region:"UK",cs:"DO",amt:5625,close:"2025-11-27",st:"signed",kind:"CS-sourced new",ct:"Inbound"},
-  {id:"48859545474",name:"Sheltons Group Malta",region:"UK",cs:"LT",amt:3750,close:"2025-12-03",st:"signed",kind:"CS-sourced new",ct:"Outbound"},
-  {id:"47416089102",name:"Boat Electrics - Active",region:"UK",cs:"LT",amt:45990,close:"2025-11-27",st:"active",kind:"CS-sourced new",ct:"Outbound",flag:"HS ARR $45,990 = 5 duplicated line items. Stripe real ARR $9,450."},
-  {id:"60525063715",name:"Woolf Bond Planning - Active",region:"UK",cs:"",csNote:"Adv upgrade by Josh - attribution TBC",amt:3300,ccy:"GBP",hsAmt:2493.48,close:"2026-06-02",st:"active",kind:"Upsell",ct:"Partner Referral"},
-  {id:"50267855989",name:"Novatia - Active",region:"UK",cs:"DO",amt:3300,close:"2026-05-05",st:"active",kind:"CS-sourced new"},
-  {id:"45116544551",name:"R3 Data Recovery - Active",region:"UK",cs:"DO",amt:1826.40,ccy:"GBP",hsAmt:1826.40,close:"2025-11-10",st:"active",kind:"CS-sourced new",ct:"Inbound",flag:"GBP mirrored 1:1 into company currency in HS (rate not configured)."},
-  {id:"57826723084",name:"Woolf Bond Planning - Standard Active",region:"UK",cs:"",csNote:"Intro via Liz - sale by Josh & Mark",amt:1750,close:"2026-04-30",st:"active",kind:"CS intro",ct:"Outbound"},
+  {id:"60525063715",name:"Woolf Bond Planning - Active",region:"UK",cs:"",csNote:"Liz confirmed: no CS commission due (partner referral)",amt:3300,ccy:"GBP",hsAmt:2493.48,close:"2026-06-02",st:"active",kind:"Upsell",ct:"Partner Referral",noCsComm:true},
+  {id:"50267855989",name:"Novatia - Active",region:"UK",cs:"DO",amt:3300,close:"2026-05-05",st:"active",kind:"Upsell",ct:"Upsell",deltaPending:true,flag:"Delta ARR pending — Ryan/Kaia to confirm previous package pricing."},
+  {id:"",name:"Glass Canvas Group Limited - ADV/Upsell",region:"UK",cs:"DO",amt:3000,close:"2026-07-31",st:"missing",wonConfirmed:true,kind:"Upsell",deltaPending:true,flag:"Liz confirmed Won (David Oliver introduction). No HubSpot deal record — Mark to create. Delta ARR pending — Ryan/Kaia."},
   // ---- UK -- open pipeline ----
   {id:"57230599346",name:"Lumensol Ltd - (ADV/Upsell)",region:"UK",cs:"LT",amt:34500,close:"2026-04-30",st:"open",kind:"Upsell"},
   {id:"56136023161",name:"Haworth Tompkins - New Deal",region:"UK",cs:"LT",amt:24000,close:"2026-03-31",st:"open",kind:"CS-sourced new",ct:"Inbound",flag:"hs_arr reads $288,000 in HubSpot - needs correction."},
-  {id:"",name:"Glass Canvas Group Limited - ADV/Upsell",region:"UK",cs:"DO",amt:3000,close:"2026-07-31",st:"missing",kind:"Upsell",flag:"No HubSpot deal match by name."},
   {id:"41554323752",name:"Treval Engineering Limited - New Deal",region:"UK",cs:"DO",amt:7500,close:"2026-06-30",st:"open",kind:"CS-sourced new"},
   {id:"57610451469",name:"400 - New Deal",region:"UK",cs:"DO",amt:15000,close:"2026-07-14",st:"open",kind:"CS-sourced new",ct:"Inbound",flag:"hs_arr $7,500 vs amount $15,000 - confirm contract years."},
   {id:"58986177598",name:"SDS - (ADV/Upsell)",region:"UK",cs:"DO",amt:12500,close:"2026-06-30",st:"open",kind:"Upsell",ct:"Upsell"},
@@ -1170,13 +1163,12 @@ var CS_UPSELLS = [
   {id:"",name:"STL Projects Ltd - Upsell",region:"UK",cs:"LT",amt:3000,close:"2026-05-31",st:"missing",kind:"Upsell",flag:"No HubSpot deal match by name."},
   {id:"57865668944",name:"LRW (London) Ltd - (ADV/Upsell)",region:"UK",cs:"LT",amt:0,close:"2026-04-30",st:"open",kind:"Upsell",flag:"No amount set in HubSpot."},
   {id:"57610390927",name:"Xcession - (ADV/Upsell)",region:"UK",cs:"LT",amt:30000,close:"2026-04-30",st:"open",kind:"Upsell"},
-  {id:"60247353133",name:"Wincer Kievenaar Architects Limited - New Deal",region:"UK",cs:"LT",amt:5400,close:"2026-06-30",st:"signed",kind:"CS-sourced new",ct:"Upsell",flag:"Sheet note: signed but possibly not paid - account still Standard."},
-  // ---- AU / NZ -- won / active ----
+  // ---- AU / NZ -- won upsells (Liz-confirmed 22 Jul 2026) ----
   {id:"56214795846",name:"Propel Marine Pty Ltd - Active",region:"AU/NZ",cs:"DS",amt:45645.12,delta:13313,close:"2026-04-07",st:"active",kind:"Upsell",ct:"Upsell"},
-  {id:"43407740035",name:"TTX Group - Active",region:"AU/NZ",cs:"DS",amt:16200,close:"2026-01-19",st:"active",kind:"Upsell",ct:"Upsell"},
-  {id:"56173724020",name:"Wilton Contracting Ltd - Active",region:"AU/NZ",cs:"DS",amt:10575,close:"2026-03-04",st:"active",kind:"Upsell",ct:"Upsell"},
-  {id:"59153725536",name:"Wilton 2 - WCL Stop World",region:"AU/NZ",cs:"DS",amt:9000,close:"2026-03-11",st:"active",kind:"Upsell",ct:"Upsell"},
-  {id:"48886874948",name:"Idyllic Design Studio",region:"AU/NZ",cs:"DS",amt:3492,close:"2025-12-16",st:"active",kind:"CS-sourced new",ct:"Inbound",flag:"Premium package - outside the Advanced/Pro eligibility rule."},
+  {id:"56173724020",name:"Wilton Contracting Ltd - Active",region:"AU/NZ",cs:"DS",amt:10575,close:"2026-03-04",st:"active",kind:"Upsell",ct:"Upsell",deltaPending:true,flag:"Delta ARR pending — Ryan/Kaia to confirm previous package pricing."},
+  {id:"59153725536",name:"Wilton 2 - WCL Stop World",region:"AU/NZ",cs:"DS",amt:9000,close:"2026-03-11",st:"active",kind:"Upsell",ct:"Upsell",deltaPending:true,flag:"Delta ARR pending — Ryan/Kaia to confirm previous package pricing."},
+  {id:"53715214102",name:"Event Base - Active",region:"AU/NZ",cs:"DS",amt:5400,ccy:"NZD",hsAmt:5400,close:"2026-03-31",st:"active",kind:"Upsell",ct:"Upsell",deltaPending:true,flag:"Delta ARR pending — Ryan/Kaia to confirm previous package pricing."},
+  {id:"57619530845",name:"SCLspec Pty Ltd - Active",region:"AU/NZ",cs:"DS",amt:2945.04,ccy:"AUD",hsAmt:2945.04,close:"2026-03-16",st:"active",kind:"Upsell",ct:"Upsell",deltaPending:true,flag:"Delta ARR pending — Ryan/Kaia. Note: HS ARR affected by invoice-item discounts (per Kaia recon methodology)."},
   // ---- AU / NZ -- open pipeline ----
   {id:"61024683800",name:"RED Fire Engineers Pty Ltd - upsell",region:"AU/NZ",cs:"DS",amt:18000,close:"2026-07-31",st:"open",kind:"Upsell"},
   {id:"60786331160",name:"DKJ Welding 2025 Ltd - Upsell",region:"AU/NZ",cs:"DS",amt:30000,close:"2026-07-31",st:"open",kind:"Upsell",ct:"Upsell"},
@@ -1190,7 +1182,7 @@ var CS_UPSELLS = [
   {id:"58902451108",name:"OCTA Associates Limited (Upsell)",region:"AU/NZ",cs:"DS",amt:30000,close:"2026-05-30",st:"open",kind:"Upsell"},
   {id:"55922604894",name:"FourPL (Adv upsell)",region:"AU/NZ",cs:"DS",amt:26400,close:"2026-03-31",st:"open",kind:"Upsell"},
   {id:"58951341866",name:"Mapien - Upsell",region:"AU/NZ",cs:"DS",amt:36000,close:"2026-05-31",st:"open",kind:"Upsell",ct:"Upsell"},
-  {id:"59087018005",name:"Greater Group Pty Ltd - Upsell",region:"AU/NZ",cs:"DS",amt:36000,ccy:"AUD",hsAmt:36000,close:"2026-05-31",st:"signed",kind:"Upsell",ct:"Upsell",flag:"Progressed to Signed since the sheet snapshot."},
+  {id:"59087018005",name:"Greater Group Pty Ltd - Upsell",region:"AU/NZ",cs:"DS",amt:36000,ccy:"AUD",hsAmt:36000,close:"2026-05-31",st:"signed",kind:"Upsell",ct:"Upsell",deltaPending:true,flag:"Progressed to Signed after Liz's 22-Jul snapshot — needs Solley confirmation before payout. Delta ARR also pending Ryan/Kaia."},
   {id:"57060844613",name:"PBA NZ (Advanced Upsell)",region:"AU/NZ",cs:"DS",amt:10500,close:"2026-05-08",st:"lost",kind:"Upsell",flag:"Now Closed-Lost in HubSpot (sheet had it Stalled)."},
   {id:"59225096723",name:"Compliance OHS - Upsell",region:"AU/NZ",cs:"DS",amt:4500,close:"2026-07-31",st:"open",kind:"Upsell",ct:"Upsell"}
 ];
@@ -1226,7 +1218,9 @@ var CS_REVIEW = [
 // delta is unknown the full amount is a proxy (overstates). CS-sourced NEW
 // deals show a TBC figure that is excluded from confirmed totals.
 function csBasis(d){ return (d.delta || d.amt || 0); }
-function csIsConfirmedKind(d){ return d.kind === 'Upsell'; }
+// Confirmed = kind is Upsell, a CS owner is assigned, and it is not explicitly
+// declared non-commissionable (e.g. Woolf Bond — partner referral per Liz).
+function csIsConfirmedKind(d){ return d.kind === 'Upsell' && !!d.cs && !d.noCsComm; }
 function csCommOf(d){ return csBasis(d) * CS_RATE; }
 function aeRateOf(d){
   if(d.kind==='Upsell') return 0.075;
@@ -1281,25 +1275,26 @@ function aeOwnerChipFor(d){
 
 // ---- CS COMMISSION PAGE -----------------------------------------------------
 function renderCsPage(){
-  var won  = CS_UPSELLS.filter(function(d){return d.st==='active'||d.st==='signed';});
+  var won  = CS_UPSELLS.filter(function(d){return d.st==='active'||d.st==='signed'||d.wonConfirmed;});
   var pipe = CS_UPSELLS.filter(function(d){return d.st==='open';});
-  var gone = CS_UPSELLS.filter(function(d){return d.st==='lost'||d.st==='missing';});
+  var gone = CS_UPSELLS.filter(function(d){return (d.st==='lost'||d.st==='missing')&&!d.wonConfirmed;});
 
   var confirmed = won.filter(csIsConfirmedKind);
   var tbc       = won.filter(function(d){return !csIsConfirmedKind(d);});
 
   var wonArr    = won.reduce(function(s,d){return s+(d.amt||0);},0);
   var commConf  = confirmed.reduce(function(s,d){return s+csCommOf(d);},0);
+  var commEst   = confirmed.filter(function(d){return d.deltaPending;}).reduce(function(s,d){return s+csCommOf(d);},0);
   var commTbc   = tbc.reduce(function(s,d){return s+csCommOf(d);},0);
   var commPaid  = confirmed.reduce(function(s,d){return s+(csIsPaid(d)?csCommOf(d):0);},0);
   var commPend  = commConf - commPaid;
   var pipeArr   = pipe.reduce(function(s,d){return s+(d.amt||0);},0);
 
   document.getElementById('cs-kpis').innerHTML =
-    '<div class="kpi-card"><div class="kpi-label">Won CS-attributed ARR</div><div class="kpi-value green">$'+fmt(wonArr)+'</div><div class="kpi-sub">'+won.length+' deals signed or active</div></div>'+
-    '<div class="kpi-card"><div class="kpi-label">CS commission (confirmed rule)</div><div class="kpi-value amber">$'+fmt(commConf,2)+'</div><div class="kpi-sub">Upsells only · 2.5% on delta/amount</div></div>'+
+    '<div class="kpi-card"><div class="kpi-label">Won CS-attributed ARR</div><div class="kpi-value green">$'+fmt(wonArr)+'</div><div class="kpi-sub">'+confirmed.length+' confirmed upsells</div></div>'+
+    '<div class="kpi-card"><div class="kpi-label">CS commission (confirmed rule)</div><div class="kpi-value amber">$'+fmt(commConf,2)+'</div><div class="kpi-sub">2.5% on delta ARR'+(commEst>0?' · <span style="color:#b45309">$'+fmt(commEst,2)+' still estimated (delta pending Ryan/Kaia)</span>':'')+'</div></div>'+
     '<div class="kpi-card"><div class="kpi-label">CS paid</div><div class="kpi-value green">$'+fmt(commPaid,2)+'</div><div class="kpi-sub">Toggled in the ledger below</div></div>'+
-    '<div class="kpi-card"><div class="kpi-label">CS pending</div><div class="kpi-value" style="color:#b45309">$'+fmt(commPend,2)+'</div><div class="kpi-sub">+ $'+fmt(commTbc,2)+' TBC if new-deal attribution counts</div></div>'+
+    '<div class="kpi-card"><div class="kpi-label">CS pending</div><div class="kpi-value" style="color:#b45309">$'+fmt(commPend,2)+'</div><div class="kpi-sub">Awaiting payout · $'+fmt(commEst,2)+' of this depends on delta ARR confirmation</div></div>'+
     '<div class="kpi-card"><div class="kpi-label">Open CS pipeline</div><div class="kpi-value">$'+fmt(pipeArr)+'</div><div class="kpi-sub">'+pipe.length+' open deals</div></div>';
 
   // by CS owner
@@ -1338,16 +1333,32 @@ function renderCsPage(){
         : '<span class="badge badge-amber">Pending</span>')
       : '<span style="font-size:10px;color:var(--text-dim)">-</span>';
     var paid   = csIsPaid(d);
-    var csCell = conf
-      ? '<span class="mono" style="color:var(--green)">$'+fmt(csC,2)+'</span>'+(d.delta?'<div style="font-size:9px;color:var(--text-dim)">on delta</div>':'')
-      : '<span class="mono" style="color:var(--text-dim)" title="CS-sourced new deal - 2.5% pending Kaia decision">$'+fmt(csC,2)+' TBC</span>';
+    var csCell;
+    if(conf){
+      if(d.delta){
+        csCell = '<span class="mono" style="color:var(--green)">$'+fmt(csC,2)+'</span><div style="font-size:9px;color:var(--text-dim)">on delta</div>';
+      } else if(d.deltaPending){
+        csCell = '<span class="mono" style="color:#b45309" title="Full-amount estimate. Actual CS commission requires the pre-upsell package price from Ryan/Kaia.">~$'+fmt(csC,2)+'</span><div style="font-size:9px;color:#b45309">delta pending</div>';
+      } else {
+        csCell = '<span class="mono" style="color:var(--green)">$'+fmt(csC,2)+'</span>';
+      }
+    } else if(d.noCsComm){
+      csCell = '<span class="mono" style="color:var(--text-dim)" title="Liz confirmed: no CS commission due for this deal.">— not due</span>';
+    } else {
+      csCell = '<span class="mono" style="color:var(--text-dim)" title="CS-sourced new deal - 2.5% pending Kaia decision">$'+fmt(csC,2)+' TBC</span>';
+    }
     var csPaidCell = conf
       ? '<button onclick="toggleCsPaid(\''+csKey(d).replace(/'/g,"\\'")+'\')" style="cursor:pointer;border:none;border-radius:20px;font-size:10px;font-weight:700;padding:3px 10px;background:'+(paid?'var(--green-bg)':'var(--surface2)')+';color:'+(paid?'var(--green)':'var(--text-dim)')+'">'+(paid?'Paid ✓':'Mark paid')+'</button>'
       : '<span style="font-size:10px;color:var(--text-dim)">-</span>';
     var flag = d.flag ? '<div style="font-size:10px;color:var(--amber);margin-top:2px">&#9888; '+d.flag+'</div>' : '';
-    var basis = d.delta
-      ? '<span class="mono" style="color:var(--text-muted)">$'+fmt(d.delta)+'</span><div style="font-size:9px;color:var(--text-dim)">delta · full $'+fmt(d.amt)+'</div>'
-      : csAmtCell(d);
+    var basis;
+    if(d.delta){
+      basis = '<span class="mono" style="color:var(--text-muted)">$'+fmt(d.delta)+'</span><div style="font-size:9px;color:var(--text-dim)">delta · full $'+fmt(d.amt)+'</div>';
+    } else if(d.deltaPending){
+      basis = csAmtCell(d) + '<div style="font-size:9px;color:#b45309">delta pending · using full amt</div>';
+    } else {
+      basis = csAmtCell(d);
+    }
     return '<tr>'+
       '<td><div class="deal-name" title="'+d.name+'">'+d.name+'</div>'+flag+'</td>'+
       '<td>'+ow.chip+'</td>'+
