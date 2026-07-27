@@ -830,8 +830,27 @@ var FX_EFFECTIVE_DATES = {};
     else if(id === 'upsells') renderUpsells();
   }).catch(function(){ /* silent: keep fallback rates */ });
 })();
+// IMPORTANT: `arr` and `comm` on RAW deals are ALWAYS stored in USD (Company
+// Currency of HubSpot). The `ccy` field is metadata about the deal's original
+// currency, NOT the currency of the value. Verified 27 Jul 2026 via commission
+// math against the HubSpot render.
+//
+// CS_UPSELLS entries are different: `amt`/`delta` are in `ccy` (from Liz's
+// sheet), while `hsAmt` is the USD equivalent from HubSpot's hs_arr.
+
+// Convert USD → target currency (returns numeric).
+function usdTo(usdAmt, targetCcy){
+  var t = (targetCcy || 'USD').toUpperCase();
+  if(t === 'USD') return usdAmt || 0;
+  var rate = FX_TO_USD[t];
+  return rate ? (usdAmt || 0) / rate : (usdAmt || 0);
+}
+
+// Convert an amount that is already IN ccy to USD (legacy helper, still used
+// by CS_UPSELLS aggregation because those live in their own ccy).
 function toUsd(amt, ccy){
   var c = (ccy || 'USD').toUpperCase();
+  if(c === 'USD') return amt || 0;
   var rate = FX_TO_USD[c];
   return rate ? (amt || 0) * rate : (amt || 0);
 }
@@ -845,14 +864,33 @@ function fmtC(amt, ccy, dec){
   return sym + fmt(amt, dec);
 }
 
-// One-line rendering of both local currency + USD equivalent when non-USD.
-function fmtCUsd(amt, ccy, dec){
-  var c = (ccy || 'USD').toUpperCase();
-  var local = fmtC(amt, c, dec);
-  if(c === 'USD') return local;
-  var usd = fmt(toUsd(amt, c), dec);
-  return local + '<span style="color:var(--text-dim);font-size:10px;margin-left:5px">≈ $'+usd+'</span>';
+// Render a USD-stored amount as the target currency with a small USD sub-line.
+// Used for RAW deal fields (arr, comm) which are always USD internally.
+// targetCcy is the currency to convert TO for the primary display.
+function fmtUsdIn(usdAmt, targetCcy, dec){
+  if(usdAmt == null) return '—';
+  var t = (targetCcy || 'USD').toUpperCase();
+  if(t === 'USD') return '<span class="mono">$'+fmt(usdAmt, dec)+'</span>';
+  var localAmt = usdTo(usdAmt, t);
+  var sym = CCY_SYM[t] || (t + ' ');
+  return '<span class="mono">'+sym+fmt(localAmt, dec)+'</span>'+
+         '<div style="font-size:9px;color:var(--text-dim);margin-top:1px">$'+fmt(usdAmt, dec)+' USD</div>';
 }
+
+// Render an amount that is already in `ccy` with a USD sub-line.
+// Used for CS_UPSELLS fields (amt, delta) which are in Liz's sheet's ccy.
+function fmtInCcy(amt, ccy, dec){
+  if(amt == null) return '—';
+  var c = (ccy || 'USD').toUpperCase();
+  var sym = CCY_SYM[c] || (c + ' ');
+  var main = '<span class="mono">'+sym+fmt(amt, dec)+'</span>';
+  if(c === 'USD') return main;
+  var usdAmt = toUsd(amt, c);
+  return main + '<div style="font-size:9px;color:var(--text-dim);margin-top:1px">$'+fmt(usdAmt, dec)+' USD</div>';
+}
+
+// Legacy fmtCUsd kept as alias to fmtInCcy (backwards compat within this file).
+function fmtCUsd(amt, ccy, dec){ return fmtInCcy(amt, ccy, dec); }
 
 function fmtD(s){if(!s)return"—";var d=new Date(s);return d.toLocaleDateString('en-AU',{day:'numeric',month:'short',year:'2-digit'});}
 function aeChip(id){var a=AE[id];if(!a)return id;return '<div style="display:inline-flex;align-items:center;gap:5px"><div style="width:20px;height:20px;border-radius:50%;background:'+a.bg+';color:'+a.color+';display:inline-flex;align-items:center;justify-content:center;font-family:\'Syne\',sans-serif;font-size:9px;font-weight:700">'+a.initials+'</div><span style="font-size:11.5px">'+a.name.split(" ")[0]+'</span></div>';}
@@ -921,21 +959,21 @@ function renderDashboard(){
 
   var el=deals.filter(function(d){return d.eligible;});
   // Aggregates: convert each deal's commission to USD before summing (deals live in local currency).
-  var tc=el.reduce(function(s,d){return s+toUsd(d.comm,d.ccy);},0);
-  var ta=el.reduce(function(s,d){return s+toUsd(d.arr||0,d.ccy);},0);
-  var tOut=el.filter(function(d){return !d.paid_out;}).reduce(function(s,d){return s+toUsd(d.comm,d.ccy);},0);
-  var tPaid=el.filter(function(d){return d.paid_out;}).reduce(function(s,d){return s+toUsd(d.comm,d.ccy);},0);
+  var tc=el.reduce(function(s,d){return s+(d.comm || 0);},0);
+  var ta=el.reduce(function(s,d){return s+(d.arr || 0);},0);
+  var tOut=el.filter(function(d){return !d.paid_out;}).reduce(function(s,d){return s+(d.comm || 0);},0);
+  var tPaid=el.filter(function(d){return d.paid_out;}).reduce(function(s,d){return s+(d.comm || 0);},0);
   var issues=DEALS.filter(function(d){return d.data_issue;}).length;
 
   var aeTots={};
   OFFICIAL_AES.forEach(function(id){aeTots[id]={comm:0,arr:0,deals:0,outstanding:0,paid:0};});
   el.forEach(function(d){
     if(!aeTots[d.owner])return;
-    aeTots[d.owner].comm+=toUsd(d.comm,d.ccy);
-    aeTots[d.owner].arr+=toUsd(d.arr||0,d.ccy);
+    aeTots[d.owner].comm+=(d.comm || 0);
+    aeTots[d.owner].arr+=(d.arr || 0);
     aeTots[d.owner].deals++;
-    if(d.paid_out) aeTots[d.owner].paid+=toUsd(d.comm,d.ccy);
-    else aeTots[d.owner].outstanding+=toUsd(d.comm,d.ccy);
+    if(d.paid_out) aeTots[d.owner].paid+=(d.comm || 0);
+    else aeTots[d.owner].outstanding+=(d.comm || 0);
   });
 
   var aeCards=OFFICIAL_AES.map(function(id){
@@ -958,10 +996,10 @@ function renderDashboard(){
       '<td><a class="deal-link" href="https://app.hubspot.com/contacts/24214994/record/0-3/'+d.id+'" target="_blank"><div class="deal-name">'+d.name+upsellBadge(d.id)+yearChip+'</div></a>'+
       (d.data_issue?'<div style="font-size:10px;color:var(--amber);margin-top:2px">⚠ '+d.data_issue+'</div>':'')+'</td>'+
       '<td>'+aeChip(d.owner)+'</td>'+
-      '<td class="mono" style="color:var(--text-muted)">'+fmtCUsd(d.arr, d.ccy)+'</td>'+
+      '<td class="mono" style="color:var(--text-muted)">'+fmtUsdIn(d.arr, d.ccy)+'</td>'+
       '<td>'+typeBadge(d)+'</td>'+
       '<td>'+rateTxt(d)+'</td>'+
-      '<td class="mono" style="color:var(--green)">'+fmtCUsd(d.comm, d.ccy)+'</td>'+
+      '<td class="mono" style="color:var(--green)">'+fmtUsdIn(d.comm, d.ccy)+'</td>'+
       '<td>'+payoutBadge(d)+'</td>'+
       '</tr>';
   }).join('');
@@ -1004,17 +1042,17 @@ function renderDeals(){
       '<td>'+pkgBadge(d.pkg)+'</td>'+
       '<td style="font-size:11.5px;color:var(--text-muted)">'+(d.src||'<span style="color:var(--red);font-size:11px">Missing</span>')+'</td>'+
       '<td>'+(d.inv?invBadge(d.inv):'<span style="color:var(--red);font-size:11px">Missing</span>')+'</td>'+
-      '<td>'+(d.arr?'<span class="mono" style="color:var(--text-muted)">'+fmtCUsd(d.arr, d.ccy)+'</span>':'<span style="color:var(--red);font-family:\'DM Mono\',monospace;font-size:11px">Missing</span>')+'</td>'+
+      '<td>'+(d.arr?'<span class="mono" style="color:var(--text-muted)">'+fmtUsdIn(d.arr, d.ccy)+'</span>':'<span style="color:var(--red);font-family:\'DM Mono\',monospace;font-size:11px">Missing</span>')+'</td>'+
       '<td>'+typeBadge(d)+'</td>'+
       '<td>'+rateTxt(d)+'</td>'+
-      '<td>'+(d.eligible&&d.arr?'<span class="mono" style="color:var(--green)">'+fmtCUsd(d.comm, d.ccy)+'</span>':'<span style="color:var(--red);font-size:11px;font-style:italic" title="'+((d.eligReason)||'Ineligible')+'">'+(d.eligReason||'Ineligible')+'</span>')+'</td>'+
+      '<td>'+(d.eligible&&d.arr?'<span class="mono" style="color:var(--green)">'+fmtUsdIn(d.comm, d.ccy)+'</span>':'<span style="color:var(--red);font-size:11px;font-style:italic" title="'+((d.eligReason)||'Ineligible')+'">'+(d.eligReason||'Ineligible')+'</span>')+'</td>'+
       '<td>'+payoutBadge(d)+'</td>'+
       '<td style="white-space:nowrap">'+hubspotLinkCell(d)+' '+stripeLinkCell(d)+'</td>'+
       '<td style="font-size:11px;color:var(--text-dim)">'+fmtD(d.close)+'</td>'+
       '</tr>';
   }).join('');
 
-  var totalComm = deals.reduce(function(s,d){return s+toUsd(d.comm||0, d.ccy);},0);
+  var totalComm = deals.reduce(function(s,d){return s+(d.comm || 0);},0);
   var upsellCount = deals.filter(function(d){return isUpsellDeal(d.id);}).length;
 
   document.getElementById('deals-table').innerHTML=
@@ -1028,8 +1066,8 @@ function renderAE(){
     var ae=AE[id];
     var my=DEALS.filter(function(d){return d.owner===id;});
     var el=my.filter(function(d){return d.eligible;});
-    var tc=el.reduce(function(s,d){return s+toUsd(d.comm||0, d.ccy);},0);
-    var outstanding=el.filter(function(d){return !d.paid_out;}).reduce(function(s,d){return s+toUsd(d.comm||0, d.ccy);},0);
+    var tc=el.reduce(function(s,d){return s+(d.comm || 0);},0);
+    var outstanding=el.filter(function(d){return !d.paid_out;}).reduce(function(s,d){return s+(d.comm || 0);},0);
     var iss=my.filter(function(d){return d.data_issue||!d.arr||!d.src||!d.inv||!d.pkg;});
     var rows=my.map(function(d){
       return '<tr style="'+(d.eligible?'':'opacity:.4')+(isUpsellDeal(d.id)?';background:rgba(245,158,11,0.03)':'')+'">'+
@@ -1038,10 +1076,10 @@ function renderAE(){
         '<td>'+pkgBadge(d.pkg)+'</td>'+
         '<td style="font-size:11.5px;color:var(--text-muted)">'+(d.src||'<span style="color:var(--red);font-size:11px">Missing</span>')+'</td>'+
         '<td>'+(d.inv?invBadge(d.inv):'<span style="color:var(--red);font-size:11px">Missing</span>')+'</td>'+
-        '<td>'+(d.arr?'<span class="mono" style="color:var(--text-muted)">'+fmtCUsd(d.arr, d.ccy)+'</span>':'<span style="color:var(--red);font-family:\'DM Mono\',monospace;font-size:11px">Missing</span>')+'</td>'+
+        '<td>'+(d.arr?'<span class="mono" style="color:var(--text-muted)">'+fmtUsdIn(d.arr, d.ccy)+'</span>':'<span style="color:var(--red);font-family:\'DM Mono\',monospace;font-size:11px">Missing</span>')+'</td>'+
         '<td>'+typeBadge(d)+'</td>'+
         '<td>'+rateTxt(d)+'</td>'+
-        '<td>'+(d.eligible&&d.arr?'<span class="mono" style="color:var(--green)">'+fmtCUsd(d.comm, d.ccy)+'</span>':'<span style="color:var(--red);font-size:11px;font-style:italic" title="'+(d.eligReason||'Ineligible')+'">'+(d.eligReason||'Ineligible')+'</span>')+'</td>'+
+        '<td>'+(d.eligible&&d.arr?'<span class="mono" style="color:var(--green)">'+fmtUsdIn(d.comm, d.ccy)+'</span>':'<span style="color:var(--red);font-size:11px;font-style:italic" title="'+(d.eligReason||'Ineligible')+'">'+(d.eligReason||'Ineligible')+'</span>')+'</td>'+
         '<td>'+payoutBadge(d)+'</td>'+
         '<td style="white-space:nowrap">'+hubspotLinkCell(d)+' '+stripeLinkCell(d)+'</td>'+
         '</tr>';
@@ -1142,7 +1180,7 @@ function renderStripe(){
       '<div class="stripe-card-header"><div><div class="stripe-card-company">'+deal.name+upsellBadge(deal.id)+'</div><div style="font-size:11px;color:var(--text-dim);margin-top:2px">'+ae.name+' · Closed '+fmtD(deal.close)+'</div></div>'+stripeBadge+'</div>'+
       '<div class="stripe-card-body">'+
       '<div class="stripe-meta">'+
-      '<div><div class="stripe-stat-label">hs_arr</div><div class="stripe-stat-val" style="color:var(--green)">'+fmtCUsd(deal.arr, deal.ccy)+'</div></div>'+
+      '<div><div class="stripe-stat-label">hs_arr</div><div class="stripe-stat-val" style="color:var(--green)">'+fmtUsdIn(deal.arr, deal.ccy)+'</div></div>'+
       '<div><div class="stripe-stat-label">Stripe ex-tax</div><div class="stripe-stat-val" style="color:var(--blue)">'+(sd&&sd.found&&sd.stripe_arr?'$'+fmt(sd.stripe_arr):'—')+'</div></div>'+
       '<div><div class="stripe-stat-label">Live pricing /yr</div><div class="stripe-stat-val" style="color:var(--purple)">'+(live?(live.currency+' '+fmt(live.stripe_annual,2)):'—')+'</div></div>'+
       '<div><div class="stripe-stat-label">Stripe billed</div><div class="stripe-stat-val" style="color:var(--text-muted)">'+(sd&&sd.found&&sd.stripe_billed?'$'+fmt(sd.stripe_billed):'—')+'</div></div>'+
@@ -1164,7 +1202,7 @@ function renderStripe(){
 // ── HS vs STRIPE ──────────────────────────────────────────────────────────
 function renderComparison(){
   var eligible=DEALS.filter(function(d){return d.eligible;});
-  var totalHs=eligible.reduce(function(s,d){return s+toUsd(d.comm||0, d.ccy);},0);
+  var totalHs=eligible.reduce(function(s,d){return s+(d.comm || 0);},0);
 
   // Stripe-side commission is only computed where Stripe bills in USD —
   // cross-currency consolidation (rate at contract sign vs billing) is
@@ -1221,7 +1259,7 @@ function renderComparison(){
 
     return '<tr class="'+rowClass+'"><td><a class="deal-link" href="https://app.hubspot.com/contacts/24214994/record/0-3/'+d.id+'" target="_blank"><div class="deal-name" title="'+d.name+'">'+d.name+upsellBadge(d.id)+'</div></a></td>'+
       '<td>'+aeChip(d.owner)+'</td><td>'+rateTxt(d)+'</td>'+
-      '<td><span class="hs-val">'+fmtCUsd(d.arr, d.ccy)+'</span></td>'+
+      '<td><span class="hs-val">'+fmtUsdIn(d.arr, d.ccy)+'</span></td>'+
       '<td>'+stripeCell+'</td>'+
       '<td><span class="comm-hs">$'+fmt(hsComm)+'</span></td>'+
       '<td>'+commCell+'</td>'+
@@ -1548,9 +1586,9 @@ function pkgUpgradeLabel(prev, next) {
 
 function renderUpsells(){
   var UPSELL_RATE = 0.075;
-  var totalArr = UPSELLS_ACTIVE.reduce(function(s,d){return s+toUsd(d.arr, d.ccy);},0);
+  var totalArr = UPSELLS_ACTIVE.reduce(function(s,d){return s+(d.arr || 0);},0);
   var totalComm = totalArr * UPSELL_RATE;
-  var totalPipeline = UPSELLS_PIPELINE.reduce(function(s,d){return s+toUsd(d.arr, d.ccy);},0);
+  var totalPipeline = UPSELLS_PIPELINE.reduce(function(s,d){return s+(d.arr || 0);},0);
 
   document.getElementById('upsell-kpis').innerHTML =
     '<div class="kpi-card"><div class="kpi-label">Active Upsell ARR</div><div class="kpi-value green">$'+fmt(totalArr)+'</div><div class="kpi-sub">'+UPSELLS_ACTIVE.length+' closed deals</div></div>'+
@@ -1564,7 +1602,7 @@ function renderUpsells(){
       '<td><a class="deal-link" href="https://app.hubspot.com/contacts/24214994/record/0-3/'+d.id+'" target="_blank"><div class="deal-name">'+d.name+'</div></a></td>'+
       '<td>'+(ae?'<div style="display:inline-flex;align-items:center;gap:5px"><div style="width:20px;height:20px;border-radius:50%;background:'+ae.bg+';color:'+ae.color+';display:inline-flex;align-items:center;justify-content:center;font-size:9px;font-weight:700">'+ae.initials+'</div><span style="font-size:11.5px">'+ae.name.split(" ")[0]+'</span></div>':d.owner)+'</td>'+
       '<td style="font-size:11px;color:var(--text-dim)">'+fmtD(d.close)+'</td>'+
-      '<td class="mono" style="color:var(--text-muted)">'+fmtCUsd(d.arr, d.ccy)+'</td>'+
+      '<td class="mono" style="color:var(--text-muted)">'+fmtUsdIn(d.arr, d.ccy)+'</td>'+
       '<td>'+pkgUpgradeLabel(d.prevPkg, d.newPkg)+'</td>'+
       '<td class="mono" style="color:var(--amber)">7.5%</td>'+
       '<td class="mono" style="color:var(--green)">$'+fmt(comm)+'</td>'+
@@ -1578,7 +1616,7 @@ function renderUpsells(){
     return '<tr style="opacity:.7">'+
       '<td><a class="deal-link" href="https://app.hubspot.com/contacts/24214994/record/0-3/'+d.id+'" target="_blank"><div class="deal-name">'+d.name+'</div></a></td>'+
       '<td>'+(ae?ae.name.split(" ")[0]:d.owner)+'</td>'+
-      '<td class="mono" style="color:var(--text-muted)">'+fmtCUsd(d.arr, d.ccy)+'</td>'+
+      '<td class="mono" style="color:var(--text-muted)">'+fmtUsdIn(d.arr, d.ccy)+'</td>'+
       '<td><span class="badge badge-amber">'+d.stage+'</span></td>'+
       '<td class="mono" style="color:var(--text-dim)">$'+fmt(comm)+'</td>'+
       '</tr>';
@@ -1962,30 +2000,34 @@ function renderSalesPayouts(){
   OFFICIAL_AES.forEach(function(id){byAe[id]=[];});
   deals.forEach(function(d){ if(byAe[d.owner]) byAe[d.owner].push(d); });
 
-  // Grand total in USD for reference across regions
-  var grandUsd = deals.reduce(function(s,d){return s+toUsd(d.comm||0, d.ccy);},0);
-  var grandOutUsd = deals.filter(function(d){return !d.paid_out;}).reduce(function(s,d){return s+toUsd(d.comm||0, d.ccy);},0);
-  var grandPaidUsd = deals.filter(function(d){return d.paid_out;}).reduce(function(s,d){return s+toUsd(d.comm||0, d.ccy);},0);
+  // Grand total in USD for reference across regions. d.comm is already USD.
+  var grandUsd = deals.reduce(function(s,d){return s+(d.comm||0);},0);
+  var grandOutUsd = deals.filter(function(d){return !d.paid_out;}).reduce(function(s,d){return s+(d.comm||0);},0);
+  var grandPaidUsd = deals.filter(function(d){return d.paid_out;}).reduce(function(s,d){return s+(d.comm||0);},0);
 
   var aeSections = OFFICIAL_AES.filter(function(id){return byAe[id].length>0;}).map(function(id){
     var ae = AE[id];
     var payCcy = AE_PAYOUT_CCY[id] || 'USD';
     var mine = byAe[id];
-    var subtotal = mine.reduce(function(s,d){return s+convertCcy(d.comm||0, d.ccy, payCcy);},0);
-    var subOut = mine.filter(function(d){return !d.paid_out;}).reduce(function(s,d){return s+convertCcy(d.comm||0, d.ccy, payCcy);},0);
-    var subPaid = mine.filter(function(d){return d.paid_out;}).reduce(function(s,d){return s+convertCcy(d.comm||0, d.ccy, payCcy);},0);
+    // d.comm is already USD; convert USD → payout currency for display
+    var subtotal = mine.reduce(function(s,d){return s+usdTo(d.comm||0, payCcy);},0);
+    var subOut = mine.filter(function(d){return !d.paid_out;}).reduce(function(s,d){return s+usdTo(d.comm||0, payCcy);},0);
+    var subPaid = mine.filter(function(d){return d.paid_out;}).reduce(function(s,d){return s+usdTo(d.comm||0, payCcy);},0);
     var rows = mine.map(function(d){
       var multi = d.contract_years && d.contract_years > 1;
       var yChip = multi ? ' <span class="badge badge-blue" style="font-size:9px" title="Multi-year contract · Year 1 ARR only this cycle">Y1 of '+d.contract_years+'</span>' : '';
-      // ARR shown in deal currency (source of truth). Commission shown in AE payout currency.
-      var commInPayCcy = convertCcy(d.comm||0, d.ccy, payCcy);
-      var commCell = (d.ccy === payCcy)
-        ? '<span class="mono" style="color:var(--green);font-weight:700">'+fmtC(commInPayCcy, payCcy, 2)+'</span>'
-        : '<span class="mono" style="color:var(--green);font-weight:700">'+fmtC(commInPayCcy, payCcy, 2)+'</span><div style="font-size:9px;color:var(--text-dim)">from '+fmtC(d.comm, d.ccy, 2)+'</div>';
+      // ARR shown in AE payout currency (converted from USD stored value)
+      var arrCell = fmtUsdIn(d.arr, payCcy);
+      // Commission converted USD → payout currency
+      var commInPay = usdTo(d.comm||0, payCcy);
+      var sym = CCY_SYM[payCcy] || (payCcy+' ');
+      var commCell = (payCcy === 'USD')
+        ? '<span class="mono" style="color:var(--green);font-weight:700">$'+fmt(commInPay,2)+'</span>'
+        : '<span class="mono" style="color:var(--green);font-weight:700">'+sym+fmt(commInPay,2)+'</span><div style="font-size:9px;color:var(--text-dim)">$'+fmt(d.comm,2)+' USD</div>';
       return '<tr>'+
         '<td><div class="deal-name">'+d.name+yChip+'</div><div style="font-size:10px;color:var(--text-dim);margin-top:2px">'+fmtD(d.close)+'</div></td>'+
         '<td>'+typeBadge(d)+'</td>'+
-        '<td class="mono" style="color:var(--text-muted)">'+fmtC(d.arr, d.ccy)+'</td>'+
+        '<td class="mono" style="color:var(--text-muted)">'+arrCell+'</td>'+
         '<td>'+rateTxt(d)+'</td>'+
         '<td>'+commCell+'</td>'+
         '<td>'+payoutBadge(d)+'</td>'+
@@ -2136,7 +2178,7 @@ function renderLost(){
       '<td>'+aeChip(d.owner)+'</td>'+
       '<td><span class="badge badge-red">'+(d.stage_label||'lost').replace(/_/g,' ')+'</span></td>'+
       '<td>'+pkgBadge(d.pkg)+'</td>'+
-      '<td>'+(d.arr?'<span class="mono" style="color:var(--text-dim)">'+fmtCUsd(d.arr, d.ccy)+'</span>':'<span style="color:var(--text-dim);font-size:11px">—</span>')+'</td>'+
+      '<td>'+(d.arr?'<span class="mono" style="color:var(--text-dim)">'+fmtUsdIn(d.arr, d.ccy)+'</span>':'<span style="color:var(--text-dim);font-size:11px">—</span>')+'</td>'+
       '<td style="font-size:11px;color:var(--text-dim)">'+fmtD(d.close)+'</td>'+
       '</tr>';
   }).join('');
