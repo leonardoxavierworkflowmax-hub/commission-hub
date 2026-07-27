@@ -201,6 +201,7 @@ input[type=date]{background:#fff;border:1px solid var(--border);border-radius:6p
   </div>
   <div class="nav">
     <div class="nav-section">Overview</div>
+    <div class="nav-item" onclick="showPage('payouts',this)"><span class="nav-icon">✓</span>Payouts <span class="pending-tag" style="background:rgba(99,219,148,0.15);color:var(--green)">Sign-off</span></div>
     <div class="nav-item active" onclick="showPage('dashboard',this)"><span class="nav-icon">◈</span>Dashboard</div>
     <div class="nav-item" onclick="showPage('deals',this)"><span class="nav-icon">≡</span>Deal Table</div>
     <div class="nav-item" onclick="showPage('lost',this)"><span class="nav-icon">⊘</span>Closed / Lost <span class="pending-tag" id="lost-tag" style="background:rgba(185,28,28,0.15);color:#fca5a5">·</span></div>
@@ -551,6 +552,38 @@ input[type=date]{background:#fff;border:1px solid var(--border);border-radius:6p
         <div style="font-size:11px;color:var(--text-muted)">CS reps stay out of the main payout summary until Kaia signs off the CS numbers.</div>
       </div>
     </div>
+
+  </div>
+</div>
+
+<!-- PAYOUTS PAGE — clean view for Kaia to sign off commission cycles -->
+<div class="page" id="page-payouts">
+  <div class="page-header">
+    <div class="page-eyebrow">Sign-off</div>
+    <div class="page-title">Payouts</div>
+    <div class="page-sub">Commission-eligible deals only · Advanced + Pro packages · Year 1 ARR basis · Aggregates use HubSpot FX</div>
+  </div>
+  <div class="page-body">
+
+    <div class="filter-bar" style="margin-bottom:20px;background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:14px 18px;">
+      <span class="filter-label">QUARTER</span>
+      <select id="pay-quarter" onchange="renderPayouts()">
+        <option value="q3-2026" selected>Q3 2026 (Jul–Sep)</option>
+        <option value="q2-2026">Q2 2026 (Apr–Jun)</option>
+        <option value="q1-2026">Q1 2026 (Jan–Mar)</option>
+        <option value="q4-2025">Q4 2025 (Oct–Dec)</option>
+        <option value="all">All time</option>
+      </select>
+      <span class="filter-label" style="margin-left:8px">STATUS</span>
+      <select id="pay-status" onchange="renderPayouts()">
+        <option value="all">All</option>
+        <option value="outstanding">Outstanding only</option>
+        <option value="paid">Paid only</option>
+      </select>
+      <span style="margin-left:auto;font-family:'DM Mono',monospace;font-size:10px;color:var(--text-dim)">Unlock with PIN to toggle paid</span>
+    </div>
+
+    <div id="payouts-body"></div>
 
   </div>
 </div>
@@ -1838,12 +1871,138 @@ function syncFromHubSpot(){
 }
 
 // ── NAV ───────────────────────────────────────────────────────────────────
+// ── PAYOUTS (clean sign-off view for Kaia) ─────────────────────────────────
+function renderPayouts(){
+  var qf = document.getElementById('pay-quarter').value;
+  var sf = document.getElementById('pay-status').value;
+
+  // ---- Sales AE side ----
+  var aeDeals = filterByQuarter(DEALS, qf).filter(function(d){return d.eligible;});
+  if(sf==='outstanding') aeDeals = aeDeals.filter(function(d){return !d.paid_out;});
+  if(sf==='paid') aeDeals = aeDeals.filter(function(d){return d.paid_out;});
+
+  var aeTotalUsd = aeDeals.reduce(function(s,d){return s+toUsd(d.comm||0, d.ccy);},0);
+  var aeOutUsd = aeDeals.filter(function(d){return !d.paid_out;}).reduce(function(s,d){return s+toUsd(d.comm||0, d.ccy);},0);
+  var aePaidUsd = aeDeals.filter(function(d){return d.paid_out;}).reduce(function(s,d){return s+toUsd(d.comm||0, d.ccy);},0);
+
+  // Group AE deals by owner
+  var byAe = {};
+  OFFICIAL_AES.forEach(function(id){byAe[id]=[];});
+  aeDeals.forEach(function(d){ if(byAe[d.owner]) byAe[d.owner].push(d); });
+
+  var aeSections = OFFICIAL_AES.filter(function(id){return byAe[id].length>0;}).map(function(id){
+    var ae = AE[id];
+    var mine = byAe[id];
+    var subtotal = mine.reduce(function(s,d){return s+toUsd(d.comm||0, d.ccy);},0);
+    var subOut = mine.filter(function(d){return !d.paid_out;}).reduce(function(s,d){return s+toUsd(d.comm||0, d.ccy);},0);
+    var rows = mine.map(function(d){
+      var multi = d.contract_years && d.contract_years > 1;
+      var yChip = multi ? ' <span class="badge badge-blue" style="font-size:9px" title="Multi-year contract · Year 1 ARR only this cycle">Y1 of '+d.contract_years+'</span>' : '';
+      return '<tr>'+
+        '<td><div class="deal-name">'+d.name+yChip+'</div><div style="font-size:10px;color:var(--text-dim);margin-top:2px">'+fmtD(d.close)+'</div></td>'+
+        '<td>'+typeBadge(d)+'</td>'+
+        '<td class="mono" style="color:var(--text-muted)">'+fmtCUsd(d.arr, d.ccy)+'</td>'+
+        '<td>'+rateTxt(d)+'</td>'+
+        '<td class="mono" style="color:var(--green);font-weight:700">'+fmtCUsd(d.comm, d.ccy)+'</td>'+
+        '<td>'+payoutBadge(d)+'</td>'+
+        '<td style="white-space:nowrap">'+hubspotLinkCell(d)+' '+stripeLinkCell(d)+'</td>'+
+        '</tr>';
+    }).join('');
+    return '<div style="margin-bottom:28px">'+
+      '<div style="display:flex;align-items:center;gap:12px;margin-bottom:10px">'+
+        '<div style="width:32px;height:32px;border-radius:8px;background:'+ae.bg+';color:'+ae.color+';display:flex;align-items:center;justify-content:center;font-family:\'Syne\',sans-serif;font-size:12px;font-weight:800">'+ae.initials+'</div>'+
+        '<div style="font-family:\'Syne\',sans-serif;font-size:15px;font-weight:700">'+ae.name+'</div>'+
+        '<div style="font-size:11px;color:var(--text-dim)">'+mine.length+' deals</div>'+
+        '<div style="margin-left:auto;font-family:\'DM Mono\',monospace;font-size:13px"><span style="color:var(--text-dim);font-size:10px">SUBTOTAL</span> <span style="color:var(--green);font-weight:700">$'+fmt(subtotal,2)+'</span>'+(subOut>0?' <span style="color:var(--text-dim);font-size:10px">· outstanding</span> <span style="color:var(--amber)">$'+fmt(subOut,2)+'</span>':'')+'</div>'+
+      '</div>'+
+      '<div class="table-wrap"><table>'+
+        '<thead><tr><th style="width:38%">Deal</th><th>Type</th><th>ARR</th><th>Rate</th><th>Commission</th><th>Payout</th><th>Links</th></tr></thead>'+
+        '<tbody>'+rows+'</tbody>'+
+      '</table></div>'+
+    '</div>';
+  }).join('');
+
+  // ---- CS side ----
+  var csDeals = CS_UPSELLS.filter(function(d){return d.st==='active'||d.st==='signed'||d.wonConfirmed;});
+  // Quarter filter (CS uses close date same way)
+  if(qf!=='all'){
+    csDeals = csDeals.filter(function(d){
+      if(!d.close) return false;
+      var dt = new Date(d.close), m = dt.getMonth(), y = dt.getFullYear();
+      var q = m<=2?'q1-'+y : m<=5?'q2-'+y : m<=8?'q3-'+y : 'q4-'+y;
+      return q === qf;
+    });
+  }
+  var csConfirmed = csDeals.filter(csIsConfirmedKind);
+  if(sf==='outstanding') csConfirmed = csConfirmed.filter(function(d){return !csIsPaid(d);});
+  if(sf==='paid') csConfirmed = csConfirmed.filter(csIsPaid);
+
+  var csTotalUsd = csConfirmed.reduce(function(s,d){return s+toUsd(csCommOf(d), d.ccy);},0);
+  var csOutUsd = csConfirmed.filter(function(d){return !csIsPaid(d);}).reduce(function(s,d){return s+toUsd(csCommOf(d), d.ccy);},0);
+  var csPaidTotal = csConfirmed.filter(csIsPaid).reduce(function(s,d){return s+toUsd(csCommOf(d), d.ccy);},0);
+
+  // Group CS by owner
+  var CS_LOOKUP = {DS:'David Solley', DO:'David Oliver', LT:'Liz Tobin'};
+  var byCs = {DS:[],DO:[],LT:[]};
+  csConfirmed.forEach(function(d){ if(byCs[d.cs]) byCs[d.cs].push(d); });
+
+  var csSections = Object.keys(byCs).filter(function(k){return byCs[k].length>0;}).map(function(k){
+    var mine = byCs[k];
+    var subtotal = mine.reduce(function(s,d){return s+toUsd(csCommOf(d), d.ccy);},0);
+    var subOut = mine.filter(function(d){return !csIsPaid(d);}).reduce(function(s,d){return s+toUsd(csCommOf(d), d.ccy);},0);
+    var rows = mine.map(function(d){
+      var paid = csIsPaid(d);
+      var csC = csCommOf(d);
+      var pendingBadge = d.deltaPending ? '<div style="font-size:9px;color:#b45309;margin-top:2px">delta pending Ryan/Kaia</div>' : '';
+      var basis = d.delta
+        ? '<span class="mono" style="color:var(--text-muted)">'+fmtCUsd(d.delta, d.ccy)+'</span><div style="font-size:9px;color:var(--text-dim)">on delta ARR</div>'
+        : '<span class="mono" style="color:var(--text-muted)">'+fmtCUsd(d.amt, d.ccy)+'</span>'+(d.deltaPending?'<div style="font-size:9px;color:#b45309">full amt · delta pending</div>':'');
+      var paidBtn = '<button onclick="toggleCsPaid(\''+csKey(d).replace(/\'/g,"\\\'")+'\')" style="cursor:pointer;border:none;border-radius:20px;font-size:10px;font-weight:700;padding:3px 10px;background:'+(paid?'var(--green-bg)':'var(--surface2)')+';color:'+(paid?'var(--green)':'var(--text-dim)')+'">'+(paid?'Paid ✓':'Mark paid')+'</button>';
+      return '<tr>'+
+        '<td><div class="deal-name">'+d.name+'</div><div style="font-size:10px;color:var(--text-dim);margin-top:2px">'+fmtD(d.close)+'</div>'+pendingBadge+'</td>'+
+        '<td>'+basis+'</td>'+
+        '<td class="mono" style="color:var(--green);font-weight:700">'+fmtCUsd(csC, d.ccy, 2)+'</td>'+
+        '<td>'+paidBtn+'</td>'+
+        '<td style="white-space:nowrap">'+csHsLink(d)+' '+stripeLinkCell(d)+'</td>'+
+        '</tr>';
+    }).join('');
+    return '<div style="margin-bottom:28px">'+
+      '<div style="display:flex;align-items:center;gap:12px;margin-bottom:10px">'+
+        '<div style="font-family:\'Syne\',sans-serif;font-size:15px;font-weight:700">'+CS_LOOKUP[k]+'</div>'+
+        '<div style="font-size:11px;color:var(--text-dim)">'+mine.length+' upsell'+(mine.length>1?'s':'')+'</div>'+
+        '<div style="margin-left:auto;font-family:\'DM Mono\',monospace;font-size:13px"><span style="color:var(--text-dim);font-size:10px">SUBTOTAL</span> <span style="color:var(--green);font-weight:700">$'+fmt(subtotal,2)+'</span>'+(subOut>0?' <span style="color:var(--text-dim);font-size:10px">· outstanding</span> <span style="color:var(--amber)">$'+fmt(subOut,2)+'</span>':'')+'</div>'+
+      '</div>'+
+      '<div class="table-wrap"><table>'+
+        '<thead><tr><th style="width:38%">Deal</th><th>Basis</th><th>CS 2.5%</th><th>Payout</th><th>Links</th></tr></thead>'+
+        '<tbody>'+rows+'</tbody>'+
+      '</table></div>'+
+    '</div>';
+  }).join('');
+
+  var grandTotal = aeTotalUsd + csTotalUsd;
+  var grandOut = aeOutUsd + csOutUsd;
+  var grandPaid = aePaidUsd + csPaidTotal;
+
+  document.getElementById('payouts-body').innerHTML =
+    '<div class="kpi-row" style="margin-bottom:24px">'+
+      '<div class="kpi-card"><div class="kpi-label">Grand Total (USD)</div><div class="kpi-value green">$'+fmt(grandTotal,2)+'</div><div class="kpi-sub">Sales + CS combined</div></div>'+
+      '<div class="kpi-card"><div class="kpi-label">Outstanding (USD)</div><div class="kpi-value amber">$'+fmt(grandOut,2)+'</div><div class="kpi-sub">Awaiting payout</div></div>'+
+      '<div class="kpi-card"><div class="kpi-label">Paid (USD)</div><div class="kpi-value">$'+fmt(grandPaid,2)+'</div><div class="kpi-sub">Already signed off</div></div>'+
+      '<div class="kpi-card"><div class="kpi-label">Deal count</div><div class="kpi-value">'+(aeDeals.length + csConfirmed.length)+'</div><div class="kpi-sub">'+aeDeals.length+' AE · '+csConfirmed.length+' CS</div></div>'+
+    '</div>'+
+    '<div class="section-title" style="display:flex;align-items:center;gap:12px">Sales AE <span style="font-family:\'DM Mono\',monospace;font-size:11px;color:var(--text-dim);font-weight:400">'+aeDeals.length+' eligible deals · $'+fmt(aeTotalUsd,2)+' USD</span></div>'+
+    (aeSections || '<div style="color:var(--text-dim);padding:20px 0;font-size:12px">No eligible AE deals for this filter.</div>')+
+    '<div class="section-title" style="margin-top:32px;display:flex;align-items:center;gap:12px">Customer Success <span style="font-family:\'DM Mono\',monospace;font-size:11px;color:var(--text-dim);font-weight:400">'+csConfirmed.length+' confirmed upsells · $'+fmt(csTotalUsd,2)+' USD</span></div>'+
+    (csSections || '<div style="color:var(--text-dim);padding:20px 0;font-size:12px">No confirmed CS upsells for this filter.</div>');
+}
+
 function showPage(id,el){
   document.querySelectorAll('.page').forEach(function(p){p.classList.remove('active');});
   document.querySelectorAll('.nav-item').forEach(function(n){n.classList.remove('active');});
   document.getElementById('page-'+id).classList.add('active');
   el.classList.add('active');
   document.querySelector('.main').scrollTop=0;
+  if(id==='payouts') renderPayouts();
 }
 
 // ── CLOSED / LOST (control view) ──────────────────────────────────────────
