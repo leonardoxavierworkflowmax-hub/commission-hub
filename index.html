@@ -201,11 +201,11 @@ input[type=date]{background:#fff;border:1px solid var(--border);border-radius:6p
   </div>
   <div class="nav">
     <div class="nav-section">Overview</div>
-    <div class="nav-item" onclick="showPage('payouts',this)"><span class="nav-icon">✓</span>Payouts <span class="pending-tag" style="background:rgba(99,219,148,0.15);color:var(--green)">Sign-off</span></div>
     <div class="nav-item active" onclick="showPage('dashboard',this)"><span class="nav-icon">◈</span>Dashboard</div>
     <div class="nav-item" onclick="showPage('deals',this)"><span class="nav-icon">≡</span>Deal Table</div>
     <div class="nav-item" onclick="showPage('lost',this)"><span class="nav-icon">⊘</span>Closed / Lost <span class="pending-tag" id="lost-tag" style="background:rgba(185,28,28,0.15);color:#fca5a5">·</span></div>
     <div class="nav-item" onclick="showPage('ae',this)"><span class="nav-icon">◎</span>By AE</div>
+    <div class="nav-item" onclick="showPage('sales-payouts',this)" style="padding-left:32px"><span class="nav-icon">✓</span>Payouts <span class="pending-tag" style="background:rgba(99,219,148,0.15);color:var(--green)">Sign-off</span></div>
     <div class="nav-section">Multi-year</div>
     <div class="nav-item" onclick="showPage('banked',this)"><span class="nav-icon">⬡</span>Banked Commission</div>
     <div class="nav-section">Stripe</div>
@@ -213,6 +213,7 @@ input[type=date]{background:#fff;border:1px solid var(--border);border-radius:6p
     <div class="nav-item" onclick="showPage('comparison',this)"><span class="nav-icon">⇌</span>HS vs Stripe</div>
     <div class="nav-section">Customer Success</div>
     <div class="nav-item" onclick="showPage('cs',this)"><span class="nav-icon">♦</span>CS Commission <span class="pending-tag">New</span></div>
+    <div class="nav-item" onclick="showPage('cs-payouts',this)" style="padding-left:32px"><span class="nav-icon">✓</span>Payouts <span class="pending-tag" style="background:rgba(99,219,148,0.15);color:var(--green)">Sign-off</span></div>
     <div class="nav-item" onclick="showPage('upsells',this)"><span class="nav-icon">↑</span>Upsell Deals</div>
   </div>
   <div class="sidebar-footer">
@@ -240,13 +241,13 @@ input[type=date]{background:#fff;border:1px solid var(--border);border-radius:6p
   <div class="page-header">
     <div class="page-eyebrow">Commission Hub · FY2026</div>
     <div class="page-title">Dashboard</div>
-    <div class="page-sub">Advanced + Pro only · Any deal value · Annual upfront · Post-discount ARR · AE Commission Attribution wins on conflict · <span style="background:#fef3c7;color:#78350f;padding:1px 7px;border-radius:4px;font-size:10px;font-weight:700">Values in deal currency · Aggregates in USD (HubSpot FX)</span></div>
+    <div class="page-sub">Advanced + Pro only · Any deal value · Annual upfront · Post-discount ARR · AE Commission Attribution wins on conflict · <span style="background:#fef3c7;color:#78350f;padding:1px 7px;border-radius:4px;font-size:10px;font-weight:700">Values in deal currency · Aggregates in USD (live HubSpot FX)</span></div>
   </div>
   <div class="page-body">
     <div style="background:var(--surface2);border:1px solid var(--border);border-left:3px solid #0D8D5C;border-radius:8px;padding:14px 18px;margin-bottom:18px">
       <div style="font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--text-dim);margin-bottom:6px">v19 · Kaia round-2 fixes applied</div>
       <div style="font-size:12px;color:var(--text-muted);line-height:1.6">
-        <strong>Premium package excluded</strong> from commission eligibility. <strong>Currency now respected</strong>: each deal renders in its own currency with USD equivalent alongside; aggregates convert via the same static FX table HubSpot uses (Company Currency = USD). <strong>Multi-year deals</strong> show <span class="badge badge-blue" style="font-size:9px">Y1 of N</span> chip — commission this cycle is Year 1 ARR only, years 2+ tracked in Banked view.
+        <strong>Premium package excluded</strong> from commission eligibility. <strong>Currency now respected</strong>: each deal renders in its own currency with USD equivalent alongside; aggregates use live exchange rates fetched from HubSpot on page load. <strong>Multi-year deals</strong> show <span class="badge badge-blue" style="font-size:9px">Y1 of N</span> chip — commission this cycle is Year 1 ARR only, years 2+ tracked in Banked view.
       </div>
     </div>
     <!-- Date range filter -->
@@ -556,18 +557,17 @@ input[type=date]{background:#fff;border:1px solid var(--border);border-radius:6p
   </div>
 </div>
 
-<!-- PAYOUTS PAGE — clean view for Kaia to sign off commission cycles -->
-<div class="page" id="page-payouts">
+<!-- SALES PAYOUTS — for AE commission sign-off. Values per AE region currency. -->
+<div class="page" id="page-sales-payouts">
   <div class="page-header">
-    <div class="page-eyebrow">Sign-off</div>
+    <div class="page-eyebrow">Sales · Sign-off</div>
     <div class="page-title">Payouts</div>
-    <div class="page-sub">Commission-eligible deals only · Advanced + Pro packages · Year 1 ARR basis · Aggregates use HubSpot FX</div>
+    <div class="page-sub">Commission-eligible AE deals · Advanced + Pro only · Year 1 ARR basis · Amounts converted to each AE's payout currency using HubSpot FX</div>
   </div>
   <div class="page-body">
-
     <div class="filter-bar" style="margin-bottom:20px;background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:14px 18px;">
       <span class="filter-label">QUARTER</span>
-      <select id="pay-quarter" onchange="renderPayouts()">
+      <select id="sp-quarter" onchange="renderSalesPayouts()">
         <option value="q3-2026" selected>Q3 2026 (Jul–Sep)</option>
         <option value="q2-2026">Q2 2026 (Apr–Jun)</option>
         <option value="q1-2026">Q1 2026 (Jan–Mar)</option>
@@ -575,16 +575,43 @@ input[type=date]{background:#fff;border:1px solid var(--border);border-radius:6p
         <option value="all">All time</option>
       </select>
       <span class="filter-label" style="margin-left:8px">STATUS</span>
-      <select id="pay-status" onchange="renderPayouts()">
+      <select id="sp-status" onchange="renderSalesPayouts()">
         <option value="all">All</option>
         <option value="outstanding">Outstanding only</option>
         <option value="paid">Paid only</option>
       </select>
       <span style="margin-left:auto;font-family:'DM Mono',monospace;font-size:10px;color:var(--text-dim)">Unlock with PIN to toggle paid</span>
     </div>
+    <div id="sales-payouts-body"></div>
+  </div>
+</div>
 
-    <div id="payouts-body"></div>
-
+<!-- CS PAYOUTS — for CS commission sign-off. Values per CS region currency. -->
+<div class="page" id="page-cs-payouts">
+  <div class="page-header">
+    <div class="page-eyebrow">Customer Success · Sign-off</div>
+    <div class="page-title">Payouts</div>
+    <div class="page-sub">Confirmed CS upsells only · 2.5% on delta ARR · Amounts converted to each CS owner's payout currency using HubSpot FX</div>
+  </div>
+  <div class="page-body">
+    <div class="filter-bar" style="margin-bottom:20px;background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:14px 18px;">
+      <span class="filter-label">QUARTER</span>
+      <select id="cp-quarter" onchange="renderCsPayouts()">
+        <option value="q3-2026" selected>Q3 2026 (Jul–Sep)</option>
+        <option value="q2-2026">Q2 2026 (Apr–Jun)</option>
+        <option value="q1-2026">Q1 2026 (Jan–Mar)</option>
+        <option value="q4-2025">Q4 2025 (Oct–Dec)</option>
+        <option value="all">All time</option>
+      </select>
+      <span class="filter-label" style="margin-left:8px">STATUS</span>
+      <select id="cp-status" onchange="renderCsPayouts()">
+        <option value="all">All</option>
+        <option value="outstanding">Outstanding only</option>
+        <option value="paid">Paid only</option>
+      </select>
+      <span style="margin-left:auto;font-family:'DM Mono',monospace;font-size:10px;color:var(--text-dim)">Unlock with PIN to toggle paid</span>
+    </div>
+    <div id="cs-payouts-body"></div>
   </div>
 </div>
 
@@ -772,10 +799,37 @@ var SYNCED_ONCE = false;
 function fmt(n,dec){if(dec===undefined)dec=0;if(n==null)return"—";return Number(n).toLocaleString('en-US',{minimumFractionDigits:dec,maximumFractionDigits:dec});}
 
 // FX table: multiplicative rate from local currency to USD.
-// Mirrors HubSpot's static currency table (Account Defaults > Currency, updated monthly).
-// Last HubSpot update: 02/07/2026 · Next: 01/08/2026. Company Currency = USD.
-// This ensures the hub's aggregates match HubSpot's own displayed amounts exactly.
-var FX_TO_USD = { USD: 1.00, GBP: 1.327787, AUD: 0.690235, NZD: 0.567677, CAD: 0.70392 };
+// Populated dynamically on page load from commission-hub-fx-rates webhook,
+// which mirrors HubSpot's Settings > Currencies exchange rates.
+// Hardcoded values here act as a fallback if the webhook is unavailable
+// (last snapshot taken 27 Jul 2026 from HubSpot).
+var FX_TO_USD = { USD: 1.00, GBP: 1.334192, AUD: 0.6997, NZD: 0.580047, CAD: 0.710235 };
+var FX_SOURCE = 'fallback (hardcoded 27 Jul 2026)';
+var FX_EFFECTIVE_DATES = {};
+
+// Fetch live FX from HubSpot via the n8n mirror webhook.
+// Fire-and-forget on load; if it fails, the hub keeps the fallback rates.
+(function fetchLiveFx(){
+  var url = 'https://workflowmax.app.n8n.cloud/webhook/commission-hub-fx-rates';
+  fetch(url).then(function(r){ return r.ok ? r.json() : null; }).then(function(data){
+    if(!data || !data.fx_to_usd) return;
+    FX_TO_USD = data.fx_to_usd;
+    FX_SOURCE = data.source || 'HubSpot Settings API';
+    FX_EFFECTIVE_DATES = data.effective_dates || {};
+    // Re-render whichever page is currently active so the numbers refresh
+    var active = document.querySelector('.page.active');
+    if(!active) return;
+    var id = active.id.replace(/^page-/, '');
+    if(id === 'dashboard') renderDashboard();
+    else if(id === 'deals') renderDeals();
+    else if(id === 'ae') renderAE();
+    else if(id === 'sales-payouts') renderSalesPayouts();
+    else if(id === 'cs') renderCsPage();
+    else if(id === 'cs-payouts') renderCsPayouts();
+    else if(id === 'comparison') renderComparison();
+    else if(id === 'upsells') renderUpsells();
+  }).catch(function(){ /* silent: keep fallback rates */ });
+})();
 function toUsd(amt, ccy){
   var c = (ccy || 'USD').toUpperCase();
   var rate = FX_TO_USD[c];
@@ -1871,129 +1925,180 @@ function syncFromHubSpot(){
 }
 
 // ── NAV ───────────────────────────────────────────────────────────────────
-// ── PAYOUTS (clean sign-off view for Kaia) ─────────────────────────────────
-function renderPayouts(){
-  var qf = document.getElementById('pay-quarter').value;
-  var sf = document.getElementById('pay-status').value;
+// ── PAYOUTS (per-region currency for sign-off) ─────────────────────────────
+// Each AE / CS owner is paid in their local currency. Deal amounts get converted
+// deal_ccy → USD → owner_ccy via the HubSpot static FX table.
+var AE_PAYOUT_CCY = {
+  "80406430": "AUD", // Sina Zarei (Melbourne)
+  "80127259": "AUD", // Denzel Kereama (Melbourne)
+  "80127257": "GBP", // Mark Dempsey (UK)
+  "85659656": "USD", // Aline Baleeiro (US)
+  "85659655": "USD"  // Edgar Calvo (US)
+};
+var CS_PAYOUT_CCY = {
+  "DS": "AUD", // Solley (AU/NZ)
+  "DO": "GBP", // Oliver (UK)
+  "LT": "GBP"  // Liz (UK)
+};
 
-  // ---- Sales AE side ----
-  var aeDeals = filterByQuarter(DEALS, qf).filter(function(d){return d.eligible;});
-  if(sf==='outstanding') aeDeals = aeDeals.filter(function(d){return !d.paid_out;});
-  if(sf==='paid') aeDeals = aeDeals.filter(function(d){return d.paid_out;});
+function convertCcy(amt, fromCcy, toCcy){
+  var from = (fromCcy || 'USD').toUpperCase();
+  var to = (toCcy || 'USD').toUpperCase();
+  if(from === to) return amt || 0;
+  var fromRate = FX_TO_USD[from] || 1;
+  var toRate = FX_TO_USD[to] || 1;
+  return ((amt || 0) * fromRate) / toRate;
+}
 
-  var aeTotalUsd = aeDeals.reduce(function(s,d){return s+toUsd(d.comm||0, d.ccy);},0);
-  var aeOutUsd = aeDeals.filter(function(d){return !d.paid_out;}).reduce(function(s,d){return s+toUsd(d.comm||0, d.ccy);},0);
-  var aePaidUsd = aeDeals.filter(function(d){return d.paid_out;}).reduce(function(s,d){return s+toUsd(d.comm||0, d.ccy);},0);
+function renderSalesPayouts(){
+  var qf = document.getElementById('sp-quarter').value;
+  var sf = document.getElementById('sp-status').value;
 
-  // Group AE deals by owner
+  var deals = filterByQuarter(DEALS, qf).filter(function(d){return d.eligible;});
+  if(sf==='outstanding') deals = deals.filter(function(d){return !d.paid_out;});
+  if(sf==='paid') deals = deals.filter(function(d){return d.paid_out;});
+
   var byAe = {};
   OFFICIAL_AES.forEach(function(id){byAe[id]=[];});
-  aeDeals.forEach(function(d){ if(byAe[d.owner]) byAe[d.owner].push(d); });
+  deals.forEach(function(d){ if(byAe[d.owner]) byAe[d.owner].push(d); });
+
+  // Grand total in USD for reference across regions
+  var grandUsd = deals.reduce(function(s,d){return s+toUsd(d.comm||0, d.ccy);},0);
+  var grandOutUsd = deals.filter(function(d){return !d.paid_out;}).reduce(function(s,d){return s+toUsd(d.comm||0, d.ccy);},0);
+  var grandPaidUsd = deals.filter(function(d){return d.paid_out;}).reduce(function(s,d){return s+toUsd(d.comm||0, d.ccy);},0);
 
   var aeSections = OFFICIAL_AES.filter(function(id){return byAe[id].length>0;}).map(function(id){
     var ae = AE[id];
+    var payCcy = AE_PAYOUT_CCY[id] || 'USD';
     var mine = byAe[id];
-    var subtotal = mine.reduce(function(s,d){return s+toUsd(d.comm||0, d.ccy);},0);
-    var subOut = mine.filter(function(d){return !d.paid_out;}).reduce(function(s,d){return s+toUsd(d.comm||0, d.ccy);},0);
+    var subtotal = mine.reduce(function(s,d){return s+convertCcy(d.comm||0, d.ccy, payCcy);},0);
+    var subOut = mine.filter(function(d){return !d.paid_out;}).reduce(function(s,d){return s+convertCcy(d.comm||0, d.ccy, payCcy);},0);
+    var subPaid = mine.filter(function(d){return d.paid_out;}).reduce(function(s,d){return s+convertCcy(d.comm||0, d.ccy, payCcy);},0);
     var rows = mine.map(function(d){
       var multi = d.contract_years && d.contract_years > 1;
       var yChip = multi ? ' <span class="badge badge-blue" style="font-size:9px" title="Multi-year contract · Year 1 ARR only this cycle">Y1 of '+d.contract_years+'</span>' : '';
+      // ARR shown in deal currency (source of truth). Commission shown in AE payout currency.
+      var commInPayCcy = convertCcy(d.comm||0, d.ccy, payCcy);
+      var commCell = (d.ccy === payCcy)
+        ? '<span class="mono" style="color:var(--green);font-weight:700">'+fmtC(commInPayCcy, payCcy, 2)+'</span>'
+        : '<span class="mono" style="color:var(--green);font-weight:700">'+fmtC(commInPayCcy, payCcy, 2)+'</span><div style="font-size:9px;color:var(--text-dim)">from '+fmtC(d.comm, d.ccy, 2)+'</div>';
       return '<tr>'+
         '<td><div class="deal-name">'+d.name+yChip+'</div><div style="font-size:10px;color:var(--text-dim);margin-top:2px">'+fmtD(d.close)+'</div></td>'+
         '<td>'+typeBadge(d)+'</td>'+
-        '<td class="mono" style="color:var(--text-muted)">'+fmtCUsd(d.arr, d.ccy)+'</td>'+
+        '<td class="mono" style="color:var(--text-muted)">'+fmtC(d.arr, d.ccy)+'</td>'+
         '<td>'+rateTxt(d)+'</td>'+
-        '<td class="mono" style="color:var(--green);font-weight:700">'+fmtCUsd(d.comm, d.ccy)+'</td>'+
+        '<td>'+commCell+'</td>'+
         '<td>'+payoutBadge(d)+'</td>'+
         '<td style="white-space:nowrap">'+hubspotLinkCell(d)+' '+stripeLinkCell(d)+'</td>'+
         '</tr>';
     }).join('');
     return '<div style="margin-bottom:28px">'+
-      '<div style="display:flex;align-items:center;gap:12px;margin-bottom:10px">'+
-        '<div style="width:32px;height:32px;border-radius:8px;background:'+ae.bg+';color:'+ae.color+';display:flex;align-items:center;justify-content:center;font-family:\'Syne\',sans-serif;font-size:12px;font-weight:800">'+ae.initials+'</div>'+
-        '<div style="font-family:\'Syne\',sans-serif;font-size:15px;font-weight:700">'+ae.name+'</div>'+
-        '<div style="font-size:11px;color:var(--text-dim)">'+mine.length+' deals</div>'+
-        '<div style="margin-left:auto;font-family:\'DM Mono\',monospace;font-size:13px"><span style="color:var(--text-dim);font-size:10px">SUBTOTAL</span> <span style="color:var(--green);font-weight:700">$'+fmt(subtotal,2)+'</span>'+(subOut>0?' <span style="color:var(--text-dim);font-size:10px">· outstanding</span> <span style="color:var(--amber)">$'+fmt(subOut,2)+'</span>':'')+'</div>'+
+      '<div style="display:flex;align-items:center;gap:12px;margin-bottom:10px;padding:10px 14px;background:var(--surface);border:1px solid var(--border);border-radius:8px">'+
+        '<div style="width:36px;height:36px;border-radius:8px;background:'+ae.bg+';color:'+ae.color+';display:flex;align-items:center;justify-content:center;font-family:\'Syne\',sans-serif;font-size:13px;font-weight:800">'+ae.initials+'</div>'+
+        '<div>'+
+          '<div style="font-family:\'Syne\',sans-serif;font-size:15px;font-weight:700">'+ae.name+'</div>'+
+          '<div style="font-size:10px;color:var(--text-dim)">Paid in '+payCcy+' · '+mine.length+' deals</div>'+
+        '</div>'+
+        '<div style="margin-left:auto;text-align:right">'+
+          '<div style="font-family:\'DM Mono\',monospace;font-size:16px;color:var(--green);font-weight:700">'+fmtC(subtotal, payCcy, 2)+'</div>'+
+          '<div style="font-size:10px;color:var(--text-dim)">'+(subOut>0?'<span style="color:var(--amber)">'+fmtC(subOut, payCcy, 2)+'</span> outstanding · ':'')+fmtC(subPaid, payCcy, 2)+' paid</div>'+
+        '</div>'+
       '</div>'+
       '<div class="table-wrap"><table>'+
-        '<thead><tr><th style="width:38%">Deal</th><th>Type</th><th>ARR</th><th>Rate</th><th>Commission</th><th>Payout</th><th>Links</th></tr></thead>'+
+        '<thead><tr><th style="width:38%">Deal</th><th>Type</th><th>ARR</th><th>Rate</th><th>Commission ('+payCcy+')</th><th>Payout</th><th>Links</th></tr></thead>'+
         '<tbody>'+rows+'</tbody>'+
       '</table></div>'+
     '</div>';
   }).join('');
 
-  // ---- CS side ----
-  var csDeals = CS_UPSELLS.filter(function(d){return d.st==='active'||d.st==='signed'||d.wonConfirmed;});
-  // Quarter filter (CS uses close date same way)
+  document.getElementById('sales-payouts-body').innerHTML =
+    '<div class="kpi-row" style="margin-bottom:24px">'+
+      '<div class="kpi-card"><div class="kpi-label">Total Commission (USD)</div><div class="kpi-value green">$'+fmt(grandUsd,2)+'</div><div class="kpi-sub">'+deals.length+' eligible deals · sum across regions</div></div>'+
+      '<div class="kpi-card"><div class="kpi-label">Outstanding (USD)</div><div class="kpi-value amber">$'+fmt(grandOutUsd,2)+'</div><div class="kpi-sub">Awaiting payout</div></div>'+
+      '<div class="kpi-card"><div class="kpi-label">Paid (USD)</div><div class="kpi-value">$'+fmt(grandPaidUsd,2)+'</div><div class="kpi-sub">Already signed off</div></div>'+
+      '<div class="kpi-card"><div class="kpi-label">AEs with deals</div><div class="kpi-value">'+OFFICIAL_AES.filter(function(id){return byAe[id].length>0;}).length+'</div><div class="kpi-sub">of '+OFFICIAL_AES.length+' AEs total</div></div>'+
+    '</div>'+
+    (aeSections || '<div style="color:var(--text-dim);padding:40px 0;text-align:center;font-size:13px">No eligible AE deals for this filter.</div>');
+}
+
+function renderCsPayouts(){
+  var qf = document.getElementById('cp-quarter').value;
+  var sf = document.getElementById('cp-status').value;
+
+  var deals = CS_UPSELLS.filter(function(d){return d.st==='active'||d.st==='signed'||d.wonConfirmed;});
   if(qf!=='all'){
-    csDeals = csDeals.filter(function(d){
+    deals = deals.filter(function(d){
       if(!d.close) return false;
       var dt = new Date(d.close), m = dt.getMonth(), y = dt.getFullYear();
       var q = m<=2?'q1-'+y : m<=5?'q2-'+y : m<=8?'q3-'+y : 'q4-'+y;
       return q === qf;
     });
   }
-  var csConfirmed = csDeals.filter(csIsConfirmedKind);
-  if(sf==='outstanding') csConfirmed = csConfirmed.filter(function(d){return !csIsPaid(d);});
-  if(sf==='paid') csConfirmed = csConfirmed.filter(csIsPaid);
+  var confirmed = deals.filter(csIsConfirmedKind);
+  if(sf==='outstanding') confirmed = confirmed.filter(function(d){return !csIsPaid(d);});
+  if(sf==='paid') confirmed = confirmed.filter(csIsPaid);
 
-  var csTotalUsd = csConfirmed.reduce(function(s,d){return s+toUsd(csCommOf(d), d.ccy);},0);
-  var csOutUsd = csConfirmed.filter(function(d){return !csIsPaid(d);}).reduce(function(s,d){return s+toUsd(csCommOf(d), d.ccy);},0);
-  var csPaidTotal = csConfirmed.filter(csIsPaid).reduce(function(s,d){return s+toUsd(csCommOf(d), d.ccy);},0);
+  // Grand total in USD for reference across regions
+  var grandUsd = confirmed.reduce(function(s,d){return s+toUsd(csCommOf(d), d.ccy);},0);
+  var grandOutUsd = confirmed.filter(function(d){return !csIsPaid(d);}).reduce(function(s,d){return s+toUsd(csCommOf(d), d.ccy);},0);
+  var grandPaidUsd = confirmed.filter(csIsPaid).reduce(function(s,d){return s+toUsd(csCommOf(d), d.ccy);},0);
 
-  // Group CS by owner
   var CS_LOOKUP = {DS:'David Solley', DO:'David Oliver', LT:'Liz Tobin'};
   var byCs = {DS:[],DO:[],LT:[]};
-  csConfirmed.forEach(function(d){ if(byCs[d.cs]) byCs[d.cs].push(d); });
+  confirmed.forEach(function(d){ if(byCs[d.cs]) byCs[d.cs].push(d); });
 
   var csSections = Object.keys(byCs).filter(function(k){return byCs[k].length>0;}).map(function(k){
+    var payCcy = CS_PAYOUT_CCY[k] || 'USD';
     var mine = byCs[k];
-    var subtotal = mine.reduce(function(s,d){return s+toUsd(csCommOf(d), d.ccy);},0);
-    var subOut = mine.filter(function(d){return !csIsPaid(d);}).reduce(function(s,d){return s+toUsd(csCommOf(d), d.ccy);},0);
+    var subtotal = mine.reduce(function(s,d){return s+convertCcy(csCommOf(d), d.ccy, payCcy);},0);
+    var subOut = mine.filter(function(d){return !csIsPaid(d);}).reduce(function(s,d){return s+convertCcy(csCommOf(d), d.ccy, payCcy);},0);
+    var subPaid = mine.filter(csIsPaid).reduce(function(s,d){return s+convertCcy(csCommOf(d), d.ccy, payCcy);},0);
     var rows = mine.map(function(d){
       var paid = csIsPaid(d);
       var csC = csCommOf(d);
+      var csCInPayCcy = convertCcy(csC, d.ccy, payCcy);
       var pendingBadge = d.deltaPending ? '<div style="font-size:9px;color:#b45309;margin-top:2px">delta pending Ryan/Kaia</div>' : '';
       var basis = d.delta
-        ? '<span class="mono" style="color:var(--text-muted)">'+fmtCUsd(d.delta, d.ccy)+'</span><div style="font-size:9px;color:var(--text-dim)">on delta ARR</div>'
-        : '<span class="mono" style="color:var(--text-muted)">'+fmtCUsd(d.amt, d.ccy)+'</span>'+(d.deltaPending?'<div style="font-size:9px;color:#b45309">full amt · delta pending</div>':'');
+        ? '<span class="mono" style="color:var(--text-muted)">'+fmtC(d.delta, d.ccy)+'</span><div style="font-size:9px;color:var(--text-dim)">on delta ARR</div>'
+        : '<span class="mono" style="color:var(--text-muted)">'+fmtC(d.amt, d.ccy)+'</span>'+(d.deltaPending?'<div style="font-size:9px;color:#b45309">full amt · delta pending</div>':'');
+      var commCell = (d.ccy === payCcy)
+        ? '<span class="mono" style="color:var(--green);font-weight:700">'+fmtC(csCInPayCcy, payCcy, 2)+'</span>'
+        : '<span class="mono" style="color:var(--green);font-weight:700">'+fmtC(csCInPayCcy, payCcy, 2)+'</span><div style="font-size:9px;color:var(--text-dim)">from '+fmtC(csC, d.ccy, 2)+'</div>';
       var paidBtn = '<button onclick="toggleCsPaid(\''+csKey(d).replace(/\'/g,"\\\'")+'\')" style="cursor:pointer;border:none;border-radius:20px;font-size:10px;font-weight:700;padding:3px 10px;background:'+(paid?'var(--green-bg)':'var(--surface2)')+';color:'+(paid?'var(--green)':'var(--text-dim)')+'">'+(paid?'Paid ✓':'Mark paid')+'</button>';
       return '<tr>'+
         '<td><div class="deal-name">'+d.name+'</div><div style="font-size:10px;color:var(--text-dim);margin-top:2px">'+fmtD(d.close)+'</div>'+pendingBadge+'</td>'+
         '<td>'+basis+'</td>'+
-        '<td class="mono" style="color:var(--green);font-weight:700">'+fmtCUsd(csC, d.ccy, 2)+'</td>'+
+        '<td>'+commCell+'</td>'+
         '<td>'+paidBtn+'</td>'+
         '<td style="white-space:nowrap">'+csHsLink(d)+' '+stripeLinkCell(d)+'</td>'+
         '</tr>';
     }).join('');
     return '<div style="margin-bottom:28px">'+
-      '<div style="display:flex;align-items:center;gap:12px;margin-bottom:10px">'+
-        '<div style="font-family:\'Syne\',sans-serif;font-size:15px;font-weight:700">'+CS_LOOKUP[k]+'</div>'+
-        '<div style="font-size:11px;color:var(--text-dim)">'+mine.length+' upsell'+(mine.length>1?'s':'')+'</div>'+
-        '<div style="margin-left:auto;font-family:\'DM Mono\',monospace;font-size:13px"><span style="color:var(--text-dim);font-size:10px">SUBTOTAL</span> <span style="color:var(--green);font-weight:700">$'+fmt(subtotal,2)+'</span>'+(subOut>0?' <span style="color:var(--text-dim);font-size:10px">· outstanding</span> <span style="color:var(--amber)">$'+fmt(subOut,2)+'</span>':'')+'</div>'+
+      '<div style="display:flex;align-items:center;gap:12px;margin-bottom:10px;padding:10px 14px;background:var(--surface);border:1px solid var(--border);border-radius:8px">'+
+        '<div>'+
+          '<div style="font-family:\'Syne\',sans-serif;font-size:15px;font-weight:700">'+CS_LOOKUP[k]+'</div>'+
+          '<div style="font-size:10px;color:var(--text-dim)">Paid in '+payCcy+' · '+mine.length+' upsell'+(mine.length>1?'s':'')+'</div>'+
+        '</div>'+
+        '<div style="margin-left:auto;text-align:right">'+
+          '<div style="font-family:\'DM Mono\',monospace;font-size:16px;color:var(--green);font-weight:700">'+fmtC(subtotal, payCcy, 2)+'</div>'+
+          '<div style="font-size:10px;color:var(--text-dim)">'+(subOut>0?'<span style="color:var(--amber)">'+fmtC(subOut, payCcy, 2)+'</span> outstanding · ':'')+fmtC(subPaid, payCcy, 2)+' paid</div>'+
+        '</div>'+
       '</div>'+
       '<div class="table-wrap"><table>'+
-        '<thead><tr><th style="width:38%">Deal</th><th>Basis</th><th>CS 2.5%</th><th>Payout</th><th>Links</th></tr></thead>'+
+        '<thead><tr><th style="width:38%">Deal</th><th>Basis</th><th>CS 2.5% ('+payCcy+')</th><th>Payout</th><th>Links</th></tr></thead>'+
         '<tbody>'+rows+'</tbody>'+
       '</table></div>'+
     '</div>';
   }).join('');
 
-  var grandTotal = aeTotalUsd + csTotalUsd;
-  var grandOut = aeOutUsd + csOutUsd;
-  var grandPaid = aePaidUsd + csPaidTotal;
-
-  document.getElementById('payouts-body').innerHTML =
+  document.getElementById('cs-payouts-body').innerHTML =
     '<div class="kpi-row" style="margin-bottom:24px">'+
-      '<div class="kpi-card"><div class="kpi-label">Grand Total (USD)</div><div class="kpi-value green">$'+fmt(grandTotal,2)+'</div><div class="kpi-sub">Sales + CS combined</div></div>'+
-      '<div class="kpi-card"><div class="kpi-label">Outstanding (USD)</div><div class="kpi-value amber">$'+fmt(grandOut,2)+'</div><div class="kpi-sub">Awaiting payout</div></div>'+
-      '<div class="kpi-card"><div class="kpi-label">Paid (USD)</div><div class="kpi-value">$'+fmt(grandPaid,2)+'</div><div class="kpi-sub">Already signed off</div></div>'+
-      '<div class="kpi-card"><div class="kpi-label">Deal count</div><div class="kpi-value">'+(aeDeals.length + csConfirmed.length)+'</div><div class="kpi-sub">'+aeDeals.length+' AE · '+csConfirmed.length+' CS</div></div>'+
+      '<div class="kpi-card"><div class="kpi-label">Total CS Commission (USD)</div><div class="kpi-value green">$'+fmt(grandUsd,2)+'</div><div class="kpi-sub">'+confirmed.length+' confirmed upsells · sum across regions</div></div>'+
+      '<div class="kpi-card"><div class="kpi-label">Outstanding (USD)</div><div class="kpi-value amber">$'+fmt(grandOutUsd,2)+'</div><div class="kpi-sub">Awaiting payout</div></div>'+
+      '<div class="kpi-card"><div class="kpi-label">Paid (USD)</div><div class="kpi-value">$'+fmt(grandPaidUsd,2)+'</div><div class="kpi-sub">Already signed off</div></div>'+
+      '<div class="kpi-card"><div class="kpi-label">CS with upsells</div><div class="kpi-value">'+Object.keys(byCs).filter(function(k){return byCs[k].length>0;}).length+'</div><div class="kpi-sub">of 3 CS owners</div></div>'+
     '</div>'+
-    '<div class="section-title" style="display:flex;align-items:center;gap:12px">Sales AE <span style="font-family:\'DM Mono\',monospace;font-size:11px;color:var(--text-dim);font-weight:400">'+aeDeals.length+' eligible deals · $'+fmt(aeTotalUsd,2)+' USD</span></div>'+
-    (aeSections || '<div style="color:var(--text-dim);padding:20px 0;font-size:12px">No eligible AE deals for this filter.</div>')+
-    '<div class="section-title" style="margin-top:32px;display:flex;align-items:center;gap:12px">Customer Success <span style="font-family:\'DM Mono\',monospace;font-size:11px;color:var(--text-dim);font-weight:400">'+csConfirmed.length+' confirmed upsells · $'+fmt(csTotalUsd,2)+' USD</span></div>'+
-    (csSections || '<div style="color:var(--text-dim);padding:20px 0;font-size:12px">No confirmed CS upsells for this filter.</div>');
+    (csSections || '<div style="color:var(--text-dim);padding:40px 0;text-align:center;font-size:13px">No confirmed CS upsells for this filter.</div>');
 }
 
 function showPage(id,el){
@@ -2002,7 +2107,8 @@ function showPage(id,el){
   document.getElementById('page-'+id).classList.add('active');
   el.classList.add('active');
   document.querySelector('.main').scrollTop=0;
-  if(id==='payouts') renderPayouts();
+  if(id==='sales-payouts') renderSalesPayouts();
+  if(id==='cs-payouts') renderCsPayouts();
 }
 
 // ── CLOSED / LOST (control view) ──────────────────────────────────────────
