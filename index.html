@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>WorkflowMAX · Commission Hub FY2026</title>
-<!-- v17 · 2026-07-22 · Liz confirmations locked: 8 upsells (Solley 5, Oliver 2, Liz 1), TBC new-deal rows removed, deltaPending flags on 6 records (delta ARR to be confirmed by Ryan/Kaia), Woolf Bond marked noCsComm, Novatia re-tagged Upsell, Event Base + SCLSpec added, Glass Canvas wonConfirmed -->
+<!-- v18 · 2026-07-27 · Liz round-2: Event Base + Greater Group flagged noCsComm (Solley did not assist), AIM now deltaPending (Liz deferred all deltas to Ryan/Kaia), Wincer confirmed drop, workflow paused pending CS Owner vs Company Owner decision -->
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
 /* ── v5 PALETTE on v8 STRUCTURE ───────────────────────────────── */
@@ -507,10 +507,10 @@ input[type=date]{background:#fff;border:1px solid var(--border);border-radius:6p
           <div style="font-size:13px;font-weight:700;margin-bottom:4px">dealtype = Existing Business &middot; commission_type = Upsell</div>
           <div style="font-size:11px;color:var(--text-muted)">Set on roughly a third, blank on the rest &mdash; the name convention is currently more reliable than the fields.</div>
         </div>
-        <div style="background:var(--surface2);border:1px solid var(--border);border-left:3px solid #0D8D5C;border-radius:8px;padding:14px">
-          <div style="font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--text-dim);margin-bottom:6px">Closing the gap</div>
-          <div style="font-size:13px;font-weight:700;margin-bottom:4px">customer_success_owner backfilled on the 8 confirmed upsells</div>
-          <div style="font-size:11px;color:var(--text-muted)">Historical attribution now lives in HubSpot. The <em>Deal | Set CS Owner from Company</em> workflow (Solley / Oliver / Liz branches) keeps future upsells in sync automatically &mdash; provided Company.Customer Success Owner is set.</div>
+        <div style="background:var(--surface2);border:1px solid var(--border);border-left:3px solid #b45309;border-radius:8px;padding:14px">
+          <div style="font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--text-dim);margin-bottom:6px">Where we are</div>
+          <div style="font-size:13px;font-weight:700;margin-bottom:4px">7 upsells locked · all delta ARRs waiting on Ryan and Kaia</div>
+          <div style="font-size:11px;color:var(--text-muted)">Attribution now lives in HubSpot on all 7 records. Liz deferred every delta (including AIM) to Ryan/Kaia, so nothing pays out yet. Event Base and Greater Group flagged as non-payable following Liz's confirmation that Solley did not assist.</div>
         </div>
       </div>
       <div style="font-size:12px;color:var(--text-muted);line-height:1.7">
@@ -1144,7 +1144,7 @@ var CS_PAID_KEY = 'ch_cs_paid_v1'; // separate from AE ch_paid_v1
 
 var CS_UPSELLS = [
   // ---- UK -- won upsells (Liz-confirmed 22 Jul 2026) ----
-  {id:"57610382769",name:"AIM Building & Maintenance Services Ltd (ADV/Upsell)",region:"UK",cs:"LT",amt:63840,ccy:"GBP",hsAmt:48237.60,close:"2026-04-09",st:"signed",kind:"Upsell",ct:"Upsell"},
+  {id:"57610382769",name:"AIM Building & Maintenance Services Ltd (ADV/Upsell)",region:"UK",cs:"LT",amt:63840,ccy:"GBP",hsAmt:48237.60,close:"2026-04-09",st:"signed",kind:"Upsell",ct:"Upsell",deltaPending:true,flag:"Liz (27 Jul): deferring to Ryan/Kaia for pre-Advanced package pricing before payout confirmation."},
   {id:"60525063715",name:"Woolf Bond Planning - Active",region:"UK",cs:"",csNote:"Liz confirmed: no CS commission due (partner referral)",amt:3300,ccy:"GBP",hsAmt:2493.48,close:"2026-06-02",st:"active",kind:"Upsell",ct:"Partner Referral",noCsComm:true},
   {id:"50267855989",name:"Novatia - Active",region:"UK",cs:"DO",amt:3300,close:"2026-05-05",st:"active",kind:"Upsell",ct:"Upsell",deltaPending:true,flag:"Delta ARR pending — Ryan/Kaia to confirm previous package pricing."},
   {id:"",name:"Glass Canvas Group Limited - ADV/Upsell",region:"UK",cs:"DO",amt:3000,close:"2026-07-31",st:"missing",wonConfirmed:true,kind:"Upsell",deltaPending:true,flag:"Liz confirmed Won (David Oliver introduction). No HubSpot deal record — Mark to create. Delta ARR pending — Ryan/Kaia."},
@@ -1167,7 +1167,7 @@ var CS_UPSELLS = [
   {id:"56214795846",name:"Propel Marine Pty Ltd - Active",region:"AU/NZ",cs:"DS",amt:45645.12,delta:13313,close:"2026-04-07",st:"active",kind:"Upsell",ct:"Upsell"},
   {id:"56173724020",name:"Wilton Contracting Ltd - Active",region:"AU/NZ",cs:"DS",amt:10575,close:"2026-03-04",st:"active",kind:"Upsell",ct:"Upsell",deltaPending:true,flag:"Delta ARR pending — Ryan/Kaia to confirm previous package pricing."},
   {id:"59153725536",name:"Wilton 2 - WCL Stop World",region:"AU/NZ",cs:"DS",amt:9000,close:"2026-03-11",st:"active",kind:"Upsell",ct:"Upsell",deltaPending:true,flag:"Delta ARR pending — Ryan/Kaia to confirm previous package pricing."},
-  {id:"53715214102",name:"Event Base - Active",region:"AU/NZ",cs:"DS",amt:5400,ccy:"NZD",hsAmt:5400,close:"2026-03-31",st:"active",kind:"Upsell",ct:"Upsell",deltaPending:true,flag:"Delta ARR pending — Ryan/Kaia to confirm previous package pricing."},
+  {id:"53715214102",name:"Event Base - Active",region:"AU/NZ",cs:"DS",csNote:"Liz (27 Jul): Solley did not assist — no CS commission payable.",amt:5400,ccy:"NZD",hsAmt:5400,close:"2026-03-31",st:"active",kind:"Upsell",ct:"Upsell",noCsComm:true,flag:"Was in Liz's first snapshot; Liz's follow-up confirms Solley did not participate."},
   {id:"57619530845",name:"SCLspec Pty Ltd - Active",region:"AU/NZ",cs:"DS",amt:2945.04,ccy:"AUD",hsAmt:2945.04,close:"2026-03-16",st:"active",kind:"Upsell",ct:"Upsell",deltaPending:true,flag:"Delta ARR pending — Ryan/Kaia. Note: HS ARR affected by invoice-item discounts (per Kaia recon methodology)."},
   // ---- AU / NZ -- open pipeline ----
   {id:"61024683800",name:"RED Fire Engineers Pty Ltd - upsell",region:"AU/NZ",cs:"DS",amt:18000,close:"2026-07-31",st:"open",kind:"Upsell"},
@@ -1182,7 +1182,7 @@ var CS_UPSELLS = [
   {id:"58902451108",name:"OCTA Associates Limited (Upsell)",region:"AU/NZ",cs:"DS",amt:30000,close:"2026-05-30",st:"open",kind:"Upsell"},
   {id:"55922604894",name:"FourPL (Adv upsell)",region:"AU/NZ",cs:"DS",amt:26400,close:"2026-03-31",st:"open",kind:"Upsell"},
   {id:"58951341866",name:"Mapien - Upsell",region:"AU/NZ",cs:"DS",amt:36000,close:"2026-05-31",st:"open",kind:"Upsell",ct:"Upsell"},
-  {id:"59087018005",name:"Greater Group Pty Ltd - Upsell",region:"AU/NZ",cs:"DS",amt:36000,ccy:"AUD",hsAmt:36000,close:"2026-05-31",st:"signed",kind:"Upsell",ct:"Upsell",deltaPending:true,flag:"Progressed to Signed after Liz's 22-Jul snapshot — needs Solley confirmation before payout. Delta ARR also pending Ryan/Kaia."},
+  {id:"59087018005",name:"Greater Group Pty Ltd - Upsell",region:"AU/NZ",cs:"DS",csNote:"Liz (27 Jul): Solley did not assist — no CS commission payable.",amt:36000,ccy:"AUD",hsAmt:36000,close:"2026-05-31",st:"signed",kind:"Upsell",ct:"Upsell",noCsComm:true,flag:"HubSpot has kind=Upsell; Liz's follow-up confirms Solley did not participate."},
   {id:"57060844613",name:"PBA NZ (Advanced Upsell)",region:"AU/NZ",cs:"DS",amt:10500,close:"2026-05-08",st:"lost",kind:"Upsell",flag:"Now Closed-Lost in HubSpot (sheet had it Stalled)."},
   {id:"59225096723",name:"Compliance OHS - Upsell",region:"AU/NZ",cs:"DS",amt:4500,close:"2026-07-31",st:"open",kind:"Upsell",ct:"Upsell"}
 ];
