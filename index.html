@@ -239,13 +239,13 @@ input[type=date]{background:#fff;border:1px solid var(--border);border-radius:6p
   <div class="page-header">
     <div class="page-eyebrow">Commission Hub · FY2026</div>
     <div class="page-title">Dashboard</div>
-    <div class="page-sub">Advanced + Pro only · Any deal value · Annual upfront · Post-discount ARR · AE Commission Attribution wins on conflict · <span style="background:#fef3c7;color:#78350f;padding:1px 7px;border-radius:4px;font-size:10px;font-weight:700">Values in deal currency · Aggregates in USD</span></div>
+    <div class="page-sub">Advanced + Pro only · Any deal value · Annual upfront · Post-discount ARR · AE Commission Attribution wins on conflict · <span style="background:#fef3c7;color:#78350f;padding:1px 7px;border-radius:4px;font-size:10px;font-weight:700">Values in deal currency · Aggregates in USD (HubSpot FX)</span></div>
   </div>
   <div class="page-body">
     <div style="background:var(--surface2);border:1px solid var(--border);border-left:3px solid #0D8D5C;border-radius:8px;padding:14px 18px;margin-bottom:18px">
       <div style="font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--text-dim);margin-bottom:6px">v19 · Kaia round-2 fixes applied</div>
       <div style="font-size:12px;color:var(--text-muted);line-height:1.6">
-        <strong>Premium package excluded</strong> from commission eligibility. <strong>Currency now respected</strong>: each deal renders in its own currency with USD equivalent alongside; aggregates convert via a live FX table. <strong>Multi-year deals</strong> show <span class="badge badge-blue" style="font-size:9px">Y1 of N</span> chip — commission this cycle is Year 1 ARR only, years 2+ tracked in Banked view.
+        <strong>Premium package excluded</strong> from commission eligibility. <strong>Currency now respected</strong>: each deal renders in its own currency with USD equivalent alongside; aggregates convert via the same static FX table HubSpot uses (Company Currency = USD). <strong>Multi-year deals</strong> show <span class="badge badge-blue" style="font-size:9px">Y1 of N</span> chip — commission this cycle is Year 1 ARR only, years 2+ tracked in Banked view.
       </div>
     </div>
     <!-- Date range filter -->
@@ -739,9 +739,10 @@ var SYNCED_ONCE = false;
 function fmt(n,dec){if(dec===undefined)dec=0;if(n==null)return"—";return Number(n).toLocaleString('en-US',{minimumFractionDigits:dec,maximumFractionDigits:dec});}
 
 // FX table: multiplicative rate from local currency to USD.
-// Sourced from the daily FX Sheet as of 27 Jul 2026 (rates travel monthly ~1-2% only).
-// Once Kaia decides FX static-vs-dynamic, this becomes derived per-deal from arr_usd_locked.
-var FX_TO_USD = { USD: 1.00, GBP: 1.288, AUD: 0.658, NZD: 0.599, EUR: 1.093, CAD: 0.720 };
+// Mirrors HubSpot's static currency table (Account Defaults > Currency, updated monthly).
+// Last HubSpot update: 02/07/2026 · Next: 01/08/2026. Company Currency = USD.
+// This ensures the hub's aggregates match HubSpot's own displayed amounts exactly.
+var FX_TO_USD = { USD: 1.00, GBP: 1.327787, AUD: 0.690235, NZD: 0.567677, CAD: 0.70392 };
 function toUsd(amt, ccy){
   var c = (ccy || 'USD').toUpperCase();
   var rate = FX_TO_USD[c];
@@ -880,7 +881,7 @@ function renderDashboard(){
 
   document.getElementById('dashboard-body').innerHTML=
     '<div class="kpi-row">'+
-    '<div class="kpi-card"><div class="kpi-label">Total Commission (USD)</div><div class="kpi-value green">$'+fmt(tc)+'</div><div class="kpi-sub">'+el.length+' eligible deals · summed via FX table</div></div>'+
+    '<div class="kpi-card"><div class="kpi-label">Total Commission (USD)</div><div class="kpi-value green">$'+fmt(tc)+'</div><div class="kpi-sub">'+el.length+' eligible deals · HubSpot FX</div></div>'+
     '<div class="kpi-card"><div class="kpi-label">Outstanding (USD)</div><div class="kpi-value amber">$'+fmt(tOut)+'</div><div class="kpi-sub">Not yet paid out</div></div>'+
     '<div class="kpi-card"><div class="kpi-label">Paid Out (USD)</div><div class="kpi-value">$'+fmt(tPaid)+'</div><div class="kpi-sub">Paid to AEs</div></div>'+
     '<div class="kpi-card"><div class="kpi-label">Data Issues</div><div class="kpi-value red">'+issues+'</div><div class="kpi-sub">Must resolve before paying</div></div>'+
@@ -931,7 +932,7 @@ function renderDeals(){
 
   document.getElementById('deals-table').innerHTML=
     '<div class="table-wrap"><table><thead><tr><th>Deal</th><th>AE</th><th>Package</th><th>Source</th><th>AE Involvement</th><th>ARR</th><th>Type</th><th>Rate</th><th>Commission</th><th>Payout</th><th>Links</th><th>Close</th></tr></thead><tbody>'+rows+'</tbody></table></div>'+
-    '<div style="padding:10px 0;font-size:11px;color:var(--text-dim)">'+deals.length+' deals · '+deals.filter(function(d){return d.eligible;}).length+' eligible'+(upsellCount?' · <span style="color:#b45309;font-weight:700">'+upsellCount+' upsell</span>':'')+'  · $'+fmt(totalComm)+' USD (aggregated via FX table)</div>';
+    '<div style="padding:10px 0;font-size:11px;color:var(--text-dim)">'+deals.length+' deals · '+deals.filter(function(d){return d.eligible;}).length+' eligible'+(upsellCount?' · <span style="color:#b45309;font-weight:700">'+upsellCount+' upsell</span>':'')+'  · $'+fmt(totalComm)+' USD (via HubSpot FX)</div>';
 }
 
 // ── BY AE ─────────────────────────────────────────────────────────────────
