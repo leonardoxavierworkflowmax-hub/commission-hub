@@ -240,7 +240,7 @@ input[type=date]{background:#fff;border:1px solid var(--border);border-radius:6p
   <div class="page-header">
     <div class="page-eyebrow">Commission Hub · FY2026</div>
     <div class="page-title">Dashboard</div>
-    <div class="page-sub">Advanced + Premium + Pro · Any deal value · Annual upfront · Post-discount ARR · AE Commission Attribution wins on conflict · <span style="background:#d4f7e5;color:#0A2F28;padding:1px 7px;border-radius:4px;font-size:10px;font-weight:700">All values USD</span></div>
+    <div class="page-sub">Advanced + Pro · Any deal value · Annual upfront · Post-discount ARR · AE Commission Attribution wins on conflict · <span style="background:#d4f7e5;color:#0A2F28;padding:1px 7px;border-radius:4px;font-size:10px;font-weight:700">All values USD</span></div>
   </div>
   <div class="page-body">
     <!-- Date range filter -->
@@ -304,7 +304,7 @@ input[type=date]{background:#fff;border:1px solid var(--border);border-radius:6p
 
     <div class="alert-strip" style="margin-bottom:16px;background:#d4f7e5;border:1px solid #86efac">
       <div style="font-size:16px">💰</div>
-      <div class="alert-body" style="color:#0A2F28"><strong>Eligible only.</strong> This view mirrors CS Commission but focused on AE payouts. Ineligible deals (Premium package, missing data, wrong deal type) are excluded — see Deal Table for the full unfiltered list. Totals converted to USD using HubSpot's static FX rate.</div>
+      <div class="alert-body" style="color:#0A2F28"><strong>Eligible only.</strong> This view mirrors CS Commission but focused on AE payouts. Ineligible deals (Standard or Premium package, missing data, wrong deal type) are excluded — see Deal Table for the full unfiltered list. Totals converted to USD using HubSpot's static FX rate.</div>
     </div>
 
     <div id="sales-comm-kpis" style="display:grid;grid-template-columns:repeat(5,1fr);gap:12px;margin-bottom:24px"></div>
@@ -752,15 +752,15 @@ var STRIPE = {
   "48859545474":{found:false,note:"No Stripe invoice found."},
 };
 
-// ── RULES (v8 — Ryan confirmed 01 Apr 2026) ───────────────────────────────
-// Packages: Advanced + Premium + Pro. Standard = ineligible.
+// ── RULES (Kaia-confirmed) ────────────────────────────────────────────────
+// Eligible packages: Advanced + Pro. Standard and Premium = ineligible.
 // No ACV minimum. Billing: annual-upfront only. Commission base: post-discount ARR.
 // Attribution logic: AE Involvement wins over Source when conflict exists.
 // If AE picks up inbound/organic and has Heavy Involvement end-to-end → Outbound 10%.
 // Ryan reviews line by line each quarter.
 // Referral = always Inbound 5% regardless of involvement.
 
-var ELIGIBLE_PKG = ["Advanced Subscription","Premium Subscription","Pro Subscription"];
+var ELIGIBLE_PKG = ["Advanced Subscription","Pro Subscription"];
 var UPSELL_DEAL_IDS = ["56173724020","57619530845","53715214102","56214795846"];
 
 // commission_type from HubSpot is the source of truth — set by Ryan.
@@ -784,7 +784,8 @@ function classify(d){
 
 function eligReason(d){
   if(!d.pkg) return "No package set";
-  if(d.pkg==="Standard Subscription") return "Standard — not eligible (Advanced or Premium required)";
+  if(d.pkg==="Standard Subscription") return "Standard — not eligible";
+  if(d.pkg==="Premium Subscription") return "Premium — not eligible";
   if(!ELIGIBLE_PKG.includes(d.pkg)) return "Package not eligible: "+d.pkg;
   if(!d.arr) return "ARR missing";
   return null;
@@ -858,7 +859,7 @@ function arrCell(d, color, missingHtml){
 function commCell(d, color){
   color = color || 'var(--green)';
   if(!d.eligible || !d.arr){
-    return '<span style="color:var(--red);font-size:11px;font-style:italic" title="'+((d.eligReason)||'Ineligible')+'">'+(d.eligReason||'Ineligible')+'</span>';
+    return '<span style="color:var(--text-dim);font-family:\'DM Mono\',monospace">—</span>';
   }
   var ccy = d.ccy || 'USD';
   var primary = '<span class="mono" style="color:'+color+'">'+fmtCcy(d.comm, ccy, 2)+'</span>';
