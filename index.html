@@ -275,6 +275,33 @@ input[type=date]{background:#fff;border:1px solid var(--border);border-radius:6p
   </div>
   <div class="page-body">
 
+    <div class="filter-bar">
+      <span class="filter-label">AE</span>
+      <select id="sc-f-ae" onchange="renderSalesCommission()">
+        <option value="">All AEs</option>
+        <option value="80127257">Mark Dempsey</option>
+        <option value="80127259">Denzel Kereama</option>
+        <option value="80406430">Sina Zarei</option>
+        <option value="85659655">Edgar Calvo</option>
+        <option value="85659656">Aline Baleeiro</option>
+      </select>
+      <span class="filter-label">Period</span>
+      <select id="sc-f-quarter" onchange="renderSalesCommission()">
+        <option value="">All time</option>
+        <option value="q2-2026">Q2 2026 (Apr–Jun)</option>
+        <option value="q1-2026">Q1 2026 (Jan–Mar)</option>
+        <option value="q4-2025">Q4 2025 (Oct–Dec)</option>
+        <option value="q3-2025">Q3 2025 (Jul–Sep)</option>
+        <option value="q2-2025">Q2 2025 (Apr–Jun)</option>
+      </select>
+      <span class="filter-label">Status</span>
+      <select id="sc-f-status" onchange="renderSalesCommission()">
+        <option value="">All</option>
+        <option value="outstanding">Outstanding</option>
+        <option value="paid_out">Paid out</option>
+      </select>
+    </div>
+
     <div class="alert-strip" style="margin-bottom:16px;background:#d4f7e5;border:1px solid #86efac">
       <div style="font-size:16px">💰</div>
       <div class="alert-body" style="color:#0A2F28"><strong>Eligible only.</strong> This view mirrors CS Commission but focused on AE payouts. Ineligible deals (Premium package, missing data, wrong deal type) are excluded — see Deal Table for the full unfiltered list. Totals converted to USD using HubSpot's static FX rate.</div>
@@ -494,6 +521,31 @@ input[type=date]{background:#fff;border:1px solid var(--border);border-radius:6p
     <div class="page-sub">CS-attributed deals · 2.5% layer on top of AE 7.5% · consolidated AE &times; CS view</div>
   </div>
   <div class="page-body">
+
+    <div class="filter-bar">
+      <span class="filter-label">CS Owner</span>
+      <select id="cs-f-owner" onchange="renderCsPage()">
+        <option value="">All CS</option>
+        <option value="DS">David Solley</option>
+        <option value="DO">David Oliver</option>
+        <option value="LT">Liz Tobin</option>
+      </select>
+      <span class="filter-label">Period</span>
+      <select id="cs-f-quarter" onchange="renderCsPage()">
+        <option value="">All time</option>
+        <option value="q2-2026">Q2 2026 (Apr–Jun)</option>
+        <option value="q1-2026">Q1 2026 (Jan–Mar)</option>
+        <option value="q4-2025">Q4 2025 (Oct–Dec)</option>
+        <option value="q3-2025">Q3 2025 (Jul–Sep)</option>
+        <option value="q2-2025">Q2 2025 (Apr–Jun)</option>
+      </select>
+      <span class="filter-label">Status</span>
+      <select id="cs-f-status" onchange="renderCsPage()">
+        <option value="">All</option>
+        <option value="outstanding">Outstanding</option>
+        <option value="paid_out">Paid out</option>
+      </select>
+    </div>
 
     <div class="alert-strip" style="margin-bottom:16px;background:#f3e8ff;border:1px solid #d8b4fe">
       <div style="font-size:16px">&#128101;</div>
@@ -938,7 +990,16 @@ function renderDashboard(){
 
 // ── SALES COMMISSION (mirror of CS Commission, eligible-only) ─────────────
 function renderSalesCommission(){
+  var aeF = (document.getElementById('sc-f-ae')||{}).value || '';
+  var qF  = (document.getElementById('sc-f-quarter')||{}).value || '';
+  var stF = (document.getElementById('sc-f-status')||{}).value || '';
+
   var el = DEALS.filter(function(d){return d.eligible;});
+  if(aeF) el = el.filter(function(d){return d.owner === aeF;});
+  el = filterByQuarter(el, qF);
+  if(stF === 'outstanding') el = el.filter(function(d){return !d.paid_out;});
+  if(stF === 'paid_out')    el = el.filter(function(d){return d.paid_out;});
+
   var total = el.reduce(function(s,d){return s+(d.comm_usd||0);},0);
   var out = el.filter(function(d){return !d.paid_out;}).reduce(function(s,d){return s+(d.comm_usd||0);},0);
   var paid = el.filter(function(d){return d.paid_out;}).reduce(function(s,d){return s+(d.comm_usd||0);},0);
@@ -1417,9 +1478,19 @@ function aeOwnerChipFor(d){
 
 // ---- CS COMMISSION PAGE -----------------------------------------------------
 function renderCsPage(){
-  var won  = CS_UPSELLS.filter(function(d){return d.st==='active'||d.st==='signed'||d.wonConfirmed;});
-  var pipe = CS_UPSELLS.filter(function(d){return d.st==='open';});
-  var gone = CS_UPSELLS.filter(function(d){return (d.st==='lost'||d.st==='missing')&&!d.wonConfirmed;});
+  var ownerF = (document.getElementById('cs-f-owner')||{}).value || '';
+  var qF     = (document.getElementById('cs-f-quarter')||{}).value || '';
+  var stF    = (document.getElementById('cs-f-status')||{}).value || '';
+
+  var pool = CS_UPSELLS.slice();
+  if(ownerF) pool = pool.filter(function(d){return d.cs === ownerF;});
+  if(qF)     pool = pool.filter(function(d){return getQuarter(d.close) === qF;});
+  if(stF === 'outstanding') pool = pool.filter(function(d){return !csIsPaid(d);});
+  if(stF === 'paid_out')    pool = pool.filter(function(d){return csIsPaid(d);});
+
+  var won  = pool.filter(function(d){return d.st==='active'||d.st==='signed'||d.wonConfirmed;});
+  var pipe = pool.filter(function(d){return d.st==='open';});
+  var gone = pool.filter(function(d){return (d.st==='lost'||d.st==='missing')&&!d.wonConfirmed;});
 
   var confirmed = won.filter(csIsConfirmedKind);
   var tbc       = won.filter(function(d){return !csIsConfirmedKind(d);});
