@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>WorkflowMAX · Commission Hub FY2026</title>
-<!-- v19 · 2026-07-27 · Kaia round-2 fixes: Premium excluded from commission eligibility (was included in error), currency display fixed (values now render in each deal's local currency, aggregation via USD pivot with FX table), multi-year deals show Year 1 of N indicator explicitly (arr was already year-1 ARR — this makes it visible). Also drops AlphaChase (Liz confirmed no upsell work). -->
+<!-- v19 · 2026-07-27 · CURRENCY FIX (Kaia flag): AE commission page now renders each deal in its native currency (£ for GBP deals, A$ for AUD, NZ$ for NZD, etc.) with the USD equivalent underneath. Aggregated totals converted to USD using static HubSpot rate (last update 02/07/2026). Also: added product_package + subscription_length__sync_ on all 7 confirmed upsells (Wilton flagged Premium, Wilton 2 + Propel Marine flagged P6M), Set CS Owner workflow now live via Company Owner branch, AlphaChase confirmed dropped. Awaiting Kaia FX static/dynamic decision + delta ARR from Ryan/Kaia. -->
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
 /* ── v5 PALETTE on v8 STRUCTURE ───────────────────────────────── */
@@ -205,7 +205,6 @@ input[type=date]{background:#fff;border:1px solid var(--border);border-radius:6p
     <div class="nav-item" onclick="showPage('deals',this)"><span class="nav-icon">≡</span>Deal Table</div>
     <div class="nav-item" onclick="showPage('lost',this)"><span class="nav-icon">⊘</span>Closed / Lost <span class="pending-tag" id="lost-tag" style="background:rgba(185,28,28,0.15);color:#fca5a5">·</span></div>
     <div class="nav-item" onclick="showPage('ae',this)"><span class="nav-icon">◎</span>By AE</div>
-    <div class="nav-item" onclick="showPage('sales-payouts',this)" style="padding-left:32px"><span class="nav-icon">✓</span>Payouts <span class="pending-tag" style="background:rgba(99,219,148,0.15);color:var(--green)">Sign-off</span></div>
     <div class="nav-section">Multi-year</div>
     <div class="nav-item" onclick="showPage('banked',this)"><span class="nav-icon">⬡</span>Banked Commission</div>
     <div class="nav-section">Stripe</div>
@@ -213,7 +212,6 @@ input[type=date]{background:#fff;border:1px solid var(--border);border-radius:6p
     <div class="nav-item" onclick="showPage('comparison',this)"><span class="nav-icon">⇌</span>HS vs Stripe</div>
     <div class="nav-section">Customer Success</div>
     <div class="nav-item" onclick="showPage('cs',this)"><span class="nav-icon">♦</span>CS Commission <span class="pending-tag">New</span></div>
-    <div class="nav-item" onclick="showPage('cs-payouts',this)" style="padding-left:32px"><span class="nav-icon">✓</span>Payouts <span class="pending-tag" style="background:rgba(99,219,148,0.15);color:var(--green)">Sign-off</span></div>
     <div class="nav-item" onclick="showPage('upsells',this)"><span class="nav-icon">↑</span>Upsell Deals</div>
   </div>
   <div class="sidebar-footer">
@@ -241,15 +239,9 @@ input[type=date]{background:#fff;border:1px solid var(--border);border-radius:6p
   <div class="page-header">
     <div class="page-eyebrow">Commission Hub · FY2026</div>
     <div class="page-title">Dashboard</div>
-    <div class="page-sub">Advanced + Pro only · Any deal value · Annual upfront · Post-discount ARR · AE Commission Attribution wins on conflict · <span style="background:#fef3c7;color:#78350f;padding:1px 7px;border-radius:4px;font-size:10px;font-weight:700">Values in deal currency · Aggregates in USD (live HubSpot FX)</span></div>
+    <div class="page-sub">Advanced + Premium + Pro · Any deal value · Annual upfront · Post-discount ARR · AE Commission Attribution wins on conflict · <span style="background:#d4f7e5;color:#0A2F28;padding:1px 7px;border-radius:4px;font-size:10px;font-weight:700">All values USD</span></div>
   </div>
   <div class="page-body">
-    <div style="background:var(--surface2);border:1px solid var(--border);border-left:3px solid #0D8D5C;border-radius:8px;padding:14px 18px;margin-bottom:18px">
-      <div style="font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--text-dim);margin-bottom:6px">v19 · Kaia round-2 fixes applied</div>
-      <div style="font-size:12px;color:var(--text-muted);line-height:1.6">
-        <strong>Premium package excluded</strong> from commission eligibility. <strong>Currency now respected</strong>: each deal renders in its own currency with USD equivalent alongside; aggregates use live exchange rates fetched from HubSpot on page load. <strong>Multi-year deals</strong> show <span class="badge badge-blue" style="font-size:9px">Y1 of N</span> chip — commission this cycle is Year 1 ARR only, years 2+ tracked in Banked view.
-      </div>
-    </div>
     <!-- Date range filter -->
     <div class="filter-bar" style="margin-bottom:24px;background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:14px 18px;">
       <span class="filter-label">PERIOD</span>
@@ -517,8 +509,8 @@ input[type=date]{background:#fff;border:1px solid var(--border);border-radius:6p
         </div>
         <div style="background:var(--surface2);border:1px solid var(--border);border-left:3px solid #b45309;border-radius:8px;padding:14px">
           <div style="font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--text-dim);margin-bottom:6px">Where we are</div>
-          <div style="font-size:13px;font-weight:700;margin-bottom:4px">7 upsells locked · all delta ARRs waiting on Ryan and Kaia</div>
-          <div style="font-size:11px;color:var(--text-muted)">Attribution now lives in HubSpot on all 7 records. Liz deferred every delta (including AIM) to Ryan/Kaia, so nothing pays out yet. Event Base and Greater Group flagged as non-payable following Liz's confirmation that Solley did not assist.</div>
+          <div style="font-size:13px;font-weight:700;margin-bottom:4px">7 upsells locked · Set CS Owner workflow live · waiting on Kaia + Ryan</div>
+          <div style="font-size:11px;color:var(--text-muted)">Historical attribution now lives in HubSpot on all 7 records. The "Deal | Set CS Owner from Company" workflow is live, branching on Company Owner (per Liz's confirmation on 27 Jul). Three pending calls from Kaia: (1) delta ARR values with Ryan, (2) FX static vs dynamic lock, (3) Wilton package discrepancy (see below) and Propel/Wilton 2 P6M term basis.</div>
         </div>
       </div>
       <div style="font-size:12px;color:var(--text-muted);line-height:1.7">
@@ -554,64 +546,6 @@ input[type=date]{background:#fff;border:1px solid var(--border);border-radius:6p
       </div>
     </div>
 
-  </div>
-</div>
-
-<!-- SALES PAYOUTS — for AE commission sign-off. Values per AE region currency. -->
-<div class="page" id="page-sales-payouts">
-  <div class="page-header">
-    <div class="page-eyebrow">Sales · Sign-off</div>
-    <div class="page-title">Payouts</div>
-    <div class="page-sub">Commission-eligible AE deals · Advanced + Pro only · Year 1 ARR basis · Amounts converted to each AE's payout currency using HubSpot FX</div>
-  </div>
-  <div class="page-body">
-    <div class="filter-bar" style="margin-bottom:20px;background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:14px 18px;">
-      <span class="filter-label">QUARTER</span>
-      <select id="sp-quarter" onchange="renderSalesPayouts()">
-        <option value="q3-2026" selected>Q3 2026 (Jul–Sep)</option>
-        <option value="q2-2026">Q2 2026 (Apr–Jun)</option>
-        <option value="q1-2026">Q1 2026 (Jan–Mar)</option>
-        <option value="q4-2025">Q4 2025 (Oct–Dec)</option>
-        <option value="all">All time</option>
-      </select>
-      <span class="filter-label" style="margin-left:8px">STATUS</span>
-      <select id="sp-status" onchange="renderSalesPayouts()">
-        <option value="all">All</option>
-        <option value="outstanding">Outstanding only</option>
-        <option value="paid">Paid only</option>
-      </select>
-      <span style="margin-left:auto;font-family:'DM Mono',monospace;font-size:10px;color:var(--text-dim)">Unlock with PIN to toggle paid</span>
-    </div>
-    <div id="sales-payouts-body"></div>
-  </div>
-</div>
-
-<!-- CS PAYOUTS — for CS commission sign-off. Values per CS region currency. -->
-<div class="page" id="page-cs-payouts">
-  <div class="page-header">
-    <div class="page-eyebrow">Customer Success · Sign-off</div>
-    <div class="page-title">Payouts</div>
-    <div class="page-sub">Confirmed CS upsells only · 2.5% on delta ARR · Amounts converted to each CS owner's payout currency using HubSpot FX</div>
-  </div>
-  <div class="page-body">
-    <div class="filter-bar" style="margin-bottom:20px;background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:14px 18px;">
-      <span class="filter-label">QUARTER</span>
-      <select id="cp-quarter" onchange="renderCsPayouts()">
-        <option value="q3-2026" selected>Q3 2026 (Jul–Sep)</option>
-        <option value="q2-2026">Q2 2026 (Apr–Jun)</option>
-        <option value="q1-2026">Q1 2026 (Jan–Mar)</option>
-        <option value="q4-2025">Q4 2025 (Oct–Dec)</option>
-        <option value="all">All time</option>
-      </select>
-      <span class="filter-label" style="margin-left:8px">STATUS</span>
-      <select id="cp-status" onchange="renderCsPayouts()">
-        <option value="all">All</option>
-        <option value="outstanding">Outstanding only</option>
-        <option value="paid">Paid only</option>
-      </select>
-      <span style="margin-left:auto;font-family:'DM Mono',monospace;font-size:10px;color:var(--text-dim)">Unlock with PIN to toggle paid</span>
-    </div>
-    <div id="cs-payouts-body"></div>
   </div>
 </div>
 
@@ -736,15 +670,14 @@ var STRIPE = {
 };
 
 // ── RULES (v8 — Ryan confirmed 01 Apr 2026) ───────────────────────────────
-// Packages eligible for commission: Advanced + Pro only (Kaia confirmed 27 Jul 2026: Premium excluded).
-// Standard = ineligible. Missing package = ineligible.
-// No ACV minimum. Billing: annual-upfront only. Commission base: post-discount ARR (Year 1 only).
+// Packages: Advanced + Premium + Pro. Standard = ineligible.
+// No ACV minimum. Billing: annual-upfront only. Commission base: post-discount ARR.
 // Attribution logic: AE Involvement wins over Source when conflict exists.
 // If AE picks up inbound/organic and has Heavy Involvement end-to-end → Outbound 10%.
 // Ryan reviews line by line each quarter.
 // Referral = always Inbound 5% regardless of involvement.
 
-var ELIGIBLE_PKG = ["Advanced Subscription","Pro Subscription"];
+var ELIGIBLE_PKG = ["Advanced Subscription","Premium Subscription","Pro Subscription"];
 var UPSELL_DEAL_IDS = ["56173724020","57619530845","53715214102","56214795846"];
 
 // commission_type from HubSpot is the source of truth — set by Ryan.
@@ -767,9 +700,8 @@ function classify(d){
 }
 
 function eligReason(d){
-  if(!d.pkg) return "No package set — commission ineligible";
-  if(d.pkg==="Standard Subscription") return "Standard package — commission ineligible (Advanced or Pro required)";
-  if(d.pkg.includes("Premium")) return "Premium package — commission ineligible (Kaia rule, 27 Jul 2026)";
+  if(!d.pkg) return "No package set";
+  if(d.pkg==="Standard Subscription") return "Standard — not eligible (Advanced or Premium required)";
   if(!ELIGIBLE_PKG.includes(d.pkg)) return "Package not eligible: "+d.pkg;
   if(!d.arr) return "ARR missing";
   return null;
@@ -783,9 +715,24 @@ function getQuarter(close){
   return "q4-"+y;
 }
 
+// FX rates snapshot from HubSpot (static monthly, last update 02/07/2026).
+// Rate reads as "1 unit of foreign currency = X USD". Awaiting Kaia decision
+// on whether to switch to dynamic daily rates from the Google Sheet.
+var FX_STATIC = {USD:1, GBP:1.327787, AUD:0.690235, NZD:0.567677, CAD:0.70392, EUR:1.15};
+var CCY_SYMBOL = {USD:'$', GBP:'£', AUD:'A$', NZD:'NZ$', CAD:'C$', EUR:'€'};
+
 var DEALS = RAW.map(function(d){
   var cl=classify(d), er=eligReason(d), eligible=!er;
-  return Object.assign({},d,cl,{eligible:eligible,eligReason:er,comm:eligible?(d.arr||0)*cl.rate:0,quarter:getQuarter(d.close)});
+  var comm = eligible ? (d.arr||0)*cl.rate : 0;
+  var rate = FX_STATIC[d.ccy || 'USD'] || 1;
+  return Object.assign({},d,cl,{
+    eligible: eligible,
+    eligReason: er,
+    comm: comm,
+    arr_usd: (d.arr != null) ? (d.arr * rate) : null,
+    comm_usd: comm * rate,
+    quarter: getQuarter(d.close)
+  });
 });
 applyPaidPersistence();
 
@@ -797,104 +744,47 @@ var SYNCED_ONCE = false;
 
 // ── HELPERS ───────────────────────────────────────────────────────────────
 function fmt(n,dec){if(dec===undefined)dec=0;if(n==null)return"—";return Number(n).toLocaleString('en-US',{minimumFractionDigits:dec,maximumFractionDigits:dec});}
-
-// FX table: multiplicative rate from local currency to USD.
-// Populated dynamically on page load from commission-hub-fx-rates webhook,
-// which mirrors HubSpot's Settings > Currencies exchange rates.
-// Hardcoded values here act as a fallback if the webhook is unavailable
-// (last snapshot taken 27 Jul 2026 from HubSpot).
-var FX_TO_USD = { USD: 1.00, GBP: 1.334192, AUD: 0.6997, NZD: 0.580047, CAD: 0.710235 };
-var FX_SOURCE = 'fallback (hardcoded 27 Jul 2026)';
-var FX_EFFECTIVE_DATES = {};
-
-// Fetch live FX from HubSpot via the n8n mirror webhook.
-// Fire-and-forget on load; if it fails, the hub keeps the fallback rates.
-(function fetchLiveFx(){
-  var url = 'https://workflowmax.app.n8n.cloud/webhook/commission-hub-fx-rates';
-  fetch(url).then(function(r){ return r.ok ? r.json() : null; }).then(function(data){
-    if(!data || !data.fx_to_usd) return;
-    FX_TO_USD = data.fx_to_usd;
-    FX_SOURCE = data.source || 'HubSpot Settings API';
-    FX_EFFECTIVE_DATES = data.effective_dates || {};
-    // Re-render whichever page is currently active so the numbers refresh
-    var active = document.querySelector('.page.active');
-    if(!active) return;
-    var id = active.id.replace(/^page-/, '');
-    if(id === 'dashboard') renderDashboard();
-    else if(id === 'deals') renderDeals();
-    else if(id === 'ae') renderAE();
-    else if(id === 'sales-payouts') renderSalesPayouts();
-    else if(id === 'cs') renderCsPage();
-    else if(id === 'cs-payouts') renderCsPayouts();
-    else if(id === 'comparison') renderComparison();
-    else if(id === 'upsells') renderUpsells();
-  }).catch(function(){ /* silent: keep fallback rates */ });
-})();
-// IMPORTANT: `arr` and `comm` on RAW deals are ALWAYS stored in USD (Company
-// Currency of HubSpot). The `ccy` field is metadata about the deal's original
-// currency, NOT the currency of the value. Verified 27 Jul 2026 via commission
-// math against the HubSpot render.
-//
-// CS_UPSELLS entries are different: `amt`/`delta` are in `ccy` (from Liz's
-// sheet), while `hsAmt` is the USD equivalent from HubSpot's hs_arr.
-
-// Convert USD → target currency (returns numeric).
-function usdTo(usdAmt, targetCcy){
-  var t = (targetCcy || 'USD').toUpperCase();
-  if(t === 'USD') return usdAmt || 0;
-  var rate = FX_TO_USD[t];
-  return rate ? (usdAmt || 0) / rate : (usdAmt || 0);
-}
-
-// Convert an amount that is already IN ccy to USD (legacy helper, still used
-// by CS_UPSELLS aggregation because those live in their own ccy).
-function toUsd(amt, ccy){
-  var c = (ccy || 'USD').toUpperCase();
-  if(c === 'USD') return amt || 0;
-  var rate = FX_TO_USD[c];
-  return rate ? (amt || 0) * rate : (amt || 0);
-}
-
-// Currency symbols. Fallback to code prefix (e.g. "AUD $") for currencies without a unique symbol.
-var CCY_SYM = { USD: '$', GBP: '£', EUR: '€', AUD: 'A$', NZD: 'NZ$', CAD: 'C$' };
-function fmtC(amt, ccy, dec){
-  if(amt == null) return '—';
-  var c = (ccy || 'USD').toUpperCase();
-  var sym = CCY_SYM[c] || (c + ' ');
-  return sym + fmt(amt, dec);
-}
-
-// Render a USD-stored amount as the target currency with a small USD sub-line.
-// Used for RAW deal fields (arr, comm) which are always USD internally.
-// targetCcy is the currency to convert TO for the primary display.
-function fmtUsdIn(usdAmt, targetCcy, dec){
-  if(usdAmt == null) return '—';
-  var t = (targetCcy || 'USD').toUpperCase();
-  if(t === 'USD') return '<span class="mono">$'+fmt(usdAmt, dec)+'</span>';
-  var localAmt = usdTo(usdAmt, t);
-  var sym = CCY_SYM[t] || (t + ' ');
-  return '<span class="mono">'+sym+fmt(localAmt, dec)+'</span>'+
-         '<div style="font-size:9px;color:var(--text-dim);margin-top:1px">$'+fmt(usdAmt, dec)+' USD</div>';
-}
-
-// Render an amount that is already in `ccy` with a USD sub-line.
-// Used for CS_UPSELLS fields (amt, delta) which are in Liz's sheet's ccy.
-function fmtInCcy(amt, ccy, dec){
-  if(amt == null) return '—';
-  var c = (ccy || 'USD').toUpperCase();
-  var sym = CCY_SYM[c] || (c + ' ');
-  var main = '<span class="mono">'+sym+fmt(amt, dec)+'</span>';
-  if(c === 'USD') return main;
-  var usdAmt = toUsd(amt, c);
-  return main + '<div style="font-size:9px;color:var(--text-dim);margin-top:1px">$'+fmt(usdAmt, dec)+' USD</div>';
-}
-
-// Legacy fmtCUsd kept as alias to fmtInCcy (backwards compat within this file).
-function fmtCUsd(amt, ccy, dec){ return fmtInCcy(amt, ccy, dec); }
-
 function fmtD(s){if(!s)return"—";var d=new Date(s);return d.toLocaleDateString('en-AU',{day:'numeric',month:'short',year:'2-digit'});}
+
+function fmtCcy(n, ccy, dec){
+  if(n == null) return '—';
+  ccy = ccy || 'USD';
+  var sym = CCY_SYMBOL[ccy] || (ccy + ' ');
+  return sym + fmt(n, dec);
+}
+
+function toUsd(n, ccy){
+  if(n == null) return null;
+  var rate = FX_STATIC[ccy || 'USD'] || 1;
+  return n * rate;
+}
+
+// Render an ARR/amount in its native deal currency, with a USD equivalent
+// underneath when the deal is not already in USD. Fixes Kaia's flag that
+// non-USD deals (Justo GBP, AIM GBP, etc.) were being mislabelled as USD.
+function arrCell(d, color, missingHtml){
+  color = color || 'var(--text-muted)';
+  missingHtml = missingHtml || '<span style="color:var(--red);font-family:\'DM Mono\',monospace;font-size:11px">Missing</span>';
+  if(d.arr == null) return missingHtml;
+  var ccy = d.ccy || 'USD';
+  var primary = '<span class="mono" style="color:'+color+'">'+fmtCcy(d.arr, ccy)+'</span>';
+  if(ccy === 'USD') return primary;
+  return primary + '<div style="font-size:9px;color:var(--text-dim)">$'+fmt(toUsd(d.arr, ccy),0)+' USD</div>';
+}
+
+function commCell(d, color){
+  color = color || 'var(--green)';
+  if(!d.eligible || !d.arr){
+    return '<span style="color:var(--red);font-size:11px;font-style:italic" title="'+((d.eligReason)||'Ineligible')+'">'+(d.eligReason||'Ineligible')+'</span>';
+  }
+  var ccy = d.ccy || 'USD';
+  var primary = '<span class="mono" style="color:'+color+'">'+fmtCcy(d.comm, ccy, 2)+'</span>';
+  if(ccy === 'USD') return primary;
+  return primary + '<div style="font-size:9px;color:var(--text-dim)">$'+fmt(toUsd(d.comm, ccy),2)+' USD</div>';
+}
+
 function aeChip(id){var a=AE[id];if(!a)return id;return '<div style="display:inline-flex;align-items:center;gap:5px"><div style="width:20px;height:20px;border-radius:50%;background:'+a.bg+';color:'+a.color+';display:inline-flex;align-items:center;justify-content:center;font-family:\'Syne\',sans-serif;font-size:9px;font-weight:700">'+a.initials+'</div><span style="font-size:11.5px">'+a.name.split(" ")[0]+'</span></div>';}
-function pkgBadge(p){if(!p)return '<span class="badge badge-red">Missing</span>';if(p.includes("Advanced"))return '<span class="badge badge-green">Advanced</span>';if(p.includes("Premium"))return '<span class="badge badge-red" title="Premium package excluded from commission per Kaia rule (27 Jul 2026)">Premium · Ineligible</span>';if(p.includes("Pro"))return '<span class="badge badge-teal">Pro</span>';return '<span class="badge badge-dim">Standard</span>';}
+function pkgBadge(p){if(!p)return '<span class="badge badge-red">Missing</span>';if(p.includes("Advanced"))return '<span class="badge badge-green">Advanced</span>';if(p.includes("Premium"))return '<span class="badge badge-amber">Premium</span>';if(p.includes("Pro"))return '<span class="badge badge-teal">Pro</span>';return '<span class="badge badge-dim">Standard</span>';}
 function typeBadge(d){if(!d.eligible)return '<span class="badge badge-dim">Ineligible</span>';if(d.type==="Outbound")return '<span class="badge badge-purple">Outbound</span>';if(d.type==="Inbound")return '<span class="badge badge-blue">Inbound</span>';return '<span class="badge badge-amber">Upsell</span>';}
 function rateTxt(d){if(!d.eligible)return '<span style="color:var(--text-dim);font-family:\'DM Mono\',monospace">—</span>';var c=d.rate===.10?'green':d.rate===.075?'amber':'blue';return '<span style="color:var(--'+c+');font-family:\'DM Mono\',monospace;font-size:13px">'+(d.rate*100)+'%</span>';}
 function payoutBadge(d){
@@ -958,22 +848,21 @@ function renderDashboard(){
   if(pf==="paid") deals=deals.filter(function(d){return d.eligible&&d.paid_out;});
 
   var el=deals.filter(function(d){return d.eligible;});
-  // Aggregates: convert each deal's commission to USD before summing (deals live in local currency).
-  var tc=el.reduce(function(s,d){return s+(d.comm || 0);},0);
-  var ta=el.reduce(function(s,d){return s+(d.arr || 0);},0);
-  var tOut=el.filter(function(d){return !d.paid_out;}).reduce(function(s,d){return s+(d.comm || 0);},0);
-  var tPaid=el.filter(function(d){return d.paid_out;}).reduce(function(s,d){return s+(d.comm || 0);},0);
+  var tc=el.reduce(function(s,d){return s+d.comm_usd;},0);
+  var ta=el.reduce(function(s,d){return s+(d.arr_usd||0);},0);
+  var tOut=el.filter(function(d){return !d.paid_out;}).reduce(function(s,d){return s+d.comm_usd;},0);
+  var tPaid=el.filter(function(d){return d.paid_out;}).reduce(function(s,d){return s+d.comm_usd;},0);
   var issues=DEALS.filter(function(d){return d.data_issue;}).length;
 
   var aeTots={};
   OFFICIAL_AES.forEach(function(id){aeTots[id]={comm:0,arr:0,deals:0,outstanding:0,paid:0};});
   el.forEach(function(d){
     if(!aeTots[d.owner])return;
-    aeTots[d.owner].comm+=(d.comm || 0);
-    aeTots[d.owner].arr+=(d.arr || 0);
+    aeTots[d.owner].comm+=d.comm_usd;
+    aeTots[d.owner].arr+=(d.arr_usd||0);
     aeTots[d.owner].deals++;
-    if(d.paid_out) aeTots[d.owner].paid+=(d.comm || 0);
-    else aeTots[d.owner].outstanding+=(d.comm || 0);
+    if(d.paid_out) aeTots[d.owner].paid+=d.comm_usd;
+    else aeTots[d.owner].outstanding+=d.comm_usd;
   });
 
   var aeCards=OFFICIAL_AES.map(function(id){
@@ -990,29 +879,27 @@ function renderDashboard(){
   }).join('');
 
   var elRows=el.map(function(d){
-    var multiYear = d.contract_years && d.contract_years > 1;
-    var yearChip = multiYear ? '<span class="badge badge-blue" style="font-size:9px;margin-left:6px" title="Multi-year contract. Commission this cycle covers Year 1 ARR only. Years 2+ tracked in Banked view.">Y1 of '+d.contract_years+'</span>' : '';
     return '<tr'+(isUpsellDeal(d.id)?' style="background:rgba(245,158,11,0.03)"':'')+'>'+
-      '<td><a class="deal-link" href="https://app.hubspot.com/contacts/24214994/record/0-3/'+d.id+'" target="_blank"><div class="deal-name">'+d.name+upsellBadge(d.id)+yearChip+'</div></a>'+
+      '<td><a class="deal-link" href="https://app.hubspot.com/contacts/24214994/record/0-3/'+d.id+'" target="_blank"><div class="deal-name">'+d.name+upsellBadge(d.id)+'</div></a>'+
       (d.data_issue?'<div style="font-size:10px;color:var(--amber);margin-top:2px">⚠ '+d.data_issue+'</div>':'')+'</td>'+
       '<td>'+aeChip(d.owner)+'</td>'+
-      '<td class="mono" style="color:var(--text-muted)">'+fmtUsdIn(d.arr, d.ccy)+'</td>'+
+      '<td>'+arrCell(d)+'</td>'+
       '<td>'+typeBadge(d)+'</td>'+
       '<td>'+rateTxt(d)+'</td>'+
-      '<td class="mono" style="color:var(--green)">'+fmtUsdIn(d.comm, d.ccy)+'</td>'+
+      '<td>'+commCell(d)+'</td>'+
       '<td>'+payoutBadge(d)+'</td>'+
       '</tr>';
   }).join('');
 
   document.getElementById('dashboard-body').innerHTML=
     '<div class="kpi-row">'+
-    '<div class="kpi-card"><div class="kpi-label">Total Commission (USD)</div><div class="kpi-value green">$'+fmt(tc)+'</div><div class="kpi-sub">'+el.length+' eligible deals · HubSpot FX</div></div>'+
-    '<div class="kpi-card"><div class="kpi-label">Outstanding (USD)</div><div class="kpi-value amber">$'+fmt(tOut)+'</div><div class="kpi-sub">Not yet paid out</div></div>'+
-    '<div class="kpi-card"><div class="kpi-label">Paid Out (USD)</div><div class="kpi-value">$'+fmt(tPaid)+'</div><div class="kpi-sub">Paid to AEs</div></div>'+
+    '<div class="kpi-card"><div class="kpi-label">Total Commission</div><div class="kpi-value green">$'+fmt(tc)+'</div><div class="kpi-sub">'+el.length+' eligible deals · USD, static FX</div></div>'+
+    '<div class="kpi-card"><div class="kpi-label">Outstanding</div><div class="kpi-value amber">$'+fmt(tOut)+'</div><div class="kpi-sub">Not yet paid out · USD</div></div>'+
+    '<div class="kpi-card"><div class="kpi-label">Paid Out</div><div class="kpi-value">$'+fmt(tPaid)+'</div><div class="kpi-sub">Paid to AEs · USD</div></div>'+
     '<div class="kpi-card"><div class="kpi-label">Data Issues</div><div class="kpi-value red">'+issues+'</div><div class="kpi-sub">Must resolve before paying</div></div>'+
     '</div>'+
     ''+
-    '<div class="section-title">Commission by AE (USD equivalents)</div>'+
+    '<div class="section-title">Commission by AE</div>'+
     '<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-bottom:28px">'+aeCards+'</div>'+
     '<div class="section-title">Eligible Deals</div>'+
     '<div class="table-wrap"><table><thead><tr><th>Deal</th><th>AE</th><th>ARR</th><th>Type</th><th>Rate</th><th>Commission</th><th>Payout</th></tr></thead><tbody>'+elRows+'</tbody></table></div>';
@@ -1042,22 +929,22 @@ function renderDeals(){
       '<td>'+pkgBadge(d.pkg)+'</td>'+
       '<td style="font-size:11.5px;color:var(--text-muted)">'+(d.src||'<span style="color:var(--red);font-size:11px">Missing</span>')+'</td>'+
       '<td>'+(d.inv?invBadge(d.inv):'<span style="color:var(--red);font-size:11px">Missing</span>')+'</td>'+
-      '<td>'+(d.arr?'<span class="mono" style="color:var(--text-muted)">'+fmtUsdIn(d.arr, d.ccy)+'</span>':'<span style="color:var(--red);font-family:\'DM Mono\',monospace;font-size:11px">Missing</span>')+'</td>'+
+      '<td>'+arrCell(d)+'</td>'+
       '<td>'+typeBadge(d)+'</td>'+
       '<td>'+rateTxt(d)+'</td>'+
-      '<td>'+(d.eligible&&d.arr?'<span class="mono" style="color:var(--green)">'+fmtUsdIn(d.comm, d.ccy)+'</span>':'<span style="color:var(--red);font-size:11px;font-style:italic" title="'+((d.eligReason)||'Ineligible')+'">'+(d.eligReason||'Ineligible')+'</span>')+'</td>'+
+      '<td>'+commCell(d)+'</td>'+
       '<td>'+payoutBadge(d)+'</td>'+
       '<td style="white-space:nowrap">'+hubspotLinkCell(d)+' '+stripeLinkCell(d)+'</td>'+
       '<td style="font-size:11px;color:var(--text-dim)">'+fmtD(d.close)+'</td>'+
       '</tr>';
   }).join('');
 
-  var totalComm = deals.reduce(function(s,d){return s+(d.comm || 0);},0);
+  var totalComm = deals.reduce(function(s,d){return s+d.comm_usd;},0);
   var upsellCount = deals.filter(function(d){return isUpsellDeal(d.id);}).length;
 
   document.getElementById('deals-table').innerHTML=
     '<div class="table-wrap"><table><thead><tr><th>Deal</th><th>AE</th><th>Package</th><th>Source</th><th>AE Involvement</th><th>ARR</th><th>Type</th><th>Rate</th><th>Commission</th><th>Payout</th><th>Links</th><th>Close</th></tr></thead><tbody>'+rows+'</tbody></table></div>'+
-    '<div style="padding:10px 0;font-size:11px;color:var(--text-dim)">'+deals.length+' deals · '+deals.filter(function(d){return d.eligible;}).length+' eligible'+(upsellCount?' · <span style="color:#b45309;font-weight:700">'+upsellCount+' upsell</span>':'')+'  · $'+fmt(totalComm)+' USD (via HubSpot FX)</div>';
+    '<div style="padding:10px 0;font-size:11px;color:var(--text-dim)">'+deals.length+' deals · '+deals.filter(function(d){return d.eligible;}).length+' eligible'+(upsellCount?' · <span style="color:#b45309;font-weight:700">'+upsellCount+' upsell</span>':'')+'  · $'+fmt(totalComm)+'</div>';
 }
 
 // ── BY AE ─────────────────────────────────────────────────────────────────
@@ -1066,8 +953,8 @@ function renderAE(){
     var ae=AE[id];
     var my=DEALS.filter(function(d){return d.owner===id;});
     var el=my.filter(function(d){return d.eligible;});
-    var tc=el.reduce(function(s,d){return s+(d.comm || 0);},0);
-    var outstanding=el.filter(function(d){return !d.paid_out;}).reduce(function(s,d){return s+(d.comm || 0);},0);
+    var tc=el.reduce(function(s,d){return s+d.comm_usd;},0);
+    var outstanding=el.filter(function(d){return !d.paid_out;}).reduce(function(s,d){return s+d.comm_usd;},0);
     var iss=my.filter(function(d){return d.data_issue||!d.arr||!d.src||!d.inv||!d.pkg;});
     var rows=my.map(function(d){
       return '<tr style="'+(d.eligible?'':'opacity:.4')+(isUpsellDeal(d.id)?';background:rgba(245,158,11,0.03)':'')+'">'+
@@ -1076,10 +963,10 @@ function renderAE(){
         '<td>'+pkgBadge(d.pkg)+'</td>'+
         '<td style="font-size:11.5px;color:var(--text-muted)">'+(d.src||'<span style="color:var(--red);font-size:11px">Missing</span>')+'</td>'+
         '<td>'+(d.inv?invBadge(d.inv):'<span style="color:var(--red);font-size:11px">Missing</span>')+'</td>'+
-        '<td>'+(d.arr?'<span class="mono" style="color:var(--text-muted)">'+fmtUsdIn(d.arr, d.ccy)+'</span>':'<span style="color:var(--red);font-family:\'DM Mono\',monospace;font-size:11px">Missing</span>')+'</td>'+
+        '<td>'+arrCell(d)+'</td>'+
         '<td>'+typeBadge(d)+'</td>'+
         '<td>'+rateTxt(d)+'</td>'+
-        '<td>'+(d.eligible&&d.arr?'<span class="mono" style="color:var(--green)">'+fmtUsdIn(d.comm, d.ccy)+'</span>':'<span style="color:var(--red);font-size:11px;font-style:italic" title="'+(d.eligReason||'Ineligible')+'">'+(d.eligReason||'Ineligible')+'</span>')+'</td>'+
+        '<td>'+commCell(d)+'</td>'+
         '<td>'+payoutBadge(d)+'</td>'+
         '<td style="white-space:nowrap">'+hubspotLinkCell(d)+' '+stripeLinkCell(d)+'</td>'+
         '</tr>';
@@ -1180,7 +1067,7 @@ function renderStripe(){
       '<div class="stripe-card-header"><div><div class="stripe-card-company">'+deal.name+upsellBadge(deal.id)+'</div><div style="font-size:11px;color:var(--text-dim);margin-top:2px">'+ae.name+' · Closed '+fmtD(deal.close)+'</div></div>'+stripeBadge+'</div>'+
       '<div class="stripe-card-body">'+
       '<div class="stripe-meta">'+
-      '<div><div class="stripe-stat-label">hs_arr</div><div class="stripe-stat-val" style="color:var(--green)">'+fmtUsdIn(deal.arr, deal.ccy)+'</div></div>'+
+      '<div><div class="stripe-stat-label">hs_arr</div><div class="stripe-stat-val" style="color:var(--green)">$'+fmt(deal.arr)+'</div></div>'+
       '<div><div class="stripe-stat-label">Stripe ex-tax</div><div class="stripe-stat-val" style="color:var(--blue)">'+(sd&&sd.found&&sd.stripe_arr?'$'+fmt(sd.stripe_arr):'—')+'</div></div>'+
       '<div><div class="stripe-stat-label">Live pricing /yr</div><div class="stripe-stat-val" style="color:var(--purple)">'+(live?(live.currency+' '+fmt(live.stripe_annual,2)):'—')+'</div></div>'+
       '<div><div class="stripe-stat-label">Stripe billed</div><div class="stripe-stat-val" style="color:var(--text-muted)">'+(sd&&sd.found&&sd.stripe_billed?'$'+fmt(sd.stripe_billed):'—')+'</div></div>'+
@@ -1202,7 +1089,7 @@ function renderStripe(){
 // ── HS vs STRIPE ──────────────────────────────────────────────────────────
 function renderComparison(){
   var eligible=DEALS.filter(function(d){return d.eligible;});
-  var totalHs=eligible.reduce(function(s,d){return s+(d.comm || 0);},0);
+  var totalHs=eligible.reduce(function(s,d){return s+d.comm;},0);
 
   // Stripe-side commission is only computed where Stripe bills in USD —
   // cross-currency consolidation (rate at contract sign vs billing) is
@@ -1259,7 +1146,7 @@ function renderComparison(){
 
     return '<tr class="'+rowClass+'"><td><a class="deal-link" href="https://app.hubspot.com/contacts/24214994/record/0-3/'+d.id+'" target="_blank"><div class="deal-name" title="'+d.name+'">'+d.name+upsellBadge(d.id)+'</div></a></td>'+
       '<td>'+aeChip(d.owner)+'</td><td>'+rateTxt(d)+'</td>'+
-      '<td><span class="hs-val">'+fmtUsdIn(d.arr, d.ccy)+'</span></td>'+
+      '<td>'+arrCell(d, 'var(--text-muted)')+'</td>'+
       '<td>'+stripeCell+'</td>'+
       '<td><span class="comm-hs">$'+fmt(hsComm)+'</span></td>'+
       '<td>'+commCell+'</td>'+
@@ -1282,16 +1169,16 @@ function renderComparison(){
 
 // ── UPSELL DATA ───────────────────────────────────────────────────────────
 var UPSELLS_ACTIVE = [
-  {id:"56173724020", name:"Wilton Contracting Ltd",  owner:"80406430", arr:10575, ccy:"AUD", prevPkg:"Standard Subscription", newPkg:"Advanced Subscription", close:"2026-03-04", status:"Active"},
-  {id:"57619530845", name:"SCLspec Pty Ltd",          owner:"80406430", arr:2925,  ccy:"AUD", prevPkg:"Standard Subscription", newPkg:"Advanced Subscription", close:"2026-03-16", status:"Active"},
-  {id:"53715214102", name:"Event Base",               owner:"80406430", arr:4200,  ccy:"NZD", prevPkg:"Standard Subscription", newPkg:"Advanced Subscription", close:"2026-03-31", status:"Active"},
-  {id:"56214795846", name:"Propel Marine Pty Ltd",    owner:"80127259", arr:13313, ccy:"AUD", prevPkg:"Standard Subscription", newPkg:"Advanced Subscription", close:"2026-04-07", status:"Active"},
+  {id:"56173724020", name:"Wilton Contracting Ltd",  owner:"80406430", arr:10575, prevPkg:"Standard Subscription", newPkg:"Advanced Subscription", close:"2026-03-04", status:"Active"},
+  {id:"57619530845", name:"SCLspec Pty Ltd",          owner:"80406430", arr:2925,  prevPkg:"Standard Subscription", newPkg:"Advanced Subscription", close:"2026-03-16", status:"Active"},
+  {id:"53715214102", name:"Event Base",               owner:"80406430", arr:4200,  prevPkg:"Standard Subscription", newPkg:"Advanced Subscription", close:"2026-03-31", status:"Active"},
+  {id:"56214795846", name:"Propel Marine Pty Ltd",    owner:"80127259", arr:13313, prevPkg:"Standard Subscription", newPkg:"Advanced Subscription", close:"2026-04-07", status:"Active"},
 ];
 
 var UPSELLS_PIPELINE = [
-  {id:"56135905417", name:"Dave Clark Australia",    owner:"80406430", arr:15000, ccy:"AUD", stage:"Discovery Call"},
-  {id:"55922604894", name:"FourPL",                  owner:"80406430", arr:26400, ccy:"AUD", stage:"Discovery Call"},
-  {id:"56162820649", name:"Measured Group",          owner:"80406430", arr:17100, ccy:"AUD", stage:"Proposal Sent"},
+  {id:"56135905417", name:"Dave Clark Australia",    owner:"80406430", arr:15000, stage:"Discovery Call"},
+  {id:"55922604894", name:"FourPL",                  owner:"80406430", arr:26400, stage:"Discovery Call"},
+  {id:"56162820649", name:"Measured Group",          owner:"80406430", arr:17100, stage:"Proposal Sent"},
 ];
 
 
@@ -1310,9 +1197,9 @@ var CS_PAID_KEY = 'ch_cs_paid_v1'; // separate from AE ch_paid_v1
 
 var CS_UPSELLS = [
   // ---- UK -- won upsells (Liz-confirmed 22 Jul 2026) ----
-  {id:"57610382769",name:"AIM Building & Maintenance Services Ltd (ADV/Upsell)",region:"UK",cs:"LT",amt:63840,ccy:"GBP",hsAmt:48237.60,close:"2026-04-09",st:"signed",kind:"Upsell",ct:"Upsell",deltaPending:true,flag:"Liz (27 Jul): deferring to Ryan/Kaia for pre-Advanced package pricing before payout confirmation."},
-  {id:"60525063715",name:"Woolf Bond Planning - Active",region:"UK",cs:"",csNote:"Liz confirmed: no CS commission due (partner referral)",amt:3300,ccy:"GBP",hsAmt:2493.48,close:"2026-06-02",st:"active",kind:"Upsell",ct:"Partner Referral",noCsComm:true},
-  {id:"50267855989",name:"Novatia - Active",region:"UK",cs:"DO",amt:3300,close:"2026-05-05",st:"active",kind:"Upsell",ct:"Upsell",deltaPending:true,flag:"Delta ARR pending — Ryan/Kaia to confirm previous package pricing."},
+  {id:"57610382769",name:"AIM Building & Maintenance Services Ltd (ADV/Upsell)",region:"UK",cs:"LT",amt:63840,ccy:"GBP",hsAmt:48237.60,pkg:"Advanced",term:"P12M",close:"2026-04-09",st:"signed",kind:"Upsell",ct:"Upsell",deltaPending:true,flag:"Liz (27 Jul): deferring to Ryan/Kaia for pre-Advanced package pricing before payout confirmation."},
+  {id:"60525063715",name:"Woolf Bond Planning - Active",region:"UK",cs:"",csNote:"Liz confirmed: no CS commission due (partner referral)",amt:3300,ccy:"GBP",hsAmt:2493.48,pkg:"Advanced",term:"P12M",close:"2026-06-02",st:"active",kind:"Upsell",ct:"Partner Referral",noCsComm:true},
+  {id:"50267855989",name:"Novatia - Active",region:"UK",cs:"DO",amt:3300,pkg:"Advanced",term:"P12M",close:"2026-05-05",st:"active",kind:"Upsell",ct:"Upsell",deltaPending:true,flag:"Delta ARR pending — Ryan/Kaia to confirm previous package pricing."},
   {id:"",name:"Glass Canvas Group Limited - ADV/Upsell",region:"UK",cs:"DO",amt:3000,close:"2026-07-31",st:"missing",wonConfirmed:true,kind:"Upsell",deltaPending:true,flag:"Liz confirmed Won (David Oliver introduction). No HubSpot deal record — Mark to create. Delta ARR pending — Ryan/Kaia."},
   // ---- UK -- open pipeline ----
   {id:"57230599346",name:"Lumensol Ltd - (ADV/Upsell)",region:"UK",cs:"LT",amt:34500,close:"2026-04-30",st:"open",kind:"Upsell"},
@@ -1329,11 +1216,11 @@ var CS_UPSELLS = [
   {id:"57865668944",name:"LRW (London) Ltd - (ADV/Upsell)",region:"UK",cs:"LT",amt:0,close:"2026-04-30",st:"open",kind:"Upsell",flag:"No amount set in HubSpot."},
   {id:"57610390927",name:"Xcession - (ADV/Upsell)",region:"UK",cs:"LT",amt:30000,close:"2026-04-30",st:"open",kind:"Upsell"},
   // ---- AU / NZ -- won upsells (Liz-confirmed 22 Jul 2026) ----
-  {id:"56214795846",name:"Propel Marine Pty Ltd - Active",region:"AU/NZ",cs:"DS",amt:45645.12,delta:13313,close:"2026-04-07",st:"active",kind:"Upsell",ct:"Upsell"},
-  {id:"56173724020",name:"Wilton Contracting Ltd - Active",region:"AU/NZ",cs:"DS",amt:10575,close:"2026-03-04",st:"active",kind:"Upsell",ct:"Upsell",deltaPending:true,flag:"Delta ARR pending — Ryan/Kaia to confirm previous package pricing."},
-  {id:"59153725536",name:"Wilton 2 - WCL Stop World",region:"AU/NZ",cs:"DS",amt:9000,close:"2026-03-11",st:"active",kind:"Upsell",ct:"Upsell",deltaPending:true,flag:"Delta ARR pending — Ryan/Kaia to confirm previous package pricing."},
-  {id:"53715214102",name:"Event Base - Active",region:"AU/NZ",cs:"DS",csNote:"Liz (27 Jul): Solley did not assist — no CS commission payable.",amt:5400,ccy:"NZD",hsAmt:5400,close:"2026-03-31",st:"active",kind:"Upsell",ct:"Upsell",noCsComm:true,flag:"Was in Liz's first snapshot; Liz's follow-up confirms Solley did not participate."},
-  {id:"57619530845",name:"SCLspec Pty Ltd - Active",region:"AU/NZ",cs:"DS",amt:2945.04,ccy:"AUD",hsAmt:2945.04,close:"2026-03-16",st:"active",kind:"Upsell",ct:"Upsell",deltaPending:true,flag:"Delta ARR pending — Ryan/Kaia. Note: HS ARR affected by invoice-item discounts (per Kaia recon methodology)."},
+  {id:"56214795846",name:"Propel Marine Pty Ltd - Active",region:"AU/NZ",cs:"DS",amt:45645.12,delta:13313,pkg:"Advanced",term:"P6M",close:"2026-04-07",st:"active",kind:"Upsell",ct:"Upsell",flag:"Subscription term is 6 months (P6M) — confirm with Kaia whether commission basis is annualised or the 6-month value."},
+  {id:"56173724020",name:"Wilton Contracting Ltd - Active",region:"AU/NZ",cs:"DS",amt:10575,pkg:"Premium",term:"",close:"2026-03-04",st:"active",kind:"Upsell",ct:"Upsell",deltaPending:true,flag:"⚠️ HubSpot product_package = Premium Subscription. Kaia's rule excludes Premium from CS commission, but Liz confirmed as payable upsell. Needs Kaia decision. HubSpot hs_arr is blank and amount = 0 — value shown ($10,575) comes from Liz's manual sheet. Delta ARR pending — Ryan/Kaia."},
+  {id:"59153725536",name:"Wilton 2 - WCL Stop World",region:"AU/NZ",cs:"DS",amt:9000,pkg:"Advanced",term:"P6M",close:"2026-03-11",st:"active",kind:"Upsell",ct:"Upsell",deltaPending:true,flag:"Subscription term is 6 months (P6M) — confirm with Kaia whether commission basis is annualised or the 6-month value. Delta ARR also pending — Ryan/Kaia."},
+  {id:"53715214102",name:"Event Base - Active",region:"AU/NZ",cs:"DS",csNote:"Liz (27 Jul): Solley did not assist — no CS commission payable.",amt:5400,ccy:"NZD",hsAmt:5400,pkg:"Advanced",term:"P12M",close:"2026-03-31",st:"active",kind:"Upsell",ct:"Upsell",noCsComm:true,flag:"Was in Liz's first snapshot; Liz's follow-up confirms Solley did not participate."},
+  {id:"57619530845",name:"SCLspec Pty Ltd - Active",region:"AU/NZ",cs:"DS",amt:2945.04,ccy:"AUD",hsAmt:2945.04,pkg:"Advanced",term:"P12M",close:"2026-03-16",st:"active",kind:"Upsell",ct:"Upsell",deltaPending:true,flag:"Delta ARR pending — Ryan/Kaia. Note: HS ARR affected by invoice-item discounts (per Kaia recon methodology)."},
   // ---- AU / NZ -- open pipeline ----
   {id:"61024683800",name:"RED Fire Engineers Pty Ltd - upsell",region:"AU/NZ",cs:"DS",amt:18000,close:"2026-07-31",st:"open",kind:"Upsell"},
   {id:"60786331160",name:"DKJ Welding 2025 Ltd - Upsell",region:"AU/NZ",cs:"DS",amt:30000,close:"2026-07-31",st:"open",kind:"Upsell",ct:"Upsell"},
@@ -1347,7 +1234,7 @@ var CS_UPSELLS = [
   {id:"58902451108",name:"OCTA Associates Limited (Upsell)",region:"AU/NZ",cs:"DS",amt:30000,close:"2026-05-30",st:"open",kind:"Upsell"},
   {id:"55922604894",name:"FourPL (Adv upsell)",region:"AU/NZ",cs:"DS",amt:26400,close:"2026-03-31",st:"open",kind:"Upsell"},
   {id:"58951341866",name:"Mapien - Upsell",region:"AU/NZ",cs:"DS",amt:36000,close:"2026-05-31",st:"open",kind:"Upsell",ct:"Upsell"},
-  {id:"59087018005",name:"Greater Group Pty Ltd - Upsell",region:"AU/NZ",cs:"DS",csNote:"Liz (27 Jul): Solley did not assist — no CS commission payable.",amt:36000,ccy:"AUD",hsAmt:36000,close:"2026-05-31",st:"signed",kind:"Upsell",ct:"Upsell",noCsComm:true,flag:"HubSpot has kind=Upsell; Liz's follow-up confirms Solley did not participate."},
+  {id:"59087018005",name:"Greater Group Pty Ltd - Upsell",region:"AU/NZ",cs:"DS",csNote:"Liz (27 Jul): Solley did not assist — no CS commission payable.",amt:36000,ccy:"AUD",hsAmt:36000,pkg:"Advanced",term:"P12M",close:"2026-05-31",st:"signed",kind:"Upsell",ct:"Upsell",noCsComm:true,flag:"HubSpot has kind=Upsell; Liz's follow-up confirms Solley did not participate."},
   {id:"57060844613",name:"PBA NZ (Advanced Upsell)",region:"AU/NZ",cs:"DS",amt:10500,close:"2026-05-08",st:"lost",kind:"Upsell",flag:"Now Closed-Lost in HubSpot (sheet had it Stalled)."},
   {id:"59225096723",name:"Compliance OHS - Upsell",region:"AU/NZ",cs:"DS",amt:4500,close:"2026-07-31",st:"open",kind:"Upsell",ct:"Upsell"}
 ];
@@ -1383,19 +1270,9 @@ var CS_REVIEW = [
 // delta is unknown the full amount is a proxy (overstates). CS-sourced NEW
 // deals show a TBC figure that is excluded from confirmed totals.
 function csBasis(d){ return (d.delta || d.amt || 0); }
-// Confirmed = kind is Upsell, a CS owner is assigned, it is not explicitly declared
-// non-commissionable, AND the underlying deal's package is commissionable
-// (Premium excluded per Kaia rule, 27 Jul 2026).
-function csDealPkgEligible(d){
-  if(!d.id) return true; // No HubSpot deal record (e.g. Glass Canvas). Trust upstream flag.
-  var raw = (typeof DEALS!=='undefined') ? DEALS.find(function(x){return x.id===d.id;}) : null;
-  if(!raw) return true; // Not in AE ledger. Assume OK.
-  if(!raw.pkg) return false; // Missing package = ineligible.
-  if(raw.pkg.includes('Premium')) return false;
-  if(raw.pkg === 'Standard Subscription') return false;
-  return true;
-}
-function csIsConfirmedKind(d){ return d.kind === 'Upsell' && !!d.cs && !d.noCsComm && csDealPkgEligible(d); }
+// Confirmed = kind is Upsell, a CS owner is assigned, and it is not explicitly
+// declared non-commissionable (e.g. Woolf Bond — partner referral per Liz).
+function csIsConfirmedKind(d){ return d.kind === 'Upsell' && !!d.cs && !d.noCsComm; }
 function csCommOf(d){ return csBasis(d) * CS_RATE; }
 function aeRateOf(d){
   if(d.kind==='Upsell') return 0.075;
@@ -1432,8 +1309,11 @@ function csRegionChip(r){
   return '<span style="background:var(--surface2);color:var(--text-muted);padding:1px 7px;border-radius:20px;font-size:10px;font-weight:700">'+r+'</span>';
 }
 function csAmtCell(d){
-  if(!d.amt) return '<span class="mono" style="color:var(--text-dim)">-</span>';
-  return '<span class="mono" style="color:var(--text-muted)">'+fmtCUsd(d.amt, d.ccy || 'USD')+'</span>';
+  if(d.amt == null) return '<span class="mono" style="color:var(--text-muted)"><span style="color:var(--text-dim)">-</span></span>';
+  var ccy = d.ccy || 'USD';
+  var primary = '<span class="mono" style="color:var(--text-muted)">'+fmtCcy(d.amt, ccy)+'</span>';
+  var sub = (ccy !== 'USD') ? '<div style="font-size:9px;color:var(--text-dim)">$'+fmt(toUsd(d.amt, ccy),0)+' USD</div>' : '';
+  return primary + sub;
 }
 function csHsLink(d){
   if(!d.id) return '<span style="font-size:11px;color:var(--text-dim)">-</span>';
@@ -1586,9 +1466,9 @@ function pkgUpgradeLabel(prev, next) {
 
 function renderUpsells(){
   var UPSELL_RATE = 0.075;
-  var totalArr = UPSELLS_ACTIVE.reduce(function(s,d){return s+(d.arr || 0);},0);
+  var totalArr = UPSELLS_ACTIVE.reduce(function(s,d){return s+d.arr;},0);
   var totalComm = totalArr * UPSELL_RATE;
-  var totalPipeline = UPSELLS_PIPELINE.reduce(function(s,d){return s+(d.arr || 0);},0);
+  var totalPipeline = UPSELLS_PIPELINE.reduce(function(s,d){return s+d.arr;},0);
 
   document.getElementById('upsell-kpis').innerHTML =
     '<div class="kpi-card"><div class="kpi-label">Active Upsell ARR</div><div class="kpi-value green">$'+fmt(totalArr)+'</div><div class="kpi-sub">'+UPSELLS_ACTIVE.length+' closed deals</div></div>'+
@@ -1602,7 +1482,7 @@ function renderUpsells(){
       '<td><a class="deal-link" href="https://app.hubspot.com/contacts/24214994/record/0-3/'+d.id+'" target="_blank"><div class="deal-name">'+d.name+'</div></a></td>'+
       '<td>'+(ae?'<div style="display:inline-flex;align-items:center;gap:5px"><div style="width:20px;height:20px;border-radius:50%;background:'+ae.bg+';color:'+ae.color+';display:inline-flex;align-items:center;justify-content:center;font-size:9px;font-weight:700">'+ae.initials+'</div><span style="font-size:11.5px">'+ae.name.split(" ")[0]+'</span></div>':d.owner)+'</td>'+
       '<td style="font-size:11px;color:var(--text-dim)">'+fmtD(d.close)+'</td>'+
-      '<td class="mono" style="color:var(--text-muted)">'+fmtUsdIn(d.arr, d.ccy)+'</td>'+
+      '<td>'+arrCell(d)+'</td>'+
       '<td>'+pkgUpgradeLabel(d.prevPkg, d.newPkg)+'</td>'+
       '<td class="mono" style="color:var(--amber)">7.5%</td>'+
       '<td class="mono" style="color:var(--green)">$'+fmt(comm)+'</td>'+
@@ -1616,7 +1496,7 @@ function renderUpsells(){
     return '<tr style="opacity:.7">'+
       '<td><a class="deal-link" href="https://app.hubspot.com/contacts/24214994/record/0-3/'+d.id+'" target="_blank"><div class="deal-name">'+d.name+'</div></a></td>'+
       '<td>'+(ae?ae.name.split(" ")[0]:d.owner)+'</td>'+
-      '<td class="mono" style="color:var(--text-muted)">'+fmtUsdIn(d.arr, d.ccy)+'</td>'+
+      '<td>'+arrCell(d)+'</td>'+
       '<td><span class="badge badge-amber">'+d.stage+'</span></td>'+
       '<td class="mono" style="color:var(--text-dim)">$'+fmt(comm)+'</td>'+
       '</tr>';
@@ -1963,194 +1843,12 @@ function syncFromHubSpot(){
 }
 
 // ── NAV ───────────────────────────────────────────────────────────────────
-// ── PAYOUTS (per-region currency for sign-off) ─────────────────────────────
-// Each AE / CS owner is paid in their local currency. Deal amounts get converted
-// deal_ccy → USD → owner_ccy via the HubSpot static FX table.
-var AE_PAYOUT_CCY = {
-  "80406430": "AUD", // Sina Zarei (Melbourne)
-  "80127259": "AUD", // Denzel Kereama (Melbourne)
-  "80127257": "GBP", // Mark Dempsey (UK)
-  "85659656": "USD", // Aline Baleeiro (US)
-  "85659655": "USD"  // Edgar Calvo (US)
-};
-var CS_PAYOUT_CCY = {
-  "DS": "AUD", // Solley (AU/NZ)
-  "DO": "GBP", // Oliver (UK)
-  "LT": "GBP"  // Liz (UK)
-};
-
-function convertCcy(amt, fromCcy, toCcy){
-  var from = (fromCcy || 'USD').toUpperCase();
-  var to = (toCcy || 'USD').toUpperCase();
-  if(from === to) return amt || 0;
-  var fromRate = FX_TO_USD[from] || 1;
-  var toRate = FX_TO_USD[to] || 1;
-  return ((amt || 0) * fromRate) / toRate;
-}
-
-function renderSalesPayouts(){
-  var qf = document.getElementById('sp-quarter').value;
-  var sf = document.getElementById('sp-status').value;
-
-  var deals = filterByQuarter(DEALS, qf).filter(function(d){return d.eligible;});
-  if(sf==='outstanding') deals = deals.filter(function(d){return !d.paid_out;});
-  if(sf==='paid') deals = deals.filter(function(d){return d.paid_out;});
-
-  var byAe = {};
-  OFFICIAL_AES.forEach(function(id){byAe[id]=[];});
-  deals.forEach(function(d){ if(byAe[d.owner]) byAe[d.owner].push(d); });
-
-  // Grand total in USD for reference across regions. d.comm is already USD.
-  var grandUsd = deals.reduce(function(s,d){return s+(d.comm||0);},0);
-  var grandOutUsd = deals.filter(function(d){return !d.paid_out;}).reduce(function(s,d){return s+(d.comm||0);},0);
-  var grandPaidUsd = deals.filter(function(d){return d.paid_out;}).reduce(function(s,d){return s+(d.comm||0);},0);
-
-  var aeSections = OFFICIAL_AES.filter(function(id){return byAe[id].length>0;}).map(function(id){
-    var ae = AE[id];
-    var payCcy = AE_PAYOUT_CCY[id] || 'USD';
-    var mine = byAe[id];
-    // d.comm is already USD; convert USD → payout currency for display
-    var subtotal = mine.reduce(function(s,d){return s+usdTo(d.comm||0, payCcy);},0);
-    var subOut = mine.filter(function(d){return !d.paid_out;}).reduce(function(s,d){return s+usdTo(d.comm||0, payCcy);},0);
-    var subPaid = mine.filter(function(d){return d.paid_out;}).reduce(function(s,d){return s+usdTo(d.comm||0, payCcy);},0);
-    var rows = mine.map(function(d){
-      var multi = d.contract_years && d.contract_years > 1;
-      var yChip = multi ? ' <span class="badge badge-blue" style="font-size:9px" title="Multi-year contract · Year 1 ARR only this cycle">Y1 of '+d.contract_years+'</span>' : '';
-      // ARR shown in AE payout currency (converted from USD stored value)
-      var arrCell = fmtUsdIn(d.arr, payCcy);
-      // Commission converted USD → payout currency
-      var commInPay = usdTo(d.comm||0, payCcy);
-      var sym = CCY_SYM[payCcy] || (payCcy+' ');
-      var commCell = (payCcy === 'USD')
-        ? '<span class="mono" style="color:var(--green);font-weight:700">$'+fmt(commInPay,2)+'</span>'
-        : '<span class="mono" style="color:var(--green);font-weight:700">'+sym+fmt(commInPay,2)+'</span><div style="font-size:9px;color:var(--text-dim)">$'+fmt(d.comm,2)+' USD</div>';
-      return '<tr>'+
-        '<td><div class="deal-name">'+d.name+yChip+'</div><div style="font-size:10px;color:var(--text-dim);margin-top:2px">'+fmtD(d.close)+'</div></td>'+
-        '<td>'+typeBadge(d)+'</td>'+
-        '<td class="mono" style="color:var(--text-muted)">'+arrCell+'</td>'+
-        '<td>'+rateTxt(d)+'</td>'+
-        '<td>'+commCell+'</td>'+
-        '<td>'+payoutBadge(d)+'</td>'+
-        '<td style="white-space:nowrap">'+hubspotLinkCell(d)+' '+stripeLinkCell(d)+'</td>'+
-        '</tr>';
-    }).join('');
-    return '<div style="margin-bottom:28px">'+
-      '<div style="display:flex;align-items:center;gap:12px;margin-bottom:10px;padding:10px 14px;background:var(--surface);border:1px solid var(--border);border-radius:8px">'+
-        '<div style="width:36px;height:36px;border-radius:8px;background:'+ae.bg+';color:'+ae.color+';display:flex;align-items:center;justify-content:center;font-family:\'Syne\',sans-serif;font-size:13px;font-weight:800">'+ae.initials+'</div>'+
-        '<div>'+
-          '<div style="font-family:\'Syne\',sans-serif;font-size:15px;font-weight:700">'+ae.name+'</div>'+
-          '<div style="font-size:10px;color:var(--text-dim)">Paid in '+payCcy+' · '+mine.length+' deals</div>'+
-        '</div>'+
-        '<div style="margin-left:auto;text-align:right">'+
-          '<div style="font-family:\'DM Mono\',monospace;font-size:16px;color:var(--green);font-weight:700">'+fmtC(subtotal, payCcy, 2)+'</div>'+
-          '<div style="font-size:10px;color:var(--text-dim)">'+(subOut>0?'<span style="color:var(--amber)">'+fmtC(subOut, payCcy, 2)+'</span> outstanding · ':'')+fmtC(subPaid, payCcy, 2)+' paid</div>'+
-        '</div>'+
-      '</div>'+
-      '<div class="table-wrap"><table>'+
-        '<thead><tr><th style="width:38%">Deal</th><th>Type</th><th>ARR</th><th>Rate</th><th>Commission ('+payCcy+')</th><th>Payout</th><th>Links</th></tr></thead>'+
-        '<tbody>'+rows+'</tbody>'+
-      '</table></div>'+
-    '</div>';
-  }).join('');
-
-  document.getElementById('sales-payouts-body').innerHTML =
-    '<div class="kpi-row" style="margin-bottom:24px">'+
-      '<div class="kpi-card"><div class="kpi-label">Total Commission (USD)</div><div class="kpi-value green">$'+fmt(grandUsd,2)+'</div><div class="kpi-sub">'+deals.length+' eligible deals · sum across regions</div></div>'+
-      '<div class="kpi-card"><div class="kpi-label">Outstanding (USD)</div><div class="kpi-value amber">$'+fmt(grandOutUsd,2)+'</div><div class="kpi-sub">Awaiting payout</div></div>'+
-      '<div class="kpi-card"><div class="kpi-label">Paid (USD)</div><div class="kpi-value">$'+fmt(grandPaidUsd,2)+'</div><div class="kpi-sub">Already signed off</div></div>'+
-      '<div class="kpi-card"><div class="kpi-label">AEs with deals</div><div class="kpi-value">'+OFFICIAL_AES.filter(function(id){return byAe[id].length>0;}).length+'</div><div class="kpi-sub">of '+OFFICIAL_AES.length+' AEs total</div></div>'+
-    '</div>'+
-    (aeSections || '<div style="color:var(--text-dim);padding:40px 0;text-align:center;font-size:13px">No eligible AE deals for this filter.</div>');
-}
-
-function renderCsPayouts(){
-  var qf = document.getElementById('cp-quarter').value;
-  var sf = document.getElementById('cp-status').value;
-
-  var deals = CS_UPSELLS.filter(function(d){return d.st==='active'||d.st==='signed'||d.wonConfirmed;});
-  if(qf!=='all'){
-    deals = deals.filter(function(d){
-      if(!d.close) return false;
-      var dt = new Date(d.close), m = dt.getMonth(), y = dt.getFullYear();
-      var q = m<=2?'q1-'+y : m<=5?'q2-'+y : m<=8?'q3-'+y : 'q4-'+y;
-      return q === qf;
-    });
-  }
-  var confirmed = deals.filter(csIsConfirmedKind);
-  if(sf==='outstanding') confirmed = confirmed.filter(function(d){return !csIsPaid(d);});
-  if(sf==='paid') confirmed = confirmed.filter(csIsPaid);
-
-  // Grand total in USD for reference across regions
-  var grandUsd = confirmed.reduce(function(s,d){return s+toUsd(csCommOf(d), d.ccy);},0);
-  var grandOutUsd = confirmed.filter(function(d){return !csIsPaid(d);}).reduce(function(s,d){return s+toUsd(csCommOf(d), d.ccy);},0);
-  var grandPaidUsd = confirmed.filter(csIsPaid).reduce(function(s,d){return s+toUsd(csCommOf(d), d.ccy);},0);
-
-  var CS_LOOKUP = {DS:'David Solley', DO:'David Oliver', LT:'Liz Tobin'};
-  var byCs = {DS:[],DO:[],LT:[]};
-  confirmed.forEach(function(d){ if(byCs[d.cs]) byCs[d.cs].push(d); });
-
-  var csSections = Object.keys(byCs).filter(function(k){return byCs[k].length>0;}).map(function(k){
-    var payCcy = CS_PAYOUT_CCY[k] || 'USD';
-    var mine = byCs[k];
-    var subtotal = mine.reduce(function(s,d){return s+convertCcy(csCommOf(d), d.ccy, payCcy);},0);
-    var subOut = mine.filter(function(d){return !csIsPaid(d);}).reduce(function(s,d){return s+convertCcy(csCommOf(d), d.ccy, payCcy);},0);
-    var subPaid = mine.filter(csIsPaid).reduce(function(s,d){return s+convertCcy(csCommOf(d), d.ccy, payCcy);},0);
-    var rows = mine.map(function(d){
-      var paid = csIsPaid(d);
-      var csC = csCommOf(d);
-      var csCInPayCcy = convertCcy(csC, d.ccy, payCcy);
-      var pendingBadge = d.deltaPending ? '<div style="font-size:9px;color:#b45309;margin-top:2px">delta pending Ryan/Kaia</div>' : '';
-      var basis = d.delta
-        ? '<span class="mono" style="color:var(--text-muted)">'+fmtC(d.delta, d.ccy)+'</span><div style="font-size:9px;color:var(--text-dim)">on delta ARR</div>'
-        : '<span class="mono" style="color:var(--text-muted)">'+fmtC(d.amt, d.ccy)+'</span>'+(d.deltaPending?'<div style="font-size:9px;color:#b45309">full amt · delta pending</div>':'');
-      var commCell = (d.ccy === payCcy)
-        ? '<span class="mono" style="color:var(--green);font-weight:700">'+fmtC(csCInPayCcy, payCcy, 2)+'</span>'
-        : '<span class="mono" style="color:var(--green);font-weight:700">'+fmtC(csCInPayCcy, payCcy, 2)+'</span><div style="font-size:9px;color:var(--text-dim)">from '+fmtC(csC, d.ccy, 2)+'</div>';
-      var paidBtn = '<button onclick="toggleCsPaid(\''+csKey(d).replace(/\'/g,"\\\'")+'\')" style="cursor:pointer;border:none;border-radius:20px;font-size:10px;font-weight:700;padding:3px 10px;background:'+(paid?'var(--green-bg)':'var(--surface2)')+';color:'+(paid?'var(--green)':'var(--text-dim)')+'">'+(paid?'Paid ✓':'Mark paid')+'</button>';
-      return '<tr>'+
-        '<td><div class="deal-name">'+d.name+'</div><div style="font-size:10px;color:var(--text-dim);margin-top:2px">'+fmtD(d.close)+'</div>'+pendingBadge+'</td>'+
-        '<td>'+basis+'</td>'+
-        '<td>'+commCell+'</td>'+
-        '<td>'+paidBtn+'</td>'+
-        '<td style="white-space:nowrap">'+csHsLink(d)+' '+stripeLinkCell(d)+'</td>'+
-        '</tr>';
-    }).join('');
-    return '<div style="margin-bottom:28px">'+
-      '<div style="display:flex;align-items:center;gap:12px;margin-bottom:10px;padding:10px 14px;background:var(--surface);border:1px solid var(--border);border-radius:8px">'+
-        '<div>'+
-          '<div style="font-family:\'Syne\',sans-serif;font-size:15px;font-weight:700">'+CS_LOOKUP[k]+'</div>'+
-          '<div style="font-size:10px;color:var(--text-dim)">Paid in '+payCcy+' · '+mine.length+' upsell'+(mine.length>1?'s':'')+'</div>'+
-        '</div>'+
-        '<div style="margin-left:auto;text-align:right">'+
-          '<div style="font-family:\'DM Mono\',monospace;font-size:16px;color:var(--green);font-weight:700">'+fmtC(subtotal, payCcy, 2)+'</div>'+
-          '<div style="font-size:10px;color:var(--text-dim)">'+(subOut>0?'<span style="color:var(--amber)">'+fmtC(subOut, payCcy, 2)+'</span> outstanding · ':'')+fmtC(subPaid, payCcy, 2)+' paid</div>'+
-        '</div>'+
-      '</div>'+
-      '<div class="table-wrap"><table>'+
-        '<thead><tr><th style="width:38%">Deal</th><th>Basis</th><th>CS 2.5% ('+payCcy+')</th><th>Payout</th><th>Links</th></tr></thead>'+
-        '<tbody>'+rows+'</tbody>'+
-      '</table></div>'+
-    '</div>';
-  }).join('');
-
-  document.getElementById('cs-payouts-body').innerHTML =
-    '<div class="kpi-row" style="margin-bottom:24px">'+
-      '<div class="kpi-card"><div class="kpi-label">Total CS Commission (USD)</div><div class="kpi-value green">$'+fmt(grandUsd,2)+'</div><div class="kpi-sub">'+confirmed.length+' confirmed upsells · sum across regions</div></div>'+
-      '<div class="kpi-card"><div class="kpi-label">Outstanding (USD)</div><div class="kpi-value amber">$'+fmt(grandOutUsd,2)+'</div><div class="kpi-sub">Awaiting payout</div></div>'+
-      '<div class="kpi-card"><div class="kpi-label">Paid (USD)</div><div class="kpi-value">$'+fmt(grandPaidUsd,2)+'</div><div class="kpi-sub">Already signed off</div></div>'+
-      '<div class="kpi-card"><div class="kpi-label">CS with upsells</div><div class="kpi-value">'+Object.keys(byCs).filter(function(k){return byCs[k].length>0;}).length+'</div><div class="kpi-sub">of 3 CS owners</div></div>'+
-    '</div>'+
-    (csSections || '<div style="color:var(--text-dim);padding:40px 0;text-align:center;font-size:13px">No confirmed CS upsells for this filter.</div>');
-}
-
 function showPage(id,el){
   document.querySelectorAll('.page').forEach(function(p){p.classList.remove('active');});
   document.querySelectorAll('.nav-item').forEach(function(n){n.classList.remove('active');});
   document.getElementById('page-'+id).classList.add('active');
   el.classList.add('active');
   document.querySelector('.main').scrollTop=0;
-  if(id==='sales-payouts') renderSalesPayouts();
-  if(id==='cs-payouts') renderCsPayouts();
 }
 
 // ── CLOSED / LOST (control view) ──────────────────────────────────────────
@@ -2178,7 +1876,7 @@ function renderLost(){
       '<td>'+aeChip(d.owner)+'</td>'+
       '<td><span class="badge badge-red">'+(d.stage_label||'lost').replace(/_/g,' ')+'</span></td>'+
       '<td>'+pkgBadge(d.pkg)+'</td>'+
-      '<td>'+(d.arr?'<span class="mono" style="color:var(--text-dim)">'+fmtUsdIn(d.arr, d.ccy)+'</span>':'<span style="color:var(--text-dim);font-size:11px">—</span>')+'</td>'+
+      '<td>'+arrCell(d, 'var(--text-dim)', '<span style="color:var(--text-dim);font-size:11px">—</span>')+'</td>'+
       '<td style="font-size:11px;color:var(--text-dim)">'+fmtD(d.close)+'</td>'+
       '</tr>';
   }).join('');
