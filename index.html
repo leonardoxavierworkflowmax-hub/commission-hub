@@ -200,8 +200,9 @@ input[type=date]{background:#fff;border:1px solid var(--border);border-radius:6p
     </div>
   </div>
   <div class="nav">
-    <div class="nav-section">Overview</div>
+    <div class="nav-section">Sales</div>
     <div class="nav-item active" onclick="showPage('dashboard',this)"><span class="nav-icon">◈</span>Dashboard</div>
+    <div class="nav-item" onclick="showPage('sales-comm',this)"><span class="nav-icon">♦</span>Sales Commission <span class="pending-tag">New</span></div>
     <div class="nav-item" onclick="showPage('deals',this)"><span class="nav-icon">≡</span>Deal Table</div>
     <div class="nav-item" onclick="showPage('lost',this)"><span class="nav-icon">⊘</span>Closed / Lost <span class="pending-tag" id="lost-tag" style="background:rgba(185,28,28,0.15);color:#fca5a5">·</span></div>
     <div class="nav-item" onclick="showPage('ae',this)"><span class="nav-icon">◎</span>By AE</div>
@@ -262,6 +263,36 @@ input[type=date]{background:#fff;border:1px solid var(--border);border-radius:6p
       <span style="margin-left:auto;font-family:'DM Mono',monospace;font-size:10px;color:var(--text-dim)">Commissions paid quarterly</span>
     </div>
     <div id="dashboard-body"></div>
+  </div>
+</div>
+
+<!-- SALES COMMISSION PAGE (v19) -->
+<div class="page" id="page-sales-comm">
+  <div class="page-header">
+    <div class="page-eyebrow">Sales</div>
+    <div class="page-title">Sales Commission</div>
+    <div class="page-sub">AE-attributed deals · eligible-only ledger · 10% new outbound / 7.5% upsell / 5% inbound · mirror of the CS Commission view</div>
+  </div>
+  <div class="page-body">
+
+    <div class="alert-strip" style="margin-bottom:16px;background:#d4f7e5;border:1px solid #86efac">
+      <div style="font-size:16px">💰</div>
+      <div class="alert-body" style="color:#0A2F28"><strong>Eligible only.</strong> This view mirrors CS Commission but focused on AE payouts. Ineligible deals (Premium package, missing data, wrong deal type) are excluded — see Deal Table for the full unfiltered list. Totals converted to USD using HubSpot's static FX rate.</div>
+    </div>
+
+    <div id="sales-comm-kpis" style="display:grid;grid-template-columns:repeat(5,1fr);gap:12px;margin-bottom:24px"></div>
+
+    <div class="section-title">By AE</div>
+    <div id="sales-comm-owner-cards" style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:28px"></div>
+
+    <div class="section-title">Eligible commission ledger</div>
+    <div style="font-size:11px;color:var(--text-dim);margin-bottom:10px">Sorted by close date, most recent first. Native deal currency shown with USD equivalent. Paid toggle requires editor mode.</div>
+    <div class="table-wrap" style="margin-bottom:24px">
+      <table>
+        <thead><tr><th>Deal</th><th>AE</th><th>Package</th><th>ARR</th><th>Type</th><th>Rate</th><th>Commission</th><th>Payout</th><th>Close</th><th>Links</th></tr></thead>
+        <tbody id="sales-comm-body"></tbody>
+      </table>
+    </div>
   </div>
 </div>
 
@@ -848,21 +879,21 @@ function renderDashboard(){
   if(pf==="paid") deals=deals.filter(function(d){return d.eligible&&d.paid_out;});
 
   var el=deals.filter(function(d){return d.eligible;});
-  var tc=el.reduce(function(s,d){return s+d.comm_usd;},0);
+  var tc=el.reduce(function(s,d){return s+(d.comm_usd||0);},0);
   var ta=el.reduce(function(s,d){return s+(d.arr_usd||0);},0);
-  var tOut=el.filter(function(d){return !d.paid_out;}).reduce(function(s,d){return s+d.comm_usd;},0);
-  var tPaid=el.filter(function(d){return d.paid_out;}).reduce(function(s,d){return s+d.comm_usd;},0);
+  var tOut=el.filter(function(d){return !d.paid_out;}).reduce(function(s,d){return s+(d.comm_usd||0);},0);
+  var tPaid=el.filter(function(d){return d.paid_out;}).reduce(function(s,d){return s+(d.comm_usd||0);},0);
   var issues=DEALS.filter(function(d){return d.data_issue;}).length;
 
   var aeTots={};
   OFFICIAL_AES.forEach(function(id){aeTots[id]={comm:0,arr:0,deals:0,outstanding:0,paid:0};});
   el.forEach(function(d){
     if(!aeTots[d.owner])return;
-    aeTots[d.owner].comm+=d.comm_usd;
+    aeTots[d.owner].comm+=(d.comm_usd||0);
     aeTots[d.owner].arr+=(d.arr_usd||0);
     aeTots[d.owner].deals++;
-    if(d.paid_out) aeTots[d.owner].paid+=d.comm_usd;
-    else aeTots[d.owner].outstanding+=d.comm_usd;
+    if(d.paid_out) aeTots[d.owner].paid+=(d.comm_usd||0);
+    else aeTots[d.owner].outstanding+=(d.comm_usd||0);
   });
 
   var aeCards=OFFICIAL_AES.map(function(id){
@@ -905,6 +936,63 @@ function renderDashboard(){
     '<div class="table-wrap"><table><thead><tr><th>Deal</th><th>AE</th><th>ARR</th><th>Type</th><th>Rate</th><th>Commission</th><th>Payout</th></tr></thead><tbody>'+elRows+'</tbody></table></div>';
 }
 
+// ── SALES COMMISSION (mirror of CS Commission, eligible-only) ─────────────
+function renderSalesCommission(){
+  var el = DEALS.filter(function(d){return d.eligible;});
+  var total = el.reduce(function(s,d){return s+(d.comm_usd||0);},0);
+  var out = el.filter(function(d){return !d.paid_out;}).reduce(function(s,d){return s+(d.comm_usd||0);},0);
+  var paid = el.filter(function(d){return d.paid_out;}).reduce(function(s,d){return s+(d.comm_usd||0);},0);
+  var arr = el.reduce(function(s,d){return s+(d.arr_usd||0);},0);
+  var avg = el.length ? total/el.length : 0;
+
+  document.getElementById('sales-comm-kpis').innerHTML =
+    '<div class="kpi-card"><div class="kpi-label">Total Commission</div><div class="kpi-value green">$'+fmt(total)+'</div><div class="kpi-sub">'+el.length+' eligible deals</div></div>'+
+    '<div class="kpi-card"><div class="kpi-label">Outstanding</div><div class="kpi-value amber">$'+fmt(out)+'</div><div class="kpi-sub">Awaiting payout</div></div>'+
+    '<div class="kpi-card"><div class="kpi-label">Paid Out</div><div class="kpi-value">$'+fmt(paid)+'</div><div class="kpi-sub">Marked as paid</div></div>'+
+    '<div class="kpi-card"><div class="kpi-label">Eligible ARR</div><div class="kpi-value">$'+fmt(arr)+'</div><div class="kpi-sub">Sum of eligible deal ARR</div></div>'+
+    '<div class="kpi-card"><div class="kpi-label">Avg Commission</div><div class="kpi-value">$'+fmt(avg)+'</div><div class="kpi-sub">Per eligible deal</div></div>';
+
+  var byOwner = {};
+  OFFICIAL_AES.forEach(function(id){byOwner[id]={comm:0,arr:0,deals:0,outstanding:0,paid:0};});
+  el.forEach(function(d){
+    if(!byOwner[d.owner]) return;
+    byOwner[d.owner].comm += (d.comm_usd||0);
+    byOwner[d.owner].arr += (d.arr_usd||0);
+    byOwner[d.owner].deals++;
+    if(d.paid_out) byOwner[d.owner].paid += (d.comm_usd||0);
+    else byOwner[d.owner].outstanding += (d.comm_usd||0);
+  });
+
+  document.getElementById('sales-comm-owner-cards').innerHTML = OFFICIAL_AES.map(function(id){
+    var ae=AE[id], s=byOwner[id];
+    return '<div style="background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:18px 20px">'+
+      '<div style="display:flex;align-items:center;gap:10px;margin-bottom:14px">'+
+      '<div style="width:36px;height:36px;border-radius:8px;background:'+ae.bg+';color:'+ae.color+';display:flex;align-items:center;justify-content:center;font-family:\'Syne\',sans-serif;font-size:13px;font-weight:800">'+ae.initials+'</div>'+
+      '<div><div style="font-family:\'Syne\',sans-serif;font-size:14px;font-weight:700">'+ae.name+'</div><div style="font-size:11px;color:var(--text-dim)">'+s.deals+' eligible · $'+fmt(s.arr)+' ARR</div></div></div>'+
+      '<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px">'+
+      '<div><div style="font-family:\'DM Mono\',monospace;font-size:9px;text-transform:uppercase;letter-spacing:.08em;color:var(--text-dim);margin-bottom:3px">Total</div><div style="font-family:\'DM Mono\',monospace;font-size:14px;color:var(--text)">$'+fmt(s.comm)+'</div></div>'+
+      '<div><div style="font-family:\'DM Mono\',monospace;font-size:9px;text-transform:uppercase;letter-spacing:.08em;color:var(--text-dim);margin-bottom:3px">Outstanding</div><div style="font-family:\'DM Mono\',monospace;font-size:14px;color:var(--amber)">$'+fmt(s.outstanding)+'</div></div>'+
+      '<div><div style="font-family:\'DM Mono\',monospace;font-size:9px;text-transform:uppercase;letter-spacing:.08em;color:var(--text-dim);margin-bottom:3px">Paid</div><div style="font-family:\'DM Mono\',monospace;font-size:14px;color:var(--green)">$'+fmt(s.paid)+'</div></div>'+
+      '</div></div>';
+  }).join('');
+
+  var sorted = el.slice().sort(function(a,b){return (b.close||'').localeCompare(a.close||'');});
+  document.getElementById('sales-comm-body').innerHTML = sorted.map(function(d){
+    return '<tr'+(isUpsellDeal(d.id)?' style="background:rgba(245,158,11,0.03)"':'')+'>'+
+      '<td><a class="deal-link" href="https://app.hubspot.com/contacts/24214994/record/0-3/'+d.id+'" target="_blank"><div class="deal-name" title="'+d.name+'">'+d.name+upsellBadge(d.id)+'</div></a></td>'+
+      '<td>'+aeChip(d.owner)+'</td>'+
+      '<td>'+pkgBadge(d.pkg)+'</td>'+
+      '<td>'+arrCell(d)+'</td>'+
+      '<td>'+typeBadge(d)+'</td>'+
+      '<td>'+rateTxt(d)+'</td>'+
+      '<td>'+commCell(d)+'</td>'+
+      '<td>'+payoutBadge(d)+'</td>'+
+      '<td style="font-size:11px;color:var(--text-dim)">'+fmtD(d.close)+'</td>'+
+      '<td style="white-space:nowrap">'+hubspotLinkCell(d)+' '+stripeLinkCell(d)+'</td>'+
+      '</tr>';
+  }).join('');
+}
+
 // ── DEAL TABLE ────────────────────────────────────────────────────────────
 function renderDeals(){
   var aeF=document.getElementById('f-ae').value;
@@ -939,7 +1027,7 @@ function renderDeals(){
       '</tr>';
   }).join('');
 
-  var totalComm = deals.reduce(function(s,d){return s+d.comm_usd;},0);
+  var totalComm = deals.reduce(function(s,d){return s+(d.comm_usd||0);},0);
   var upsellCount = deals.filter(function(d){return isUpsellDeal(d.id);}).length;
 
   document.getElementById('deals-table').innerHTML=
@@ -953,8 +1041,8 @@ function renderAE(){
     var ae=AE[id];
     var my=DEALS.filter(function(d){return d.owner===id;});
     var el=my.filter(function(d){return d.eligible;});
-    var tc=el.reduce(function(s,d){return s+d.comm_usd;},0);
-    var outstanding=el.filter(function(d){return !d.paid_out;}).reduce(function(s,d){return s+d.comm_usd;},0);
+    var tc=el.reduce(function(s,d){return s+(d.comm_usd||0);},0);
+    var outstanding=el.filter(function(d){return !d.paid_out;}).reduce(function(s,d){return s+(d.comm_usd||0);},0);
     var iss=my.filter(function(d){return d.data_issue||!d.arr||!d.src||!d.inv||!d.pkg;});
     var rows=my.map(function(d){
       return '<tr style="'+(d.eligible?'':'opacity:.4')+(isUpsellDeal(d.id)?';background:rgba(245,158,11,0.03)':'')+'">'+
@@ -1526,7 +1614,7 @@ function submitPin(){
     if(h===EDITOR_PIN_HASH){
       sessionStorage.setItem('ch_editor','1');
       inp.value=''; if(msg) msg.textContent='';
-      updateLockUI(); renderDashboard(); renderDeals(); renderAE();
+      updateLockUI(); renderDashboard(); renderSalesCommission(); renderDeals(); renderAE();
     } else {
       if(msg) msg.textContent='Wrong PIN';
     }
@@ -1535,7 +1623,7 @@ function submitPin(){
 function lockSession(){
   sessionStorage.removeItem('ch_editor');
   var msg=document.getElementById('pin-msg'); if(msg) msg.textContent='';
-  updateLockUI(); renderDashboard(); renderDeals(); renderAE(); if(typeof renderCsPage==='function') renderCsPage();
+  updateLockUI(); renderDashboard(); renderSalesCommission(); renderDeals(); renderAE(); if(typeof renderCsPage==='function') renderCsPage();
 }
 function updateLockUI(){
   var ind=document.getElementById('lock-indicator');
@@ -1555,7 +1643,7 @@ function togglePaid(id){
   d.paid_out=!d.paid_out;
   var map=loadPaidMap(); map[id]=d.paid_out;
   try{ localStorage.setItem(PAID_KEY, JSON.stringify(map)); }catch(e){}
-  renderDashboard(); renderDeals(); renderAE();
+  renderDashboard(); renderSalesCommission(); renderDeals(); renderAE();
 }
 
 // ── SYNC ──────────────────────────────────────────────────────────────────
@@ -1743,6 +1831,7 @@ function buildDeal(src){
     src: src.source || prior.src || '',
     inv: src.ae_involvement || prior.inv || '',
     pkg: src.product_package || prior.pkg || '',
+    ccy: src.deal_currency_code || prior.ccy || 'USD',
     close: src.close || prior.close || '',
     commission_type: src.commission_type || prior.commission_type || '',
     // preserved manual fields
@@ -1796,7 +1885,16 @@ function syncFromHubSpot(){
     active.forEach(function(row){
       var d = buildDeal(row);
       var cl = classify(d), er = eligReason(d), eligible = !er;
-      DEALS.push(Object.assign({}, d, cl, {eligible:eligible, eligReason:er, comm: eligible?(d.arr||0)*cl.rate:0, quarter:getQuarter(d.close)}));
+      var comm = eligible ? (d.arr||0)*cl.rate : 0;
+      var rate = FX_STATIC[d.ccy || 'USD'] || 1;
+      DEALS.push(Object.assign({}, d, cl, {
+        eligible: eligible,
+        eligReason: er,
+        comm: comm,
+        arr_usd: (d.arr != null) ? (d.arr * rate) : null,
+        comm_usd: comm * rate,
+        quarter: getQuarter(d.close)
+      }));
     });
 
     // Control tab — closed-lost / expired / churn. Enriched name/owner where known.
@@ -1808,7 +1906,7 @@ function syncFromHubSpot(){
     var newCount = DEALS.filter(function(d){return d.isNew;}).length;
     SYNCED_ONCE = true;
     LAST_SYNCED = new Date();
-    renderDashboard(); renderDeals(); renderAE(); renderComparison(); renderUpsells(); renderCsPage(); renderLost();
+    renderDashboard(); renderSalesCommission(); renderDeals(); renderAE(); renderComparison(); renderUpsells(); renderCsPage(); renderLost();
 
     // Stage 2 — Stripe. A Stripe failure never wipes the HubSpot result;
     // we report exactly which half worked.
@@ -1894,6 +1992,7 @@ function renderLost(){
 
 // ── INIT ──────────────────────────────────────────────────────────────────
 renderDashboard();
+renderSalesCommission();
 renderDeals();
 renderAE();
 renderBanked();
