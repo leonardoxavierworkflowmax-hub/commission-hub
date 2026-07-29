@@ -850,9 +850,9 @@ function arrCell(d, color, missingHtml){
   missingHtml = missingHtml || '<span style="color:var(--red);font-family:\'DM Mono\',monospace;font-size:11px">Missing</span>';
   if(d.arr == null) return missingHtml;
   var ccy = d.ccy || 'USD';
-  var primary = '<span class="mono" style="color:'+color+'">'+fmtCcy(d.arr, ccy)+'</span>';
+  var primary = '<span class="mono" style="color:'+color+'">'+fmtCcy(d.arr, ccy, 2)+'</span>';
   if(ccy === 'USD') return primary;
-  return primary + '<div style="font-size:9px;color:var(--text-dim)">$'+fmt(toUsd(d.arr, ccy),0)+' USD</div>';
+  return primary + '<div style="font-size:9px;color:var(--text-dim)">$'+fmt(toUsd(d.arr, ccy),2)+' USD</div>';
 }
 
 function commCell(d, color){
