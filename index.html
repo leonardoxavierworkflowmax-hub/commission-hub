@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>WorkflowMAX · Commission Hub FY2026</title>
-<!-- v19 · 2026-07-30 · MULTI-YEAR FIX (Kaia sheet validated): commission basis on multi-year contracts is now Year-1 Stripe value only (Boat Electrics 9,450 of 45,990 TCV; WorkspaceConsultants 6,750; KSN 22,500; MAC Network 4,488.24; Consult Construct 11,685; Guarda 2,700 amount correction). Multi-year badges in ledger, TCV shown as subtitle, Banked Commission derives Year 2+ from validated basis. Premium package now ineligible (Advanced + Pro only). Currency: native ccy primary with USD equivalent, static HubSpot FX. FX close-date variance accepted per Kaia (30 Jul). -->
+<!-- v19 · 2026-07-30 · DEEP RECONCILIATION SWEEP (HubSpot line items + Kaia sheet + live proxy data): 15/15 deals reconciled to the cent. Multi-year basis = Y1 Stripe value (Boat 9,450 of 45,990 · 5 line items verified; KSN 22,500 · 2yr confirmed via Year 1/Year 2 line items, Stripe bills 22,500 vs HS list 28,500 seat gap; Consult Construct 11,685 USD · HS line items in wrong GBP price book, Stripe bills USD; 400 - New Deal 2yr via P24M line item, Y2 banked). Per-deal close-date FX from Kaia sheet (Justo 1.3558, Novatia 1.3546, PDA 1.3361, Woolf 1.3466, MAC 1.3437). Referral/Partner Referral = Inbound 5% (Woolf fix). Premium + Standard ineligible. Banked Commission derives Y2+ from validated basis/tcv. -->
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
 /* ── v5 PALETTE on v8 STRUCTURE ───────────────────────────────── */
@@ -762,18 +762,24 @@ var STRIPE = {
 
 var ELIGIBLE_PKG = ["Advanced Subscription","Pro Subscription"];
 
-// ── KAIA-VALIDATED COMMISSION BASIS (sheet received 30 Jul 2026) ──────────
-// For multi-year contracts, commission is due on Year 1 value only (verified
-// against the Stripe subscription, ex-tax). hs_arr on these deals holds the
-// full-contract TCV, so the basis below overrides it for commission maths.
-// Years 2+ flow through Banked Commission and pay out at each renewal.
+// ── KAIA-VALIDATED OVERRIDES (sheet received 30 Jul 2026) ─────────────────
+// basis: Year-1 commission basis (Stripe-verified, ex-tax) for multi-year or
+//        wrong-amount deals. hs_arr holds full TCV on these.
+// years: contract length (Y2+ flows through Banked Commission).
+// fx:    per-deal close-date FX rate from Kaia's sheet (exact reconciliation).
+// ccy:   currency correction where HubSpot's deal_currency_code is wrong.
 var KAIA_BASIS = {
-  "boat electrics":      {basis: 9450,    years: 5, note: "Y1 only — 5yr contract (Kaia validated)"},
-  "workspaceconsultants":{basis: 6750,    years: 2, note: "Y1 only — 2yr contract (Kaia validated)"},
-  "ksn":                 {basis: 22500,   years: 2, note: "Y1 only — multi-year (Kaia validated)"},
-  "mac network":         {basis: 4488.24, years: 2, note: "Y1 only — 2yr contract (Kaia validated)"},
-  "consult construct":   {basis: 11685,   years: 2, note: "Y1 only — multi-year (Kaia validated)"},
-  "guarda":              {basis: 2700,             note: "HS amount wrong — Stripe value used (Kaia validated)"}
+  "boat electrics":      {basis: 9450,    years: 5, note: "Y1 only — 5yr contract · HS line items: Y1 9,450 + 4×9,135 (verified)"},
+  "workspaceconsultants":{basis: 6750,    years: 2, note: "Y1 only — 2yr contract (Kaia validated, HS line items confirm)"},
+  "ksn":                 {basis: 22500,   years: 2, tcv: 45000, note: "Y1 only — 2yr confirmed via HS line items. Stripe bills 22,500/yr vs HS list 28,500 (seat/discount gap) — Stripe is billing truth"},
+  "mac network":         {basis: 4488.24, years: 2, fx: 1.3437, note: "Y1 only — 2yr contract (Kaia validated). Renewal deal shows 6,187.44 expansion at Y2"},
+  "consult construct":   {basis: 11685,   years: 2, ccy: "USD", tcv: 23370, note: "Y1 only — 2yr · HS line items priced in UK GBP but Stripe bills USD (41 users × $23.75/mo). Kaia validated"},
+  "guarda":              {basis: 2700,              note: "Stripe has 10% discount HS lacks — Stripe value used (Kaia validated)"},
+  "400 - new deal":      {years: 2, banked_years: [{year: 2, arr: 6494.71}], note: "2yr contract (P24M line item) — Y1 = hs_arr annualised, Y2 banked"},
+  "justo":               {fx: 1.3558},
+  "novatia":             {fx: 1.3546},
+  "pda":                 {fx: 1.3361},
+  "woolf bond":          {fx: 1.3466}
 };
 function kaiaBasis(d){
   var n = (d.name||'').toLowerCase();
@@ -790,6 +796,7 @@ function classify(d){
   if(t==="Upsell")   return {type:"Upsell",   rate:.075};
   if(t==="Outbound") return {type:"Outbound", rate:.10};
   if(t==="Inbound")  return {type:"Inbound",  rate:.05};
+  if(t==="Referral"||t==="Partner Referral") return {type:"Inbound", rate:.05}; // Referral = always Inbound 5%
   // Fallback if property not yet set
   var s=(d.src||"").toLowerCase(), i=(d.inv||"").toLowerCase();
   if(UPSELL_DEAL_IDS.indexOf(d.id)!==-1) return {type:"Upsell",rate:.075};
@@ -827,18 +834,22 @@ var CCY_SYMBOL = {USD:'$', GBP:'£', AUD:'A$', NZD:'NZ$', CAD:'C$', EUR:'€'};
 var DEALS = RAW.map(function(d){
   var cl=classify(d), er=eligReason(d), eligible=!er;
   var kb = kaiaBasis(d);
-  var basis = kb ? kb.basis : (d.arr||0);
+  var ccy = (kb && kb.ccy) ? kb.ccy : (d.ccy || 'USD');
+  var basis = kb && kb.basis != null ? kb.basis : (d.arr||0);
   var comm = eligible ? basis*cl.rate : 0;
-  var rate = FX_STATIC[d.ccy || 'USD'] || 1;
+  var rate = (kb && kb.fx) ? kb.fx : (FX_STATIC[ccy] || 1);
   return Object.assign({},d,cl,{
+    ccy: ccy,
     eligible: eligible,
     eligReason: er,
     comm: comm,
     comm_basis: basis,
-    tcv: d.arr,
+    tcv: (kb && kb.tcv != null) ? kb.tcv : d.arr,
+    banked_years: (kb && kb.banked_years) ? kb.banked_years : d.banked_years,
     multi_year: !!(kb && kb.years > 1),
-    contract_years_validated: kb ? (kb.years||1) : (d.contract_years||1),
-    basis_note: kb ? kb.note : null,
+    contract_years_validated: kb && kb.years ? kb.years : (d.contract_years||1),
+    basis_note: kb ? (kb.note||null) : null,
+    fx_rate: rate,
     arr_usd: (d.arr != null) ? (d.arr * rate) : null,
     basis_usd: basis * rate,
     comm_usd: comm * rate,
@@ -884,7 +895,8 @@ function arrCell(d, color, missingHtml){
   var primary = '<span class="mono" style="color:'+color+'"'+(d.basis_note?' title="'+d.basis_note+'"':'')+'>'+fmtCcy(shownVal, ccy, 2)+'</span>';
   var subs = [];
   if(hasBasisOverride){
-    subs.push('TCV '+fmtCcy(d.arr, ccy, 0)+(d.contract_years_validated>1?' · '+d.contract_years_validated+'yr':''));
+    var tcvShow = (d.tcv != null) ? d.tcv : d.arr;
+    subs.push('TCV '+fmtCcy(tcvShow, ccy, 0)+(d.contract_years_validated>1?' · '+d.contract_years_validated+'yr':''));
   }
   if(ccy !== 'USD'){
     subs.push('$'+fmt(toUsd(shownVal, ccy),2)+' USD');
@@ -1197,7 +1209,7 @@ function renderBanked(){
     var y1Val = (d.comm_basis!=null) ? d.comm_basis : d.arr;
     var laterTotal = Math.max((d.tcv!=null?d.tcv:d.arr) - y1Val, 0);
     var perLaterYear = years>1 ? laterTotal/(years-1) : 0;
-    var fxRate = FX_STATIC[d.ccy||'USD']||1;
+    var fxRate = d.fx_rate || FX_STATIC[d.ccy||'USD'] || 1;
     var banked=0;
     var yearRows='';
     for(var y=1;y<=years;y++){
@@ -2004,18 +2016,22 @@ function syncFromHubSpot(){
       var d = buildDeal(row);
       var cl = classify(d), er = eligReason(d), eligible = !er;
       var kb = kaiaBasis(d);
-      var basis = kb ? kb.basis : (d.arr||0);
+      var ccy = (kb && kb.ccy) ? kb.ccy : (d.ccy || 'USD');
+      var basis = (kb && kb.basis != null) ? kb.basis : (d.arr||0);
       var comm = eligible ? basis*cl.rate : 0;
-      var rate = FX_STATIC[d.ccy || 'USD'] || 1;
+      var rate = (kb && kb.fx) ? kb.fx : (FX_STATIC[ccy] || 1);
       DEALS.push(Object.assign({}, d, cl, {
+        ccy: ccy,
         eligible: eligible,
         eligReason: er,
         comm: comm,
         comm_basis: basis,
-        tcv: d.arr,
+        tcv: (kb && kb.tcv != null) ? kb.tcv : d.arr,
+        banked_years: (kb && kb.banked_years) ? kb.banked_years : d.banked_years,
         multi_year: !!(kb && kb.years > 1),
-        contract_years_validated: kb ? (kb.years||1) : (d.contract_years||1),
-        basis_note: kb ? kb.note : null,
+        contract_years_validated: (kb && kb.years) ? kb.years : (d.contract_years||1),
+        basis_note: kb ? (kb.note||null) : null,
+        fx_rate: rate,
         arr_usd: (d.arr != null) ? (d.arr * rate) : null,
         basis_usd: basis * rate,
         comm_usd: comm * rate,
