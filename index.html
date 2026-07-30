@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>WorkflowMAX · Commission Hub FY2026</title>
-<!-- v19 · 2026-07-27 · CURRENCY FIX (Kaia flag): AE commission page now renders each deal in its native currency (£ for GBP deals, A$ for AUD, NZ$ for NZD, etc.) with the USD equivalent underneath. Aggregated totals converted to USD using static HubSpot rate (last update 02/07/2026). Also: added product_package + subscription_length__sync_ on all 7 confirmed upsells (Wilton flagged Premium, Wilton 2 + Propel Marine flagged P6M), Set CS Owner workflow now live via Company Owner branch, AlphaChase confirmed dropped. Awaiting Kaia FX static/dynamic decision + delta ARR from Ryan/Kaia. -->
+<!-- v19 · 2026-07-30 · MULTI-YEAR FIX (Kaia sheet validated): commission basis on multi-year contracts is now Year-1 Stripe value only (Boat Electrics 9,450 of 45,990 TCV; WorkspaceConsultants 6,750; KSN 22,500; MAC Network 4,488.24; Consult Construct 11,685; Guarda 2,700 amount correction). Multi-year badges in ledger, TCV shown as subtitle, Banked Commission derives Year 2+ from validated basis. Premium package now ineligible (Advanced + Pro only). Currency: native ccy primary with USD equivalent, static HubSpot FX. FX close-date variance accepted per Kaia (30 Jul). -->
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
 /* ── v5 PALETTE on v8 STRUCTURE ───────────────────────────────── */
@@ -761,6 +761,25 @@ var STRIPE = {
 // Referral = always Inbound 5% regardless of involvement.
 
 var ELIGIBLE_PKG = ["Advanced Subscription","Pro Subscription"];
+
+// ── KAIA-VALIDATED COMMISSION BASIS (sheet received 30 Jul 2026) ──────────
+// For multi-year contracts, commission is due on Year 1 value only (verified
+// against the Stripe subscription, ex-tax). hs_arr on these deals holds the
+// full-contract TCV, so the basis below overrides it for commission maths.
+// Years 2+ flow through Banked Commission and pay out at each renewal.
+var KAIA_BASIS = {
+  "boat electrics":      {basis: 9450,    years: 5, note: "Y1 only — 5yr contract (Kaia validated)"},
+  "workspaceconsultants":{basis: 6750,    years: 2, note: "Y1 only — 2yr contract (Kaia validated)"},
+  "ksn":                 {basis: 22500,   years: 2, note: "Y1 only — multi-year (Kaia validated)"},
+  "mac network":         {basis: 4488.24, years: 2, note: "Y1 only — 2yr contract (Kaia validated)"},
+  "consult construct":   {basis: 11685,   years: 2, note: "Y1 only — multi-year (Kaia validated)"},
+  "guarda":              {basis: 2700,             note: "HS amount wrong — Stripe value used (Kaia validated)"}
+};
+function kaiaBasis(d){
+  var n = (d.name||'').toLowerCase();
+  for(var k in KAIA_BASIS){ if(n.indexOf(k) !== -1) return KAIA_BASIS[k]; }
+  return null;
+}
 var UPSELL_DEAL_IDS = ["56173724020","57619530845","53715214102","56214795846"];
 
 // commission_type from HubSpot is the source of truth — set by Ryan.
@@ -807,13 +826,21 @@ var CCY_SYMBOL = {USD:'$', GBP:'£', AUD:'A$', NZD:'NZ$', CAD:'C$', EUR:'€'};
 
 var DEALS = RAW.map(function(d){
   var cl=classify(d), er=eligReason(d), eligible=!er;
-  var comm = eligible ? (d.arr||0)*cl.rate : 0;
+  var kb = kaiaBasis(d);
+  var basis = kb ? kb.basis : (d.arr||0);
+  var comm = eligible ? basis*cl.rate : 0;
   var rate = FX_STATIC[d.ccy || 'USD'] || 1;
   return Object.assign({},d,cl,{
     eligible: eligible,
     eligReason: er,
     comm: comm,
+    comm_basis: basis,
+    tcv: d.arr,
+    multi_year: !!(kb && kb.years > 1),
+    contract_years_validated: kb ? (kb.years||1) : (d.contract_years||1),
+    basis_note: kb ? kb.note : null,
     arr_usd: (d.arr != null) ? (d.arr * rate) : null,
+    basis_usd: basis * rate,
     comm_usd: comm * rate,
     quarter: getQuarter(d.close)
   });
@@ -849,11 +876,21 @@ function toUsd(n, ccy){
 function arrCell(d, color, missingHtml){
   color = color || 'var(--text-muted)';
   missingHtml = missingHtml || '<span style="color:var(--red);font-family:\'DM Mono\',monospace;font-size:11px">Missing</span>';
-  if(d.arr == null) return missingHtml;
+  if(d.arr == null && !d.comm_basis) return missingHtml;
   var ccy = d.ccy || 'USD';
-  var primary = '<span class="mono" style="color:'+color+'">'+fmtCcy(d.arr, ccy, 2)+'</span>';
-  if(ccy === 'USD') return primary;
-  return primary + '<div style="font-size:9px;color:var(--text-dim)">$'+fmt(toUsd(d.arr, ccy),2)+' USD</div>';
+  var hasBasisOverride = d.comm_basis != null && d.arr != null && Math.abs(d.comm_basis - d.arr) > 0.01;
+  var shownVal = hasBasisOverride ? d.comm_basis : d.arr;
+  if(shownVal == null) return missingHtml;
+  var primary = '<span class="mono" style="color:'+color+'"'+(d.basis_note?' title="'+d.basis_note+'"':'')+'>'+fmtCcy(shownVal, ccy, 2)+'</span>';
+  var subs = [];
+  if(hasBasisOverride){
+    subs.push('TCV '+fmtCcy(d.arr, ccy, 0)+(d.contract_years_validated>1?' · '+d.contract_years_validated+'yr':''));
+  }
+  if(ccy !== 'USD'){
+    subs.push('$'+fmt(toUsd(shownVal, ccy),2)+' USD');
+  }
+  if(!subs.length) return primary;
+  return primary + '<div style="font-size:9px;color:var(--text-dim)">'+subs.join(' · ')+'</div>';
 }
 
 function commCell(d, color){
@@ -892,6 +929,11 @@ function invBadge(inv){
 function upsellBadge(id){
   return UPSELL_DEAL_IDS.indexOf(id)!==-1
     ? '<span style="display:inline-flex;align-items:center;gap:3px;background:#FBF5D8;color:#b45309;border:1px solid #e8d987;border-radius:4px;font-size:9px;font-weight:700;padding:1px 6px;margin-left:4px;vertical-align:middle">↑ Upsell</span>'
+    : '';
+}
+function multiYearBadge(d){
+  return d.multi_year
+    ? '<span style="display:inline-flex;align-items:center;gap:3px;background:#e0e7ff;color:#3730a3;border:1px solid #c7d2fe;border-radius:4px;font-size:9px;font-weight:700;padding:1px 6px;margin-left:4px;vertical-align:middle" title="'+(d.basis_note||'Multi-year contract — commission on Y1 only; later years in Banked Commission')+'">'+d.contract_years_validated+'yr</span>'
     : '';
 }
 function isUpsellDeal(id){
@@ -1004,14 +1046,14 @@ function renderSalesCommission(){
   var total = el.reduce(function(s,d){return s+(d.comm_usd||0);},0);
   var out = el.filter(function(d){return !d.paid_out;}).reduce(function(s,d){return s+(d.comm_usd||0);},0);
   var paid = el.filter(function(d){return d.paid_out;}).reduce(function(s,d){return s+(d.comm_usd||0);},0);
-  var arr = el.reduce(function(s,d){return s+(d.arr_usd||0);},0);
+  var arr = el.reduce(function(s,d){return s+(d.basis_usd!=null?d.basis_usd:(d.arr_usd||0));},0);
   var avg = el.length ? total/el.length : 0;
 
   document.getElementById('sales-comm-kpis').innerHTML =
     '<div class="kpi-card"><div class="kpi-label">Total Commission</div><div class="kpi-value green">$'+fmt(total)+'</div><div class="kpi-sub">'+el.length+' eligible deals</div></div>'+
     '<div class="kpi-card"><div class="kpi-label">Outstanding</div><div class="kpi-value amber">$'+fmt(out)+'</div><div class="kpi-sub">Awaiting payout</div></div>'+
     '<div class="kpi-card"><div class="kpi-label">Paid Out</div><div class="kpi-value">$'+fmt(paid)+'</div><div class="kpi-sub">Marked as paid</div></div>'+
-    '<div class="kpi-card"><div class="kpi-label">Eligible ARR</div><div class="kpi-value">$'+fmt(arr)+'</div><div class="kpi-sub">Sum of eligible deal ARR</div></div>'+
+    '<div class="kpi-card"><div class="kpi-label">Eligible ARR</div><div class="kpi-value">$'+fmt(arr)+'</div><div class="kpi-sub">Y1 commission basis</div></div>'+
     '<div class="kpi-card"><div class="kpi-label">Avg Commission</div><div class="kpi-value">$'+fmt(avg)+'</div><div class="kpi-sub">Per eligible deal</div></div>';
 
   var byOwner = {};
@@ -1019,7 +1061,7 @@ function renderSalesCommission(){
   el.forEach(function(d){
     if(!byOwner[d.owner]) return;
     byOwner[d.owner].comm += (d.comm_usd||0);
-    byOwner[d.owner].arr += (d.arr_usd||0);
+    byOwner[d.owner].arr += (d.basis_usd!=null?d.basis_usd:(d.arr_usd||0));
     byOwner[d.owner].deals++;
     if(d.paid_out) byOwner[d.owner].paid += (d.comm_usd||0);
     else byOwner[d.owner].outstanding += (d.comm_usd||0);
@@ -1041,7 +1083,7 @@ function renderSalesCommission(){
   var sorted = el.slice().sort(function(a,b){return (b.close||'').localeCompare(a.close||'');});
   document.getElementById('sales-comm-body').innerHTML = sorted.map(function(d){
     return '<tr'+(isUpsellDeal(d.id)?' style="background:rgba(245,158,11,0.03)"':'')+'>'+
-      '<td><a class="deal-link" href="https://app.hubspot.com/contacts/24214994/record/0-3/'+d.id+'" target="_blank"><div class="deal-name" title="'+d.name+'">'+d.name+upsellBadge(d.id)+'</div></a></td>'+
+      '<td><a class="deal-link" href="https://app.hubspot.com/contacts/24214994/record/0-3/'+d.id+'" target="_blank"><div class="deal-name" title="'+d.name+'">'+d.name+upsellBadge(d.id)+multiYearBadge(d)+'</div></a></td>'+
       '<td>'+aeChip(d.owner)+'</td>'+
       '<td>'+pkgBadge(d.pkg)+'</td>'+
       '<td>'+arrCell(d)+'</td>'+
@@ -1133,12 +1175,12 @@ function renderAE(){
 
 // ── BANKED COMMISSION (multi-year) ────────────────────────────────────────
 function renderBanked(){
-  var multiYear=DEALS.filter(function(d){return d.eligible&&d.contract_years>1;});
-  var standardNote='<div class="alert-strip success" style="margin-bottom:20px"><div style="font-size:16px">📋</div><div class="alert-body"><strong>Multi-year standard (Mark Dempsey · Boat Electrics):</strong> One line item per contract year, each with its own billing start date and annual frequency. <code>hs_arr</code> on the deal = Year 1 ACV only. HubSpot sums all line items as TCV — the Commission Hub uses Year 1 only for commission calculation. Sina and Denzel to follow the same structure when updating their deals.</div></div>';
+  var multiYear=DEALS.filter(function(d){return d.eligible&&(d.contract_years_validated>1);});
+  var standardNote='<div class="alert-strip success" style="margin-bottom:20px"><div style="font-size:16px">📋</div><div class="alert-body"><strong>Multi-year standard:</strong> Commission is due on Year 1 value only (verified against the Stripe subscription). Year 2+ commission is provisionally banked and pays out in the quarter of each renewal. Y1 basis for multi-year deals validated against Kaia\'s reconciliation sheet (30 Jul 2026).</div></div>';
   if(!multiYear.length){
     document.getElementById('banked-body').innerHTML=
       standardNote+
-      '<div class="alert-strip info"><div style="font-size:16px">ℹ</div><div class="alert-body"><strong>No multi-year deals currently active.</strong> Boat Electrics (Mark) is a 5-year contract — once contract_years is confirmed for other deals, they will appear here.</div></div>'+
+      '<div class="alert-strip info"><div style="font-size:16px">ℹ</div><div class="alert-body"><strong>No multi-year deals currently active.</strong></div></div>'+
       '<div class="section-title">How it works</div>'+
       '<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:14px">'+
       '<div style="background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:18px"><div style="font-family:\'DM Mono\',monospace;font-size:10px;text-transform:uppercase;color:var(--text-dim);margin-bottom:8px">Year 1 · Paid at close</div><div style="font-size:12.5px;color:var(--text-muted)">AE earns full rate × Year 1 ACV at close. Paid in the quarter of close.</div></div>'+
@@ -1151,31 +1193,35 @@ function renderBanked(){
 
   var aeBanked={};OFFICIAL_AES.forEach(function(id){aeBanked[id]=0;});
   var cards=multiYear.map(function(d){
+    var years = d.contract_years_validated;
+    var y1Val = (d.comm_basis!=null) ? d.comm_basis : d.arr;
+    var laterTotal = Math.max((d.tcv!=null?d.tcv:d.arr) - y1Val, 0);
+    var perLaterYear = years>1 ? laterTotal/(years-1) : 0;
+    var fxRate = FX_STATIC[d.ccy||'USD']||1;
     var banked=0;
     var yearRows='';
-    for(var y=1;y<=d.contract_years;y++){
+    for(var y=1;y<=years;y++){
       var isY1=y===1;
-      // Use banked_years for accurate per-year ARR if available
-      var yearArr = d.arr;
+      var yearArr = isY1 ? y1Val : perLaterYear;
       if(!isY1 && d.banked_years){
         var byEntry = d.banked_years.find(function(b){return b.year===y;});
         if(byEntry) yearArr = byEntry.arr;
       }
       var comm = yearArr * d.rate;
       banked+=isY1?0:comm;
-      if(aeBanked[d.owner]!==undefined&&!isY1) aeBanked[d.owner]+=comm;
+      if(aeBanked[d.owner]!==undefined&&!isY1) aeBanked[d.owner]+=comm*fxRate;
       var closeYear=new Date(d.close).getFullYear();
       yearRows+='<tr>'+
         '<td class="mono" style="color:var(--text-dim)">Year '+y+' · '+(closeYear+y-1)+'</td>'+
-        '<td class="mono" style="color:var(--text-muted)">$'+fmt(yearArr)+'</td>'+
+        '<td class="mono" style="color:var(--text-muted)">'+fmtCcy(yearArr, d.ccy, 2)+'</td>'+
         '<td>'+rateTxt(d)+'</td>'+
-        '<td class="mono" style="color:var(--green)">$'+fmt(comm)+'</td>'+
+        '<td class="mono" style="color:var(--green)">'+fmtCcy(comm, d.ccy, 2)+((d.ccy&&d.ccy!=='USD')?' <span style="font-size:9px;color:var(--text-dim)">($'+fmt(comm*fxRate,2)+')</span>':'')+'</td>'+
         '<td>'+(isY1?'<span class="badge badge-green" style="font-size:9px">Paid at close</span>':'<span class="banked-chip">Banked</span>')+'</td>'+
         '</tr>';
     }
     return '<div class="stripe-card" style="margin-bottom:16px">'+
-      '<div class="stripe-card-header"><div><div class="stripe-card-company">'+d.name+'</div><div style="font-size:11px;color:var(--text-dim);margin-top:2px">'+AE[d.owner].name+' · '+d.contract_years+'-year contract · Closed '+fmtD(d.close)+'</div></div>'+
-      '<span class="banked-chip">$'+fmt(banked)+' banked</span></div>'+
+      '<div class="stripe-card-header"><div><div class="stripe-card-company">'+d.name+'</div><div style="font-size:11px;color:var(--text-dim);margin-top:2px">'+(AE[d.owner]?AE[d.owner].name:d.owner)+' · '+years+'-year contract · Closed '+fmtD(d.close)+(d.basis_note?' · '+d.basis_note:'')+'</div></div>'+
+      '<span class="banked-chip">'+fmtCcy(banked, d.ccy, 0)+' banked</span></div>'+
       '<div class="stripe-card-body"><div class="table-wrap" style="margin:0"><table><thead><tr><th>Period</th><th>ARR</th><th>Rate</th><th>Commission</th><th>Status</th></tr></thead><tbody>'+yearRows+'</tbody></table></div></div></div>';
   }).join('');
 
@@ -1183,7 +1229,7 @@ function renderBanked(){
   document.getElementById('banked-body').innerHTML=
     standardNote+
     '<div class="kpi-row" style="grid-template-columns:repeat(3,1fr)">'+
-    '<div class="kpi-card"><div class="kpi-label">Total Banked</div><div class="kpi-value teal">$'+fmt(totalBanked)+'</div><div class="kpi-sub">Future renewal commissions provisionally earned</div></div>'+
+    '<div class="kpi-card"><div class="kpi-label">Total Banked</div><div class="kpi-value teal">$'+fmt(totalBanked)+'</div><div class="kpi-sub">Future renewal commissions · USD, static FX</div></div>'+
     '<div class="kpi-card"><div class="kpi-label">Multi-year Deals</div><div class="kpi-value">'+multiYear.length+'</div><div class="kpi-sub">Contracts with Year 2+ renewals</div></div>'+
     '<div class="kpi-card"><div class="kpi-label">Paid quarterly</div><div class="kpi-value green">Q</div><div class="kpi-sub">Renewal commission paid in quarter of renewal</div></div>'+
     '</div>'+cards;
@@ -1957,13 +2003,21 @@ function syncFromHubSpot(){
     active.forEach(function(row){
       var d = buildDeal(row);
       var cl = classify(d), er = eligReason(d), eligible = !er;
-      var comm = eligible ? (d.arr||0)*cl.rate : 0;
+      var kb = kaiaBasis(d);
+      var basis = kb ? kb.basis : (d.arr||0);
+      var comm = eligible ? basis*cl.rate : 0;
       var rate = FX_STATIC[d.ccy || 'USD'] || 1;
       DEALS.push(Object.assign({}, d, cl, {
         eligible: eligible,
         eligReason: er,
         comm: comm,
+        comm_basis: basis,
+        tcv: d.arr,
+        multi_year: !!(kb && kb.years > 1),
+        contract_years_validated: kb ? (kb.years||1) : (d.contract_years||1),
+        basis_note: kb ? kb.note : null,
         arr_usd: (d.arr != null) ? (d.arr * rate) : null,
+        basis_usd: basis * rate,
         comm_usd: comm * rate,
         quarter: getQuarter(d.close)
       }));
