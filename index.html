@@ -769,6 +769,9 @@ var ELIGIBLE_PKG = ["Advanced Subscription","Pro Subscription"];
 // fx:    per-deal close-date FX rate from Kaia's sheet (exact reconciliation).
 // ccy:   currency correction where HubSpot's deal_currency_code is wrong.
 var KAIA_BASIS = {
+  "aim building":        {basis: 24118.80, years: 2, banked_years: [{year: 2, arr: 24118.80}], note: "Y1 only — 2yr monthly contract · HS line items: Year 1 + Year 2 at £2,009.90/mo each (Kaia flag 01 Aug)"},
+  "ttx":                 {basis: 12183.00, years: 2, banked_years: [{year: 2, arr: 12183.00}], note: "Y1 only — 2yr monthly contract · HS line items: Year 1 + Year 2 at $1,015.25/mo each (line-item sweep 01 Aug)"},
+  "cartledge":           {basis: 7752.48,  years: 2, banked_years: [{year: 2, arr: 7752.48}],  note: "Y1 only — 2yr monthly contract · HS line items: Year 1 + Year 2 at A$646.04/mo each (line-item sweep 01 Aug)"},
   "boat electrics":      {basis: 9450,    years: 5, note: "Y1 only — 5yr contract · HS line items: Y1 9,450 + 4×9,135 (verified)"},
   "workspaceconsultants":{basis: 6750,    years: 2, note: "Y1 only — 2yr contract (Kaia validated, HS line items confirm)"},
   "ksn":                 {basis: 22500,   years: 2, tcv: 45000, note: "Y1 only — 2yr confirmed via HS line items. Stripe bills 22,500/yr vs HS list 28,500 (seat/discount gap) — Stripe is billing truth"},
